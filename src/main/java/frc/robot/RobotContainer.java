@@ -12,9 +12,7 @@ import edu.wpi.first.math.geometry.Translation2d;
 import edu.wpi.first.math.trajectory.Trajectory;
 import edu.wpi.first.math.trajectory.TrajectoryConfig;
 import edu.wpi.first.math.trajectory.TrajectoryGenerator;
-import edu.wpi.first.wpilibj.GenericHID;
 import edu.wpi.first.wpilibj.Joystick;
-import edu.wpi.first.wpilibj.XboxController;
 import edu.wpi.first.wpilibj2.command.Command;
 import edu.wpi.first.wpilibj2.command.InstantCommand;
 import edu.wpi.first.wpilibj2.command.SequentialCommandGroup;
@@ -34,35 +32,40 @@ import java.util.List;
  */
 public class RobotContainer
 {
+
   // The robot's subsystems and commands are defined here...
   private final SwerveSubsystem swerveSubsystem = new SwerveSubsystem();
-  private final Joystick driverJoytick = new Joystick(Constants.OIConstants.kDriverControllerPort);
+  private final Joystick        driverJoytick   = new Joystick(Constants.OIConstants.kDriverControllerPort);
 
-  /** The container for the robot. Contains subsystems, OI devices, and commands. */
+  /**
+   * The container for the robot. Contains subsystems, OI devices, and commands.
+   */
   public RobotContainer()
   {
     swerveSubsystem.setDefaultCommand(new SwerveJoystickCmd(
-            swerveSubsystem,
-            () -> -driverJoytick.getRawAxis(OIConstants.kDriverYAxis),
-            () -> driverJoytick.getRawAxis(OIConstants.kDriverXAxis),
-            () -> driverJoytick.getRawAxis(OIConstants.kDriverRotAxis),
-            () -> !driverJoytick.getRawButton(OIConstants.kDriverFieldOrientedButtonIdx)));
+        swerveSubsystem,
+        () -> -driverJoytick.getRawAxis(OIConstants.kDriverYAxis),
+        () -> driverJoytick.getRawAxis(OIConstants.kDriverXAxis),
+        () -> driverJoytick.getRawAxis(OIConstants.kDriverRotAxis),
+        () -> !driverJoytick.getRawButton(OIConstants.kDriverFieldOrientedButtonIdx)));
     // Configure the button bindings
 //    controller0 = new XboxController(0);
 //    controller1 = new XboxController(1);
     configureButtonBindings();
   }
 
-  private void configureButtonBindings() {
+  private void configureButtonBindings()
+  {
     new JoystickButton(driverJoytick, 2).whenPressed(swerveSubsystem::zeroHeading); // NEW
   }
 
-  public Command getAutonomousCommand() {
+  public Command getAutonomousCommand()
+  {
     // 1. Create trajectory settings
     TrajectoryConfig trajectoryConfig = new TrajectoryConfig(
-            Constants.AutoConstants.kMaxSpeedMetersPerSecond,
-            AutoConstants.kMaxAccelerationMetersPerSecondSquared)
-            .setKinematics(DriveConstants.kDriveKinematics);
+        Constants.AutoConstants.kMaxSpeedMetersPerSecond,
+        AutoConstants.kMaxAccelerationMetersPerSecondSquared)
+        .setKinematics(DriveConstants.kDriveKinematics);
 
     // 2. Generate trajectory ---Is all the Poses put together in Autonomous
     Trajectory trajectory = TrajectoryGenerator.generateTrajectory(
@@ -80,22 +83,23 @@ public class RobotContainer
         AutoConstants.kPThetaController, 0, 0, AutoConstants.kThetaControllerConstraints);
     thetaController.enableContinuousInput(-Math.PI, Math.PI);
 
-    // 4. Construct command to follow trajectory <-- Below is entirely incorrect assuming the SwerveDriveCommand is supposed to be used in teleop.
+    // 4. Construct command to follow trajectory <-- Below is entirely incorrect assuming the SwerveDriveCommand is
+    // supposed to be used in teleop.
     // Try again with non example code that you understand please!
-       SwerveControllerCommand swerveControllerCommand = new SwerveDriveCommand(
-               trajectory,
-               swerveSubsystem::getPose,
-               DriveConstants.kDriveKinematics,
-               xController,
-               yController,
-               thetaController,
-               swerveSubsystem::setModuleStates,
-               swerveSubsystem);
+    SwerveControllerCommand swerveControllerCommand = new SwerveDriveCommand(
+        trajectory,
+        swerveSubsystem::getPose,
+        DriveConstants.kDriveKinematics,
+        xController,
+        yController,
+        thetaController,
+        swerveSubsystem::setModuleStates,
+        swerveSubsystem);
 
     // 5. Add some init and wrap-up, and return everything
-       return new SequentialCommandGroup(
-               new InstantCommand(() -> swerveSubsystem.resetOdometry(trajectory.getInitialPose())), //Import?
-               swerveControllerCommand,
-               new InstantCommand(() -> swerveSubsystem.stopModules()));
+    return new SequentialCommandGroup(
+        new InstantCommand(() -> swerveSubsystem.resetOdometry(trajectory.getInitialPose())), //Import?
+        swerveControllerCommand,
+        new InstantCommand(() -> swerveSubsystem.stopModules()));
   }
 }
