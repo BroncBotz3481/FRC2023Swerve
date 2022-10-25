@@ -16,9 +16,14 @@ import edu.wpi.first.wpilibj.GenericHID;
 import edu.wpi.first.wpilibj.Joystick;
 import edu.wpi.first.wpilibj.XboxController;
 import edu.wpi.first.wpilibj2.command.Command;
+import edu.wpi.first.wpilibj2.command.InstantCommand;
+import edu.wpi.first.wpilibj2.command.SequentialCommandGroup;
+import edu.wpi.first.wpilibj2.command.SwerveControllerCommand;
 import edu.wpi.first.wpilibj2.command.button.JoystickButton;
 import frc.robot.Constants.AutoConstants;
 import frc.robot.Constants.DriveConstants;
+import frc.robot.Constants.OIConstants;
+import frc.robot.commands.swerve.SwerveDriveCommand;
 import frc.robot.subsystems.swerve.SwerveSubsystem;
 import java.util.List;
 
@@ -30,36 +35,28 @@ import java.util.List;
 public class RobotContainer
 {
   // The robot's subsystems and commands are defined here...
-
-  private final Joystick        driverJoytick   = new Joystick(Constants.OIConstants.kDriverControllerPort);
-  private final SwerveSubsystem swerveSubsystem = SwerveSubsystem.instance.getInstance();
-  public        XboxController  controller0;
-  public        XboxController  controller1;
+  private final SwerveSubsystem swerveSubsystem = new SwerveSubsystem();
+  private final Joystick driverJoytick = new Joystick(Constants.OIConstants.kDriverControllerPort);
 
   /** The container for the robot. Contains subsystems, OI devices, and commands. */
   public RobotContainer()
   {
+    swerveSubsystem.setDefaultCommand(new SwerveJoystickCmd(
+            swerveSubsystem,
+            () -> -driverJoytick.getRawAxis(OIConstants.kDriverYAxis),
+            () -> driverJoytick.getRawAxis(OIConstants.kDriverXAxis),
+            () -> driverJoytick.getRawAxis(OIConstants.kDriverRotAxis),
+            () -> !driverJoytick.getRawButton(OIConstants.kDriverFieldOrientedButtonIdx)));
     // Configure the button bindings
-    controller0 = new XboxController(0);
-    controller1 = new XboxController(1);
+//    controller0 = new XboxController(0);
+//    controller1 = new XboxController(1);
     configureButtonBindings();
   }
 
-  /**
-   * Use this method to define your button->command mappings. Buttons can be created by
-   * instantiating a {@link GenericHID} or one of its subclasses ({@link
-   * edu.wpi.first.wpilibj.Joystick} or {@link XboxController}), and then passing it to a {@link
-   * edu.wpi.first.wpilibj2.command.button.JoystickButton}.
-   */
   private void configureButtonBindings() {
     new JoystickButton(driverJoytick, 2).whenPressed(swerveSubsystem::zeroHeading); // NEW
   }
 
-  /**
-   * Use this to pass the autonomous command to the main {@link Robot} class.
-   *
-   * @return the command to run in autonomous
-   */
   public Command getAutonomousCommand() {
     // 1. Create trajectory settings
     TrajectoryConfig trajectoryConfig = new TrajectoryConfig(
@@ -85,21 +82,20 @@ public class RobotContainer
 
     // 4. Construct command to follow trajectory <-- Below is entirely incorrect assuming the SwerveDriveCommand is supposed to be used in teleop.
     // Try again with non example code that you understand please!
-//       SwerveControllerCommand swerveControllerCommand = new SwerveDriveCommand(
-//               trajectory,
-//               swerveSubsystem::getPose,
-//               DriveConstants.kDriveKinematics,
-//               xController,
-//               yController,
-//               thetaController,
-//               swerveSubsystem::setModuleStates,
-//               swerveSubsystem);
+       SwerveControllerCommand swerveControllerCommand = new SwerveDriveCommand(
+               trajectory,
+               swerveSubsystem::getPose,
+               DriveConstants.kDriveKinematics,
+               xController,
+               yController,
+               thetaController,
+               swerveSubsystem::setModuleStates,
+               swerveSubsystem);
 
     // 5. Add some init and wrap-up, and return everything
-//       return new SequentialCommandGroup(
-//               new InstantCommand(() -> swerveSubsystem.resetOdometry(trajectory.getInitialPose())), //Import?
-//               swerveControllerCommand,
-//               new InstantCommand(() -> swerveSubsystem.stopModules()));
-    return null;
+       return new SequentialCommandGroup(
+               new InstantCommand(() -> swerveSubsystem.resetOdometry(trajectory.getInitialPose())), //Import?
+               swerveControllerCommand,
+               new InstantCommand(() -> swerveSubsystem.stopModules()));
   }
 }

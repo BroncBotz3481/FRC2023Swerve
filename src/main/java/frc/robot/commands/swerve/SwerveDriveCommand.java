@@ -14,8 +14,8 @@ public class SwerveDriveCommand extends CommandBase
 
     private final SwerveSubsystem  swerveSubsystem;
     private final Supplier<Double> xSpdFunction, ySpdFunction, turningSpdFunction;
-    private final Boolean         fieldOrientedFunction;
-    private final SlewRateLimiter xLimiter, yLimiter, turningLimiter; //Study Later
+    private final Boolean fieldOrientedFunction;
+    private final SlewRateLimiter xLimiter, yLimiter, turningLimiter; //Study Later about Slew rates
 
     public SwerveDriveCommand(SwerveSubsystem swerveSubsystem,
                               Supplier<Double> xSpdFunction, Supplier<Double> ySpdFunction,
@@ -44,7 +44,7 @@ public class SwerveDriveCommand extends CommandBase
         double ySpeed = ySpdFunction.get();
         double turningSpeed = turningSpdFunction.get();
 
-        // 2. Apply deadband
+        // 2. Apply deadband/Dead-Zone
         xSpeed = Math.abs(xSpeed) > OIConstants.kDeadband ? xSpeed : 0.0;
         ySpeed = Math.abs(ySpeed) > OIConstants.kDeadband ? ySpeed : 0.0;
         turningSpeed = Math.abs(turningSpeed) > OIConstants.kDeadband ? turningSpeed : 0.0;
@@ -52,8 +52,7 @@ public class SwerveDriveCommand extends CommandBase
         // 3. Make the driving smoother
         xSpeed = xLimiter.calculate(xSpeed) * DriveConstants.kTeleDriveMaxSpeedMetersPerSecond;
         ySpeed = yLimiter.calculate(ySpeed) * DriveConstants.kTeleDriveMaxSpeedMetersPerSecond;
-        turningSpeed = turningLimiter.calculate(turningSpeed)
-                       * DriveConstants.kTeleDriveMaxAngularSpeedRadiansPerSecond;
+        turningSpeed = turningLimiter.calculate(turningSpeed) * DriveConstants.kTeleDriveMaxAngularSpeedRadiansPerSecond;
 
         // 4. Construct desired chassis speeds
         ChassisSpeeds chassisSpeeds;

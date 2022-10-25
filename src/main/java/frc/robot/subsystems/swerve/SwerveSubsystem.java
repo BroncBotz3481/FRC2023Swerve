@@ -14,7 +14,8 @@ public class SwerveSubsystem extends SubsystemBase
 {
 
     public static final SwerveSubsystem instance  = new SwerveSubsystem();
-    private final       SwerveModule    frontLeft = new SwerveModule(
+    //Creates 4 New Swerve Modules With their Respective Port Numbers
+    private final SwerveModule frontLeft = new SwerveModule(
         DriveConstants.kFrontLeftDriveMotorPort,
         DriveConstants.kFrontLeftTurningMotorPort,
         DriveConstants.kFrontLeftDriveEncoderReversed,
@@ -50,13 +51,13 @@ public class SwerveSubsystem extends SubsystemBase
         DriveConstants.kBackRightDriveAbsoluteEncoderOffsetRad,
         DriveConstants.kBackRightDriveAbsoluteEncoderReversed);
 
-    private final Pigeon2             gyro     = new Pigeon2(DriveConstants.PigeonCANID);
-    private final SwerveDriveOdometry odometer = new SwerveDriveOdometry(DriveConstants.kDriveKinematics,
-                                                                         new Rotation2d(0));
+    private final Pigeon2 gyro = new Pigeon2(DriveConstants.PigeonCANID); //Creates Pigeon2 Gyroscope
+    private final SwerveDriveOdometry odometer = new SwerveDriveOdometry(DriveConstants.kDriveKinematics, new Rotation2d(0));
 
-    private SwerveSubsystem()
+    //Resets Gryoscope
+    public SwerveSubsystem()
     {
-        new Thread(() -> {
+        new Thread(() -> { //On a Thread so that rest of code is not blocked
             try
             {
                 Thread.sleep(1000);
@@ -78,11 +79,13 @@ public class SwerveSubsystem extends SubsystemBase
         //gyro.reset();     //Need to figure out what to use to reset the gyro on Pigeon2
     }
 
+    //Gets the heading of the Robot
     public double getHeading()
     {
         return gyro.getYaw();
     }
 
+    //Gets Heading in Rotation For robot
     public Rotation2d getRotation2d()
     {
         return Rotation2d.fromDegrees(getHeading());
@@ -106,6 +109,7 @@ public class SwerveSubsystem extends SubsystemBase
         SmartDashboard.putString("Robot Location", getPose().getTranslation().toString());
     }
 
+    //Stops all modules
     public void stopModules() {
         frontLeft.stop();
         frontRight.stop();
@@ -113,8 +117,9 @@ public class SwerveSubsystem extends SubsystemBase
         backRight.stop();
     }
 
+    //Sets Each Module to a state
     public void setModuleStates(SwerveModuleState[] desiredStates) {
-        SwerveDriveKinematics.desaturateWheelSpeeds(desiredStates, DriveConstants.kPhysicalMaxSpeedMetersPerSecond);
+        SwerveDriveKinematics.desaturateWheelSpeeds(desiredStates, DriveConstants.kPhysicalMaxSpeedMetersPerSecond); //Normalizes Wheel Speeds, Proportionally decreases all wheel speeds to ensure desired effect
         frontLeft.setDesiredState(desiredStates[0]);
         frontRight.setDesiredState(desiredStates[1]);
         backLeft.setDesiredState(desiredStates[2]);

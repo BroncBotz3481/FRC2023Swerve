@@ -30,14 +30,14 @@
  public final class Constants {
  
      public static final class ModuleConstants {
-         public static final double kWheelDiameterMeters = Units.inchesToMeters(4); //Wheel Diameter 4 inches in meters
-         public static final double kDriveMotorGearRatio = 1 / 6.75;
-         public static final double kTurningMotorGearRatio = 1 / 12.8;
-         public static final double kDriveEncoderRot2Meter = kDriveMotorGearRatio * Math.PI * kWheelDiameterMeters; 
-         public static final double kTurningEncoderRot2Rad = kTurningMotorGearRatio * 2 * Math.PI;
-         public static final double kDriveEncoderRPM2MeterPerSec = kDriveEncoderRot2Meter / 60;
-         public static final double kTurningEncoderRPM2RadPerSec = kTurningEncoderRot2Rad / 60;
-         public static final double kPTurning = 0.5;
+         public static final double kWheelDiameterMeters = Units.inchesToMeters(4); //Wheel Diameter is 4 inches - converted to meters
+         public static final double kDriveMotorGearRatio = 1 / 6.75; //Gear Ratio
+         public static final double kTurningMotorGearRatio = 1 / 12.8; //Gear Ratio
+         public static final double kDriveEncoderRot2Meter = kDriveMotorGearRatio * Math.PI * kWheelDiameterMeters; //Takes the Gear Ratio of the Driver motor and multiplies it by PI and the Diameter to get you meters
+         public static final double kTurningEncoderRot2Rad = kTurningMotorGearRatio * 2 * Math.PI; //Takes the Turning Motor Gear Ratio and multiplies it with 2PI to give you Radians
+         public static final double kDriveEncoderRPM2MeterPerSec = kDriveEncoderRot2Meter / 60; //Divides the Drive Motor rotations in Meters by 60 to give you Per Second instead of Per Min
+         public static final double kTurningEncoderRPM2RadPerSec = kTurningEncoderRot2Rad / 60; //Divides the Turning Motor rotations in Radians by 60 to give you Per Second instead of Per Min
+         public static final double kPTurning = 0.5; //PID Constant P for the Turning Motor. The Proportional term already does a good enough job to tune the Motor so the "D" and "I" are not needed
      }
  
      public static final class DriveConstants {
