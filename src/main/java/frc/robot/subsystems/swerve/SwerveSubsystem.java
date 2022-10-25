@@ -13,7 +13,6 @@ import frc.robot.Constants.DriveConstants;
 public class SwerveSubsystem extends SubsystemBase
 {
 
-  public static final SwerveSubsystem instance  = new SwerveSubsystem();
   //Creates 4 New Swerve Modules With their Respective Port Numbers
   private final       SwerveModule    frontLeft = new SwerveModule(
       DriveConstants.kFrontLeftDriveMotorPort,
@@ -68,11 +67,6 @@ public class SwerveSubsystem extends SubsystemBase
 
       }
     }).start();
-  }
-
-  public SwerveSubsystem getInstance()
-  {
-    return instance;
   }
 
   public void zeroHeading()

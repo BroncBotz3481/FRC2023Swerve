@@ -14,13 +14,12 @@ public class SwerveDriveCommand extends CommandBase
 
   private final SwerveSubsystem  swerveSubsystem;
   private final Supplier<Double> xSpdFunction, ySpdFunction, turningSpdFunction;
-  private final Boolean         fieldOrientedFunction;
-  private final SlewRateLimiter xLimiter, yLimiter, turningLimiter; //Study Later about Slew rates
+  private final Supplier<Boolean> fieldOrientedFunction;
+  private final SlewRateLimiter   xLimiter, yLimiter, turningLimiter; //Study Later about Slew rates
 
-  public SwerveDriveCommand(SwerveSubsystem swerveSubsystem,
-                            Supplier<Double> xSpdFunction, Supplier<Double> ySpdFunction,
-                            Supplier<Double> turningSpdFunction,
-                            Boolean fieldOrientedFunction)
+  public SwerveDriveCommand(SwerveSubsystem swerveSubsystem, Supplier<Double> xSpdFunction,
+                            Supplier<Double> ySpdFunction, Supplier<Double> turningSpdFunction,
+                            Supplier<Boolean> fieldOrientedFunction)
   {
     this.swerveSubsystem = swerveSubsystem;
     this.xSpdFunction = xSpdFunction;
@@ -58,11 +57,11 @@ public class SwerveDriveCommand extends CommandBase
 
     // 4. Construct desired chassis speeds
     ChassisSpeeds chassisSpeeds;
-    if (fieldOrientedFunction)
+    if (fieldOrientedFunction.get())
     {
       // Relative to field
-      chassisSpeeds = ChassisSpeeds.fromFieldRelativeSpeeds(
-          xSpeed, ySpeed, turningSpeed, swerveSubsystem.getRotation2d());
+      chassisSpeeds = ChassisSpeeds.fromFieldRelativeSpeeds(xSpeed, ySpeed, turningSpeed,
+                                                            swerveSubsystem.getRotation2d());
     } else
     {
       // Relative to robot
