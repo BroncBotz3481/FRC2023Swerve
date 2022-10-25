@@ -1,25 +1,27 @@
-package frc.robot.commands.SwerveCommands;
+package frc.robot.commands.swerve;
 
 import edu.wpi.first.math.filter.SlewRateLimiter;
 import edu.wpi.first.math.kinematics.ChassisSpeeds;
 import edu.wpi.first.math.kinematics.SwerveModuleState;
 import edu.wpi.first.wpilibj2.command.CommandBase;
-import frc.robot.subsystems.swerve.SwerveSubsystem;
 import frc.robot.Constants.DriveConstants;
 import frc.robot.Constants.OIConstants;
-
+import frc.robot.subsystems.swerve.SwerveSubsystem;
 import java.util.function.Supplier;
 
-public class SwerveJoystickCmd extends CommandBase {
+public class SwerveDriveCommand extends CommandBase
+{
 
-    private final SwerveSubsystem swerveSubsystem;
+    private final SwerveSubsystem  swerveSubsystem;
     private final Supplier<Double> xSpdFunction, ySpdFunction, turningSpdFunction;
-    private final Supplier<Boolean> fieldOrientedFunction;
+    private final Boolean         fieldOrientedFunction;
     private final SlewRateLimiter xLimiter, yLimiter, turningLimiter; //Study Later
 
-    public SwerveJoystickCmd(SwerveSubsystem swerveSubsystem,
-                             Supplier<Double> xSpdFunction, Supplier<Double> ySpdFunction, Supplier<Double> turningSpdFunction,
-                             Supplier<Boolean> fieldOrientedFunction) {
+    public SwerveDriveCommand(SwerveSubsystem swerveSubsystem,
+                              Supplier<Double> xSpdFunction, Supplier<Double> ySpdFunction,
+                              Supplier<Double> turningSpdFunction,
+                              Boolean fieldOrientedFunction)
+    {
         this.swerveSubsystem = swerveSubsystem;
         this.xSpdFunction = xSpdFunction;
         this.ySpdFunction = ySpdFunction;
@@ -51,15 +53,17 @@ public class SwerveJoystickCmd extends CommandBase {
         xSpeed = xLimiter.calculate(xSpeed) * DriveConstants.kTeleDriveMaxSpeedMetersPerSecond;
         ySpeed = yLimiter.calculate(ySpeed) * DriveConstants.kTeleDriveMaxSpeedMetersPerSecond;
         turningSpeed = turningLimiter.calculate(turningSpeed)
-                * DriveConstants.kTeleDriveMaxAngularSpeedRadiansPerSecond;
+                       * DriveConstants.kTeleDriveMaxAngularSpeedRadiansPerSecond;
 
         // 4. Construct desired chassis speeds
         ChassisSpeeds chassisSpeeds;
-        if (fieldOrientedFunction.get()) {
+        if (fieldOrientedFunction)
+        {
             // Relative to field
             chassisSpeeds = ChassisSpeeds.fromFieldRelativeSpeeds(
-                    xSpeed, ySpeed, turningSpeed, swerveSubsystem.getRotation2d());
-        } else {
+                xSpeed, ySpeed, turningSpeed, swerveSubsystem.getRotation2d());
+        } else
+        {
             // Relative to robot
             chassisSpeeds = new ChassisSpeeds(xSpeed, ySpeed, turningSpeed);
         }

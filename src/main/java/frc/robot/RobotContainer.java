@@ -15,31 +15,30 @@ import edu.wpi.first.math.trajectory.TrajectoryGenerator;
 import edu.wpi.first.wpilibj.GenericHID;
 import edu.wpi.first.wpilibj.Joystick;
 import edu.wpi.first.wpilibj.XboxController;
-import edu.wpi.first.wpilibj2.command.*;
+import edu.wpi.first.wpilibj2.command.Command;
 import edu.wpi.first.wpilibj2.command.button.JoystickButton;
-import edu.wpi.first.wpilibj2.command.button.Trigger;
-import frc.robot.commands.SwerveCommands.SwerveJoystickCmd;
-import frc.robot.subsystems.swerve.SwerveSubsystem;
-import frc.robot.Constants.OIConstants;
-import frc.robot.Constants.DriveConstants;
 import frc.robot.Constants.AutoConstants;
+import frc.robot.Constants.DriveConstants;
+import frc.robot.subsystems.swerve.SwerveSubsystem;
 import java.util.List;
 
 /**
- * This class is where the bulk of the robot should be declared. Since Command-based is a
- * "declarative" paradigm, very little robot logic should actually be handled in the {@link Robot}
- * periodic methods (other than the scheduler calls). Instead, the structure of the robot (including
- * subsystems, commands, and button mappings) should be declared here.
+ * This class is where the bulk of the robot should be declared. Since Command-based is a "declarative" paradigm, very
+ * little robot logic should actually be handled in the {@link Robot} periodic methods (other than the scheduler calls).
+ * Instead, the structure of the robot (including subsystems, commands, and button mappings) should be declared here.
  */
-public class RobotContainer {
+public class RobotContainer
+{
   // The robot's subsystems and commands are defined here...
-  
-  private final Joystick driverJoytick = new Joystick(Constants.OIConstants.kDriverControllerPort);
-  public XboxController controller0;
-  public XboxController controller1;
+
+  private final Joystick        driverJoytick   = new Joystick(Constants.OIConstants.kDriverControllerPort);
+  private final SwerveSubsystem swerveSubsystem = SwerveSubsystem.instance.getInstance();
+  public        XboxController  controller0;
+  public        XboxController  controller1;
 
   /** The container for the robot. Contains subsystems, OI devices, and commands. */
-  public RobotContainer() {
+  public RobotContainer()
+  {
     // Configure the button bindings
     controller0 = new XboxController(0);
     controller1 = new XboxController(1);
@@ -53,7 +52,7 @@ public class RobotContainer {
    * edu.wpi.first.wpilibj2.command.button.JoystickButton}.
    */
   private void configureButtonBindings() {
-    new JoystickButton(driverJoytick, 2).whenPressed(() -> swerveSubsystem.zeroHeading()); // NEW
+    new JoystickButton(driverJoytick, 2).whenPressed(swerveSubsystem::zeroHeading); // NEW
   }
 
   /**
@@ -70,35 +69,37 @@ public class RobotContainer {
 
     // 2. Generate trajectory ---Is all the Poses put together in Autonomous
     Trajectory trajectory = TrajectoryGenerator.generateTrajectory(
-            new Pose2d(0, 0, new Rotation2d(0)),
-            List.of(
-                    new Translation2d(1, 0),
-                    new Translation2d(1, -1)),
-            new Pose2d(2, -1, Rotation2d.fromDegrees(180)),
-            trajectoryConfig);
+        new Pose2d(0, 0, new Rotation2d(0)),
+        List.of(
+            new Translation2d(1, 0),
+            new Translation2d(1, -1)),
+        new Pose2d(2, -1, Rotation2d.fromDegrees(180)),
+        trajectoryConfig);
 
     // 3. Define PID controllers for tracking trajectory
     PIDController xController = new PIDController(AutoConstants.kPXController, 0, 0);
     PIDController yController = new PIDController(AutoConstants.kPYController, 0, 0);
     ProfiledPIDController thetaController = new ProfiledPIDController(
-            AutoConstants.kPThetaController, 0, 0, AutoConstants.kThetaControllerConstraints);
+        AutoConstants.kPThetaController, 0, 0, AutoConstants.kThetaControllerConstraints);
     thetaController.enableContinuousInput(-Math.PI, Math.PI);
 
-    // 4. Construct command to follow trajectory
-       SwerveControllerCommand swerveControllerCommand = new SwerveControllerCommand(
-               trajectory,
-               swerveSubsystem::getPose,
-               DriveConstants.kDriveKinematics,
-               xController,
-               yController,
-               thetaController,
-               swerveSubsystem::setModuleStates,
-               swerveSubsystem);
+    // 4. Construct command to follow trajectory <-- Below is entirely incorrect assuming the SwerveDriveCommand is supposed to be used in teleop.
+    // Try again with non example code that you understand please!
+//       SwerveControllerCommand swerveControllerCommand = new SwerveDriveCommand(
+//               trajectory,
+//               swerveSubsystem::getPose,
+//               DriveConstants.kDriveKinematics,
+//               xController,
+//               yController,
+//               thetaController,
+//               swerveSubsystem::setModuleStates,
+//               swerveSubsystem);
 
-       // 5. Add some init and wrap-up, and return everything
-       return new SequentialCommandGroup(
-               new InstantCommand(() -> swerveSubsystem.resetOdometry(trajectory.getInitialPose())), //Import?
-               swerveControllerCommand,
-               new InstantCommand(() -> swerveSubsystem.stopModules()));
+    // 5. Add some init and wrap-up, and return everything
+//       return new SequentialCommandGroup(
+//               new InstantCommand(() -> swerveSubsystem.resetOdometry(trajectory.getInitialPose())), //Import?
+//               swerveControllerCommand,
+//               new InstantCommand(() -> swerveSubsystem.stopModules()));
+    return null;
   }
 }

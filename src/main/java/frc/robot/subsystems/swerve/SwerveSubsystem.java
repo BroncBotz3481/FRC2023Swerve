@@ -8,27 +8,29 @@ import edu.wpi.first.math.kinematics.SwerveDriveOdometry;
 import edu.wpi.first.math.kinematics.SwerveModuleState;
 import edu.wpi.first.wpilibj.smartdashboard.SmartDashboard;
 import edu.wpi.first.wpilibj2.command.SubsystemBase;
-import frc.robot.Constants;
 import frc.robot.Constants.DriveConstants;
 
-public class SwerveSubsystem extends SubsystemBase {
-    private final SwerveModule frontLeft = new SwerveModule(
-            DriveConstants.kFrontLeftDriveMotorPort,
-            DriveConstants.kFrontLeftTurningMotorPort,
-            DriveConstants.kFrontLeftDriveEncoderReversed,
-            DriveConstants.kFrontLeftTurningEncoderReversed,
-            DriveConstants.kFrontLeftDriveAbsoluteEncoderPort,
-            DriveConstants.kFrontLeftDriveAbsoluteEncoderOffsetRad,
-            DriveConstants.kFrontLeftDriveAbsoluteEncoderReversed);
+public class SwerveSubsystem extends SubsystemBase
+{
+
+    public static final SwerveSubsystem instance  = new SwerveSubsystem();
+    private final       SwerveModule    frontLeft = new SwerveModule(
+        DriveConstants.kFrontLeftDriveMotorPort,
+        DriveConstants.kFrontLeftTurningMotorPort,
+        DriveConstants.kFrontLeftDriveEncoderReversed,
+        DriveConstants.kFrontLeftTurningEncoderReversed,
+        DriveConstants.kFrontLeftDriveAbsoluteEncoderPort,
+        DriveConstants.kFrontLeftDriveAbsoluteEncoderOffsetRad,
+        DriveConstants.kFrontLeftDriveAbsoluteEncoderReversed);
 
     private final SwerveModule frontRight = new SwerveModule(
-            DriveConstants.kFrontRightDriveMotorPort,
-            DriveConstants.kFrontRightTurningMotorPort,
-            DriveConstants.kFrontRightDriveEncoderReversed,
-            DriveConstants.kFrontRightTurningEncoderReversed,
-            DriveConstants.kFrontRightDriveAbsoluteEncoderPort,
-            DriveConstants.kFrontRightDriveAbsoluteEncoderOffsetRad,
-            DriveConstants.kFrontRightDriveAbsoluteEncoderReversed);
+        DriveConstants.kFrontRightDriveMotorPort,
+        DriveConstants.kFrontRightTurningMotorPort,
+        DriveConstants.kFrontRightDriveEncoderReversed,
+        DriveConstants.kFrontRightTurningEncoderReversed,
+        DriveConstants.kFrontRightDriveAbsoluteEncoderPort,
+        DriveConstants.kFrontRightDriveAbsoluteEncoderOffsetRad,
+        DriveConstants.kFrontRightDriveAbsoluteEncoderReversed);
 
     private final SwerveModule backLeft = new SwerveModule(
             DriveConstants.kBackLeftDriveMotorPort,
@@ -40,45 +42,59 @@ public class SwerveSubsystem extends SubsystemBase {
             DriveConstants.kBackLeftDriveAbsoluteEncoderReversed);
 
     private final SwerveModule backRight = new SwerveModule(
-            DriveConstants.kBackRightDriveMotorPort,
-            DriveConstants.kBackRightTurningMotorPort,
-            DriveConstants.kBackRightDriveEncoderReversed,
-            DriveConstants.kBackRightTurningEncoderReversed,
-            DriveConstants.kBackRightDriveAbsoluteEncoderPort,
-            DriveConstants.kBackRightDriveAbsoluteEncoderOffsetRad,
-            DriveConstants.kBackRightDriveAbsoluteEncoderReversed);
+        DriveConstants.kBackRightDriveMotorPort,
+        DriveConstants.kBackRightTurningMotorPort,
+        DriveConstants.kBackRightDriveEncoderReversed,
+        DriveConstants.kBackRightTurningEncoderReversed,
+        DriveConstants.kBackRightDriveAbsoluteEncoderPort,
+        DriveConstants.kBackRightDriveAbsoluteEncoderOffsetRad,
+        DriveConstants.kBackRightDriveAbsoluteEncoderReversed);
 
-    private final Pigeon2 gyro = new Pigeon2(DriveConstants.PigeonCANID);
+    private final Pigeon2             gyro     = new Pigeon2(DriveConstants.PigeonCANID);
     private final SwerveDriveOdometry odometer = new SwerveDriveOdometry(DriveConstants.kDriveKinematics,
-            new Rotation2d(0));
+                                                                         new Rotation2d(0));
 
-    public SwerveSubsystem() {
+    private SwerveSubsystem()
+    {
         new Thread(() -> {
-            try {
+            try
+            {
                 Thread.sleep(1000);
                 zeroHeading();
-            } catch (Exception e) {
+            } catch (Exception ignored)
+            {
+
             }
         }).start();
     }
 
-    public void zeroHeading() {
+    public SwerveSubsystem getInstance()
+    {
+        return instance;
+    }
+
+    public void zeroHeading()
+    {
         //gyro.reset();     //Need to figure out what to use to reset the gyro on Pigeon2
     }
 
-    public double getHeading() {
+    public double getHeading()
+    {
         return gyro.getYaw();
     }
 
-    public Rotation2d getRotation2d() {
+    public Rotation2d getRotation2d()
+    {
         return Rotation2d.fromDegrees(getHeading());
     }
 
-    public Pose2d getPose() {
+    public Pose2d getPose()
+    {
         return odometer.getPoseMeters();
     }
 
-    public void resetOdometry(Pose2d pose) {
+    public void resetOdometry(Pose2d pose)
+    {
         odometer.resetPosition(pose, getRotation2d());
     }
 
