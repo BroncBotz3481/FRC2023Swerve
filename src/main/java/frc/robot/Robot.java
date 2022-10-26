@@ -10,7 +10,6 @@ import edu.wpi.first.wpilibj.TimedRobot;
 import edu.wpi.first.wpilibj.smartdashboard.SmartDashboard;
 import edu.wpi.first.wpilibj2.command.Command;
 import edu.wpi.first.wpilibj2.command.CommandScheduler;
-import frc.robot.subsystems.swerve.SwerveModule;
 
 /**
  * The VM is configured to automatically run this class, and to call the functions corresponding to each mode, as
@@ -23,7 +22,7 @@ public class Robot extends TimedRobot
   private Command m_autonomousCommand;
 
   private RobotContainer m_robotContainer;
-  private SwerveModule swerve;
+
 
   /**
    * This function is run when the robot is first started up and should be used for any initialization code.
@@ -115,8 +114,8 @@ public class Robot extends TimedRobot
   {
     // Cancels all running commands at the start of test mode.
     CommandScheduler.getInstance().cancelAll();
-    swerve = new SwerveModule(2, 1, false, false,
-                              1, 0, false);
+//    swerve = new SwerveModule(2, 1, false, false,
+//                              2, 0, false);
     SmartDashboard.putNumber("Rotation Degrees", 90);
     SmartDashboard.putNumber("Drive Velocity", 0);
   }
@@ -127,10 +126,12 @@ public class Robot extends TimedRobot
   @Override
   public void testPeriodic()
   {
-    SmartDashboard.putNumber("Current Angle", swerve.getTurningPosition());
+    SmartDashboard.putNumber("Current Angle",
+                             new Rotation2d(
+                                 m_robotContainer.swerveSubsystem.frontRight.getAbsoluteEncoderRad()).getDegrees());
 
     double num = SmartDashboard.getNumber("Rotation Degrees", 90);
-    swerve.setDesiredState(
+    m_robotContainer.swerveSubsystem.frontRight.setDesiredState(
         new SwerveModuleState(SmartDashboard.getNumber("Drive Velocity", 0), Rotation2d.fromDegrees(num)));
   }
 }

@@ -29,6 +29,16 @@ public class SwerveModule
   private final boolean  absoluteEncoderReversed; //Variable to store whether the Absolute Encoder is "Reversed" or not
   private final double   absoluteEncoderOffsetRad; //Variable to store the Absolute Encoder's Offset Position from 0
 
+  /**
+   *
+   * @param driveMotorId
+   * @param turningMotorId
+   * @param driveMotorReversed
+   * @param turningMotorReversed
+   * @param absoluteEncoderId
+   * @param absoluteEncoderOffset
+   * @param absoluteEncoderReversed
+   */
   public SwerveModule(int driveMotorId, int turningMotorId, boolean driveMotorReversed, boolean turningMotorReversed,
                       //Used to create swerve modules using their Motor ID's
                       int absoluteEncoderId, double absoluteEncoderOffset, boolean absoluteEncoderReversed)
@@ -75,6 +85,12 @@ public class SwerveModule
   }
 
   //Built in Encoder-
+
+  /**
+   * Position of built in encoder on the turning motor.
+   *
+   * @return Rotation in radians.
+   */
   public double getTurningPosition()
   {
     return turningEncoder.getPosition();
@@ -92,13 +108,15 @@ public class SwerveModule
     return driveEncoder.getVelocity();
   }
 
-  //CANCoder
+  /**
+   * CANCoder
+   *
+   * @return Encoder position in radians
+   */
   public double getAbsoluteEncoderRad()
   {
-    double angle = absoluteEncoder.getPosition(); // Get angle in Degrees
-    angle *= Math.PI / 180; // Converts from Degrees to Radians
-    angle -= absoluteEncoderOffsetRad; //Accounts for offset
-    return angle * (absoluteEncoderReversed ? -1.0 : 1.0); //Multiples by -1 if Encoder is Reversed
+    return Rotation2d.fromDegrees(absoluteEncoder.getPosition()).getRadians() *
+           (absoluteEncoderReversed ? -1.0 : 1.0); //Multiples by -1 if Encoder is Reversed
   }
 
   //Gives Built in Encoders Absolute Encoder Information
@@ -118,11 +136,11 @@ public class SwerveModule
   public void setDesiredState(SwerveModuleState state)
   {
     //Stops motors and exits the function if driving velocity is close to 0
-    if (Math.abs(state.speedMetersPerSecond) < 0.001)
-    {
-      stop();
-      return;
-    }
+//    if (Math.abs(state.speedMetersPerSecond) < 0.001)
+//    {
+//      stop();
+//      return;
+//    }
     state = SwerveModuleState.optimize(state,
                                        getState().angle); //Optimizes so that you will never have to move more than
     // 90 degrees at a time
