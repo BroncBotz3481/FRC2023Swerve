@@ -66,14 +66,14 @@ public final class Constants
 
     public static final int kFrontLeftDriveMotorPort  = 4;
     public static final int kBackLeftDriveMotorPort   = 7;
-    public static final int kFrontRightDriveMotorPort = 2;
+    public static final int kFrontRightDriveMotorPort = 6;
     public static final int kBackRightDriveMotorPort  = 5;
 
     public static final int kFrontLeftTurningMotorPort  = 3;
     public static final int kBackLeftTurningMotorPort   = 8;
     public static final int kFrontRightTurningMotorPort = 1;
     public static final int kBackRightTurningMotorPort  = 6;
-    public static final int PigeonCANID                 = 20;
+    public static final int PigeonCANID                 = 6;
 
     public static final boolean kFrontLeftTurningEncoderReversed  = true;
     public static final boolean kBackLeftTurningEncoderReversed   = true;
@@ -85,9 +85,9 @@ public final class Constants
     public static final boolean kFrontRightDriveEncoderReversed = false;
     public static final boolean kBackRightDriveEncoderReversed  = false;
 
-    public static final int kFrontLeftDriveAbsoluteEncoderPort  = 1;
-    public static final int kBackLeftDriveAbsoluteEncoderPort   = 4;
-    public static final int kFrontRightDriveAbsoluteEncoderPort = 2;
+    public static final int kFrontLeftDriveAbsoluteEncoderPort  = 0;
+    public static final int kBackLeftDriveAbsoluteEncoderPort   = 2;
+    public static final int kFrontRightDriveAbsoluteEncoderPort = 1;
     public static final int kBackRightDriveAbsoluteEncoderPort  = 3;
 
     public static final boolean kFrontLeftDriveAbsoluteEncoderReversed  = false;
