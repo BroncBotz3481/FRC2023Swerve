@@ -4,6 +4,7 @@ import static java.util.Objects.requireNonNull;
 
 import com.ctre.phoenix.motorcontrol.ControlMode;
 import com.ctre.phoenix.motorcontrol.FeedbackDevice;
+import com.ctre.phoenix.motorcontrol.NeutralMode;
 import com.ctre.phoenix.motorcontrol.can.BaseMotorController;
 import com.ctre.phoenix.motorcontrol.can.BaseTalon;
 import com.ctre.phoenix.motorcontrol.can.TalonFX;
@@ -245,7 +246,8 @@ public class SwerveModule<DriveMotorType extends MotorController, AngleMotorType
 
   /**
    * Setup REV motors and configure the values in the class for them. Set's the driveMotorTicksPerRotation, and
-   * m_drivePIDController for the class. Assumes the absolute encoder reads from 0 to 360.
+   * m_drivePIDController for the class. Assumes the absolute encoder reads from 0 to 360. Configures motor controller
+   * in brake mode. Set the smart limit amperage
    *
    * @param motor                 Motor controller.
    * @param swerveModuleMotorType Spin motor or drive motor.
@@ -264,6 +266,8 @@ public class SwerveModule<DriveMotorType extends MotorController, AngleMotorType
 
     motor.setIdleMode(IdleMode.kBrake);
 
+    motor.setSmartCurrentLimit(40, 60); // Might need to remove this.
+
     if (swerveModuleMotorType == SwerveModuleMotorType.DRIVE)
     {
 
@@ -278,7 +282,7 @@ public class SwerveModule<DriveMotorType extends MotorController, AngleMotorType
       // r/min * K = m/s
       // r/min * 1min/60s * (pi*diameter*gear)/r = m/s
       // r/min * (pi*diameter*gear)/60 = m/s
-      configureSparkMax(motor, (Math.PI * wheelDiameter * gearRatio) / 60, SwerveModuleMotorType.DRIVE);
+      setREVConversionFactor(motor, (Math.PI * wheelDiameter * gearRatio) / 60, SwerveModuleMotorType.DRIVE);
     } else
     {
       m_spinPIDContrller = motor.getPIDController();
@@ -290,7 +294,7 @@ public class SwerveModule<DriveMotorType extends MotorController, AngleMotorType
       // deg * K = ticks
       // deg * (360deg/(42*gearRatio)ticks) = ticks
       // K = 360/(42*gearRatio)
-      configureSparkMax(motor, 360 / (42 * gearRatio), SwerveModuleMotorType.SPIN);
+      setREVConversionFactor(motor, 360 / (42 * gearRatio), SwerveModuleMotorType.SPIN);
       setPIDF(1, 0, 0.1, 0, 100, SwerveModuleMotorType.SPIN);
     }
 
@@ -346,6 +350,11 @@ public class SwerveModule<DriveMotorType extends MotorController, AngleMotorType
    */
   private void setupCTREMotor(BaseTalon motor, SwerveModuleMotorType swerveModuleMotorType, double gearRatio)
   {
+    motor.setNeutralMode(NeutralMode.Brake);
+
+    // Purposely did not configure status frames since CTRE motors should be on a CANivore
+    // TODO: Set the amperage limits.
+
     if (swerveModuleMotorType == SwerveModuleMotorType.DRIVE)
     {
       // Math set's the coefficient to the OUTPUT of the ENCODER (ticks/100ms) which is the INPUT to the PID.
@@ -356,24 +365,22 @@ public class SwerveModule<DriveMotorType extends MotorController, AngleMotorType
       // ticks/100ms * 1/10 * (pi*diameter)/(ticks[4096]*gearRatio)ticks = meters/second
       // ticks/100ms * (pi*diameter)/((ticks[4096]*gearRatio)*10) = meters/second
       // K = (pi*diameter)/((ticks[4096]*gearRatio)*10)
-      // TODO: Select the feedback sensor.
+      // Set the feedback sensor up earlier in setCANRemoteFeedbackSensor()
       motor.configSelectedFeedbackCoefficient((Math.PI * wheelDiameter) / ((4096 * gearRatio) * 10));
     }
   }
 
   /**
-   * Set's the general configuration for the SparkMax. Configures motor controller in brake mode. Set's the amperage
-   * limits to the PDP fuses. Configures the conversion factor based upon which motor.
+   * Configures the conversion factor based upon which motor.
    *
    * @param motor                 motor controller to configure
    * @param conversionFactor      Conversion from RPM to MPS for drive motor, and rotations to degrees for the spin
    *                              motor.
    * @param swerveModuleMotorType Spin motor or drive motor for conversion factor setting.
    */
-  private void configureSparkMax(CANSparkMax motor, double conversionFactor,
-                                 SwerveModuleMotorType swerveModuleMotorType)
+  private void setREVConversionFactor(CANSparkMax motor, double conversionFactor,
+                                      SwerveModuleMotorType swerveModuleMotorType)
   {
-    motor.setSmartCurrentLimit(40, 60); // Might need to remove this.
     if (swerveModuleMotorType == SwerveModuleMotorType.SPIN)
     {
       motor.getEncoder().setPositionConversionFactor(conversionFactor);
