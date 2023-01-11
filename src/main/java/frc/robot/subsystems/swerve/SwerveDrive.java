@@ -66,15 +66,19 @@ public class SwerveDrive<DriveMotorType extends MotorController, SteeringMotorTy
   /**
    * Field2d displayed on shuffleboard with current position.
    */
-  private final Field2d                                                   m_field       = new Field2d();
+  private final Field2d                                                   m_field = new Field2d();
   /**
    * The slew rate limiters to make control smooth.
    */
-  private final SlewRateLimiter m_xLimiter, m_yLimiter, m_turningLimiter;
+  private final SlewRateLimiter                                           m_xLimiter, m_yLimiter, m_turningLimiter;
   /**
    * Maximum speed in meters per second.
    */
-  public        double                                                    m_maxSpeedMPS = 5, m_maxAngularVelocity;
+  public double m_maxSpeedMPS = 5, m_maxAngularVelocity;
+  /**
+   * Invert the gyro reading.
+   */
+  private boolean m_gyroInverted = false;
 
   /**
    * Constructor for Swerve Drive assuming modules have been created and configured with PIDF and conversions.
@@ -89,19 +93,22 @@ public class SwerveDrive<DriveMotorType extends MotorController, SteeringMotorTy
    * @param maxDriveAccelerationMetersPerSecond    Maximum acceleration in meters per second for the drive motors.
    * @param maxAngularAccelerationRadiansPerSecond Maximum angular acceleration in meters per second for the steering
    *                                               motors.
+   * @param gyroInverted                           Invert the gryoscope for the robot.
    */
   public SwerveDrive(SwerveModule<DriveMotorType, SteeringMotorType, CANCoder> frontLeft,
                      SwerveModule<DriveMotorType, SteeringMotorType, CANCoder> backLeft,
                      SwerveModule<DriveMotorType, SteeringMotorType, CANCoder> frontRight,
                      SwerveModule<DriveMotorType, SteeringMotorType, CANCoder> backRight, WPI_Pigeon2 pigeon,
                      double maxSpeedMetersPerSecond, double maxAngularVelocityRadiansPerSecond,
-                     double maxDriveAccelerationMetersPerSecond, double maxAngularAccelerationRadiansPerSecond)
+                     double maxDriveAccelerationMetersPerSecond, double maxAngularAccelerationRadiansPerSecond,
+                     boolean gyroInverted)
   {
     instances++;
     m_frontLeft = frontLeft;
     m_backRight = backRight;
     m_backLeft = backLeft;
     m_frontRight = frontRight;
+    m_gyroInverted = gyroInverted;
     m_swerveKinematics = new SwerveDriveKinematics(frontLeft.swerveModuleLocation,
                                                    frontRight.swerveModuleLocation,
                                                    backLeft.swerveModuleLocation,
@@ -215,13 +222,24 @@ public class SwerveDrive<DriveMotorType extends MotorController, SteeringMotorTy
   }
 
   /**
+   * Invert the gyroscope reading.
+   *
+   * @param isInverted Inversion of the gryoscope, true is inverted.
+   */
+  public void setGyroInverted(boolean isInverted)
+  {
+    m_gyroInverted = isInverted;
+  }
+
+  /**
    * Get the current robot rotation.
    *
    * @return {@link Rotation2d} of the robot.
    */
   public Rotation2d getRotation()
   {
-    return new Rotation2d(m_pigeonIMU.getYaw());
+    return m_gyroInverted ? Rotation2d.fromDegrees(360 - m_pigeonIMU.getYaw()) : Rotation2d.fromDegrees(
+        m_pigeonIMU.getYaw());
   }
 
   /**
