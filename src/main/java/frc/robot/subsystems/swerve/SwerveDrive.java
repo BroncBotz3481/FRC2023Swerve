@@ -175,8 +175,6 @@ public class SwerveDrive<DriveMotorType extends MotorController, SteeringMotorTy
    */
   public void set(double x, double y, double radianPerSecond, boolean fieldRelative)
   {
-    radianPerSecond +=
-        radianPerSecond < 0 ? Math.PI : 0; // Convert from -180deg to 180deg to 0deg to 360deg (-PI to PI -> 0 to 2PI)
 
     SwerveModuleState[] moduleStates = m_swerveKinematics.toSwerveModuleStates(
         fieldRelative ? ChassisSpeeds.fromFieldRelativeSpeeds(x, y, radianPerSecond, getRotation())
