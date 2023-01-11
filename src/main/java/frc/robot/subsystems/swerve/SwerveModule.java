@@ -148,7 +148,7 @@ public class SwerveModule<DriveMotorType extends MotorController, AngleMotorType
     }
 
     encoder.configAbsoluteSensorRange(AbsoluteSensorRange.Unsigned_0_to_360);
-    // Convert CANCoder to read data as in 0 to 360
+    // Convert CANCoder to read data as unsigned 0 to 360 for synchronization purposes.
   }
 
   /**
@@ -629,14 +629,8 @@ public class SwerveModule<DriveMotorType extends MotorController, AngleMotorType
    */
   public void setAngle(double angle)
   {
-    try
-    {
-      angle = SwerveModuleState.optimize(getState(), Rotation2d.fromDegrees(angle)).angle.getDegrees();
-    } catch (Exception e)
-    {
-      System.err.println("Could not fetch module state!");
-    }
-
+    angle = SwerveModuleState.optimize(getState(), Rotation2d.fromDegrees(angle)).angle.getDegrees();
+    assert angle > 0; // Angle **MUST** be within range of 0 to 360.
     if (isREVSpinMotor())
     {
       setREVAngle(angle);
