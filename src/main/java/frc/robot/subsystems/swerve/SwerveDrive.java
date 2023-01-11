@@ -9,6 +9,7 @@ import edu.wpi.first.math.geometry.Rotation2d;
 import edu.wpi.first.math.kinematics.ChassisSpeeds;
 import edu.wpi.first.math.kinematics.SwerveDriveKinematics;
 import edu.wpi.first.math.kinematics.SwerveDriveOdometry;
+import edu.wpi.first.math.kinematics.SwerveModulePosition;
 import edu.wpi.first.math.kinematics.SwerveModuleState;
 import edu.wpi.first.util.sendable.Sendable;
 import edu.wpi.first.util.sendable.SendableBuilder;
@@ -66,15 +67,19 @@ public class SwerveDrive<DriveMotorType extends MotorController, SteeringMotorTy
   /**
    * Field2d displayed on shuffleboard with current position.
    */
-  private final Field2d                                                   m_field       = new Field2d();
+  private final Field2d                                                   m_field = new Field2d();
   /**
    * The slew rate limiters to make control smooth.
    */
-  private final SlewRateLimiter m_xLimiter, m_yLimiter, m_turningLimiter;
+  private final SlewRateLimiter                                           m_xLimiter, m_yLimiter, m_turningLimiter;
   /**
    * Maximum speed in meters per second.
    */
-  public        double                                                    m_maxSpeedMPS = 5, m_maxAngularVelocity;
+  public double m_maxSpeedMPS = 5, m_maxAngularVelocity;
+  /**
+   * Invert the gyro reading.
+   */
+  private boolean m_gyroInverted = false;
 
   /**
    * Constructor for Swerve Drive assuming modules have been created and configured with PIDF and conversions.
@@ -89,25 +94,28 @@ public class SwerveDrive<DriveMotorType extends MotorController, SteeringMotorTy
    * @param maxDriveAccelerationMetersPerSecond    Maximum acceleration in meters per second for the drive motors.
    * @param maxAngularAccelerationRadiansPerSecond Maximum angular acceleration in meters per second for the steering
    *                                               motors.
+   * @param gyroInverted                           Invert the gryoscope for the robot.
    */
   public SwerveDrive(SwerveModule<DriveMotorType, SteeringMotorType, CANCoder> frontLeft,
                      SwerveModule<DriveMotorType, SteeringMotorType, CANCoder> backLeft,
                      SwerveModule<DriveMotorType, SteeringMotorType, CANCoder> frontRight,
                      SwerveModule<DriveMotorType, SteeringMotorType, CANCoder> backRight, WPI_Pigeon2 pigeon,
                      double maxSpeedMetersPerSecond, double maxAngularVelocityRadiansPerSecond,
-                     double maxDriveAccelerationMetersPerSecond, double maxAngularAccelerationRadiansPerSecond)
+                     double maxDriveAccelerationMetersPerSecond, double maxAngularAccelerationRadiansPerSecond,
+                     boolean gyroInverted)
   {
     instances++;
     m_frontLeft = frontLeft;
     m_backRight = backRight;
     m_backLeft = backLeft;
     m_frontRight = frontRight;
+    m_gyroInverted = gyroInverted;
     m_swerveKinematics = new SwerveDriveKinematics(frontLeft.swerveModuleLocation,
                                                    frontRight.swerveModuleLocation,
                                                    backLeft.swerveModuleLocation,
                                                    backRight.swerveModuleLocation);
     m_pigeonIMU = pigeon;
-    m_swerveOdometry = new SwerveDriveOdometry(m_swerveKinematics, getRotation());
+    m_swerveOdometry = new SwerveDriveOdometry(m_swerveKinematics, getRotation(), getPositions());
     m_maxSpeedMPS = maxSpeedMetersPerSecond;
     m_maxAngularVelocity = maxAngularVelocityRadiansPerSecond;
     configurePigeonIMU();
@@ -136,10 +144,7 @@ public class SwerveDrive<DriveMotorType extends MotorController, SteeringMotorTy
   public SwerveDriveOdometry update()
   {
     m_swerveOdometry.update(getRotation(),
-                            m_frontLeft.getState(AbsoluteSensorRange.Signed_PlusMinus180),
-                            m_frontRight.getState(AbsoluteSensorRange.Signed_PlusMinus180),
-                            m_backLeft.getState(AbsoluteSensorRange.Signed_PlusMinus180),
-                            m_backRight.getState(AbsoluteSensorRange.Signed_PlusMinus180));
+                            getPositions());
     return m_swerveOdometry;
   }
 
@@ -215,13 +220,24 @@ public class SwerveDrive<DriveMotorType extends MotorController, SteeringMotorTy
   }
 
   /**
+   * Invert the gyroscope reading.
+   *
+   * @param isInverted Inversion of the gryoscope, true is inverted.
+   */
+  public void setGyroInverted(boolean isInverted)
+  {
+    m_gyroInverted = isInverted;
+  }
+
+  /**
    * Get the current robot rotation.
    *
    * @return {@link Rotation2d} of the robot.
    */
   public Rotation2d getRotation()
   {
-    return new Rotation2d(m_pigeonIMU.getYaw());
+    return m_gyroInverted ? Rotation2d.fromDegrees(360 - m_pigeonIMU.getYaw()) : Rotation2d.fromDegrees(
+        m_pigeonIMU.getYaw());
   }
 
   /**
@@ -234,6 +250,30 @@ public class SwerveDrive<DriveMotorType extends MotorController, SteeringMotorTy
     return m_swerveOdometry.getPoseMeters();
   }
 
+
+  /**
+   * Get current swerve module positions in order.
+   *
+   * @param range Sensor range to use.
+   * @return Swerve module positions array.
+   */
+  public SwerveModulePosition[] getPositions(AbsoluteSensorRange range)
+  {
+    return new SwerveModulePosition[]{m_frontLeft.getPosition(range), m_frontRight.getPosition(range),
+                                      m_backLeft.getPosition(range), m_backRight.getPosition(range)};
+  }
+
+  /**
+   * Get current swerve module positions in order. Returns the angle in the range of -180 to 180.
+   *
+   * @return Swerve module positions array.
+   */
+  public SwerveModulePosition[] getPositions()
+  {
+    return getPositions(AbsoluteSensorRange.Signed_PlusMinus180);
+  }
+
+
   /**
    * Reset the odometry given the position and using current rotation from the PigeonIMU 2.
    *
@@ -241,7 +281,7 @@ public class SwerveDrive<DriveMotorType extends MotorController, SteeringMotorTy
    */
   public void resetOdometry(Pose2d pose)
   {
-    m_swerveOdometry.resetPosition(pose, getRotation());
+    m_swerveOdometry.resetPosition(getRotation(), getPositions(), pose);
   }
 
   /**

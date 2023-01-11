@@ -60,7 +60,8 @@ public class SwerveSubsystem extends SubsystemBase
                                                         DriveConstants.kTeleDriveMaxSpeedMetersPerSecond,
                                                         DriveConstants.kTeleDriveMaxAngularSpeedRadiansPerSecond,
                                                         DriveConstants.kTeleDriveMaxAccelerationUnitsPerSecond,
-                                                        DriveConstants.kTeleDriveMaxAngularAccelerationUnitsPerSecond);
+                                                        DriveConstants.kTeleDriveMaxAngularAccelerationUnitsPerSecond,
+                                                        false);
 
     m_drive.zeroGyro();
     m_drive.setDeadband(0.02);

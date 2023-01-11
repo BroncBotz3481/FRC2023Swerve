@@ -21,6 +21,7 @@ import com.revrobotics.RelativeEncoder;
 import com.revrobotics.SparkMaxPIDController;
 import edu.wpi.first.math.geometry.Rotation2d;
 import edu.wpi.first.math.geometry.Translation2d;
+import edu.wpi.first.math.kinematics.SwerveModulePosition;
 import edu.wpi.first.math.kinematics.SwerveModuleState;
 import edu.wpi.first.util.sendable.Sendable;
 import edu.wpi.first.util.sendable.SendableBuilder;
@@ -208,7 +209,14 @@ public class SwerveModule<DriveMotorType extends MotorController, AngleMotorType
       ((CANSparkMax) m_spinMotor).getEncoder().setPosition(0);
     }
 
-    // TODO: Add reset to CTRE motors, and selectively reset the spinMotor and driveMotor.
+    if (isCTREDriveMotor())
+    {
+      ((BaseTalon) m_driveMotor).setSelectedSensorPosition(0);
+    }
+    if (isCTRESpinMotor())
+    {
+      ((BaseTalon) m_spinMotor).setSelectedSensorPosition(0);
+    }
 
   }
 
@@ -865,6 +873,29 @@ public class SwerveModule<DriveMotorType extends MotorController, AngleMotorType
   public SwerveModuleState getState()
   {
     return getState(configuredSensorRange);
+  }
+
+  /**
+   * Get the swerve module position based off the sensors.
+   *
+   * @return Swerve Module position.
+   */
+  public SwerveModulePosition getPosition(AbsoluteSensorRange range)
+  {
+    double distanceMeters = isREVDriveMotor() ? ((CANSparkMax) m_driveMotor).getEncoder().getPosition()
+                                              : ((BaseTalon) m_driveMotor).getSelectedSensorPosition();
+
+    return new SwerveModulePosition(distanceMeters, getState(range).angle);
+  }
+
+  /**
+   * Get the swerve module position based off the sensors.
+   *
+   * @return Swerve Module position.
+   */
+  public SwerveModulePosition getPosition()
+  {
+    return getPosition(configuredSensorRange);
   }
 
   /**

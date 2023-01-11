@@ -1,16 +1,16 @@
 {
   "fileName": "WPILibNewCommands.json",
   "name": "WPILib-New-Commands",
-  "version": "2020.0.0",
+  "version": "1.0.0",
   "uuid": "111e20f7-815e-48f8-9dd6-e675ce75b266",
   "mavenUrls": [],
   "jsonUrl": "",
   "javaDependencies": [
-      {
-          "groupId": "edu.wpi.first.wpilibNewCommands",
-          "artifactId": "wpilibNewCommands-java",
-          "version": "wpilib"
-      }
+    {
+      "groupId": "edu.wpi.first.wpilibNewCommands",
+      "artifactId": "wpilibNewCommands-java",
+      "version": "wpilib"
+    }
   ],
   "jniDependencies": [],
   "cppDependencies": [
@@ -24,13 +24,13 @@
           "sharedLibrary": true,
           "skipInvalidPlatforms": true,
           "binaryPlatforms": [
-              "linuxathena",
-              "linuxraspbian",
-              "linuxaarch64bionic",
-              "windowsx86-64",
-              "windowsx86",
-              "linuxx86-64",
-              "osxx86-64"
+            "linuxathena",
+            "linuxarm32",
+            "linuxarm64",
+            "windowsx86-64",
+            "windowsx86",
+            "linuxx86-64",
+            "osxuniversal"
           ]
       }
   ]
