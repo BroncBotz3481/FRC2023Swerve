@@ -285,11 +285,14 @@ public class SwerveModule<DriveMotorType extends MotorController, AngleMotorType
 
     motor.setIdleMode(IdleMode.kBrake);
 
-    motor.setSmartCurrentLimit(40, 60); // Might need to remove this.
-    motor.enableVoltageCompensation(12); // Nominal voltage is 12v
+    //    motor.setSmartCurrentLimit(40, 60);
+    setVoltageCompensation(12, swerveModuleMotorType); // Nominal voltage is 12v
 
     if (swerveModuleMotorType == SwerveModuleMotorType.DRIVE)
     {
+      // Based off current limit used in swerve-lib
+      // URL: https://github.com/SwerveDriveSpecialties/swerve-lib-2022-unmaintained/blob/55f3f1ad9e6bd81e56779d022a40917aacf8d3b3/src/main/java/com/swervedrivespecialties/swervelib/rev/NeoDriveControllerFactoryBuilder.java#L38
+
       setCurrentLimit(80, swerveModuleMotorType);
       // motor.getEncoder().getCountsPerRevolution()
       m_drivePIDController = motor.getPIDController();
@@ -760,6 +763,34 @@ public class SwerveModule<DriveMotorType extends MotorController, AngleMotorType
   public void setInvertedSteering(boolean isInverted)
   {
     m_spinMotor.setInverted(isInverted);
+  }
+
+  /**
+   * Set the sensor to be inverted for the motor type.
+   *
+   * @param isInverted            The state of inversion, true is inverted.
+   * @param swerveModuleMotorType Swerve module motor's sensors to configure.
+   */
+  public void setInvertedSensor(boolean isInverted, SwerveModuleMotorType swerveModuleMotorType)
+  {
+    if (swerveModuleMotorType == SwerveModuleMotorType.SPIN)
+    {
+      if (absoluteEncoder instanceof CANCoder)
+      {
+        absoluteEncoder.configSensorDirection(isInverted);
+      }
+      if (isREVSpinMotor())
+      {
+        ((CANSparkMax) m_spinMotor).getEncoder().setInverted(isInverted);
+      }
+    } else
+    {
+      if (isREVDriveMotor())
+      {
+        ((CANSparkMax) m_driveMotor).getEncoder().setInverted(isInverted);
+      }
+      // TODO: Implement CTRE inversion.
+    }
   }
 
   /**
