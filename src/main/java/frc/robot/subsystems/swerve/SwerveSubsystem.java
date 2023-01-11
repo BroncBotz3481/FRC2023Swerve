@@ -1,126 +1,86 @@
 package frc.robot.subsystems.swerve;
 
-import com.ctre.phoenix.sensors.Pigeon2;
-import edu.wpi.first.math.geometry.Pose2d;
-import edu.wpi.first.math.geometry.Rotation2d;
-import edu.wpi.first.math.kinematics.SwerveDriveKinematics;
-import edu.wpi.first.math.kinematics.SwerveDriveOdometry;
-import edu.wpi.first.math.kinematics.SwerveModuleState;
-import edu.wpi.first.wpilibj.smartdashboard.SmartDashboard;
+import com.ctre.phoenix.sensors.CANCoder;
+import com.ctre.phoenix.sensors.WPI_Pigeon2;
+import com.revrobotics.CANSparkMax;
+import com.revrobotics.CANSparkMaxLowLevel.MotorType;
+import edu.wpi.first.math.util.Units;
 import edu.wpi.first.wpilibj2.command.SubsystemBase;
 import frc.robot.Constants.DriveConstants;
+import frc.robot.Constants.ModuleConstants;
 
 public class SwerveSubsystem extends SubsystemBase
 {
 
-  public final SwerveModule frontRight = new SwerveModule(
-      DriveConstants.kFrontRightDriveMotorPort,
-      DriveConstants.kFrontRightTurningMotorPort,
-      DriveConstants.kFrontRightDriveEncoderReversed,
-      DriveConstants.kFrontRightTurningEncoderReversed,
-      DriveConstants.kFrontRightDriveAbsoluteEncoderPort,
-      DriveConstants.kFrontRightDriveAbsoluteEncoderOffsetRad,
-      DriveConstants.kFrontRightDriveAbsoluteEncoderReversed);
-  //Creates 4 New Swerve Modules With their Respective Port Numbers
-  private final SwerveModule frontLeft = new SwerveModule(
-      DriveConstants.kFrontLeftDriveMotorPort,
-      DriveConstants.kFrontLeftTurningMotorPort,
-      DriveConstants.kFrontLeftDriveEncoderReversed,
-      DriveConstants.kFrontLeftTurningEncoderReversed,
-      DriveConstants.kFrontLeftDriveAbsoluteEncoderPort,
-      DriveConstants.kFrontLeftDriveAbsoluteEncoderOffsetRad,
-      DriveConstants.kFrontLeftDriveAbsoluteEncoderReversed);
-  private final SwerveModule backLeft = new SwerveModule(
-      DriveConstants.kBackLeftDriveMotorPort,
-      DriveConstants.kBackLeftTurningMotorPort,
-      DriveConstants.kBackLeftDriveEncoderReversed,
-      DriveConstants.kBackLeftTurningEncoderReversed,
-      DriveConstants.kBackLeftDriveAbsoluteEncoderPort,
-      DriveConstants.kBackLeftDriveAbsoluteEncoderOffsetRad,
-      DriveConstants.kBackLeftDriveAbsoluteEncoderReversed);
+  public final SwerveModule<CANSparkMax, CANSparkMax, CANCoder> m_frontRight, m_frontLeft, m_backRight, m_backLeft;
+  public final  SwerveDrive<CANSparkMax, CANSparkMax> m_drive;
+  private final WPI_Pigeon2                           m_gyro = new WPI_Pigeon2(DriveConstants.PigeonCANID);
+  //Creates Pigeon2 Gyroscope
 
-  private final SwerveModule backRight = new SwerveModule(
-      DriveConstants.kBackRightDriveMotorPort,
-      DriveConstants.kBackRightTurningMotorPort,
-      DriveConstants.kBackRightDriveEncoderReversed,
-      DriveConstants.kBackRightTurningEncoderReversed,
-      DriveConstants.kBackRightDriveAbsoluteEncoderPort,
-      DriveConstants.kBackRightDriveAbsoluteEncoderOffsetRad,
-      DriveConstants.kBackRightDriveAbsoluteEncoderReversed);
-
-  private final Pigeon2             gyro     = new Pigeon2(DriveConstants.PigeonCANID); //Creates Pigeon2 Gyroscope
-  private final SwerveDriveOdometry odometer = new SwerveDriveOdometry(DriveConstants.kDriveKinematics,
-                                                                       new Rotation2d(0));
-
-  //Resets Gryoscope
   public SwerveSubsystem()
   {
-    new Thread(() -> { //On a Thread so that rest of code is not blocked
-      try
-      {
-        Thread.sleep(1000);
-        zeroHeading();
-      } catch (Exception ignored)
-      {
+    m_frontLeft = new SwerveModule<>(
+        new CANSparkMax(DriveConstants.kFrontLeftDriveMotorPort, MotorType.kBrushless),
+        new CANSparkMax(DriveConstants.kFrontLeftTurningMotorPort, MotorType.kBrushless),
+        new CANCoder(DriveConstants.kFrontLeftAbsoluteEncoderPort), SwerveModule.SwerveModuleLocation.FrontLeft,
+        ModuleConstants.kDriveMotorGearRatio, ModuleConstants.kTurningMotorGearRatio,
+        DriveConstants.kFrontLeftDriveAbsoluteEncoderOffset,
+        Units.inchesToMeters(4), DriveConstants.kWheelBase,
+        DriveConstants.kTrackWidth); //Drive Train width supposed to be in meters or is there a function to convert?
+    // (I input in inches) Can we use
+//Wheel diameter is in 4 inches, do we need meters? Don't know where to find wheel Base
+    m_frontRight = new SwerveModule<>(
+        new CANSparkMax(DriveConstants.kFrontRightDriveMotorPort, MotorType.kBrushless),
+        new CANSparkMax(DriveConstants.kFrontRightTurningMotorPort, MotorType.kBrushless),
+        new CANCoder(DriveConstants.kFrontRightAbsoluteEncoderPort), SwerveModule.SwerveModuleLocation.FrontRight,
+        ModuleConstants.kDriveMotorGearRatio, ModuleConstants.kTurningMotorGearRatio,
+        DriveConstants.kFrontRightDriveAbsoluteEncoderOffset,
+        Units.inchesToMeters(4), DriveConstants.kWheelBase,
+        DriveConstants.kTrackWidth);
 
-      }
-    }).start();
+    m_backLeft = new SwerveModule<>(
+        new CANSparkMax(DriveConstants.kBackLeftDriveMotorPort, MotorType.kBrushless),
+        new CANSparkMax(DriveConstants.kBackLeftTurningMotorPort, MotorType.kBrushless),
+        new CANCoder(DriveConstants.kBackLeftAbsoluteEncoderPort), SwerveModule.SwerveModuleLocation.BackLeft,
+        ModuleConstants.kDriveMotorGearRatio, ModuleConstants.kTurningMotorGearRatio,
+        DriveConstants.kBackLeftDriveAbsoluteEncoderOffset,
+        Units.inchesToMeters(4), DriveConstants.kWheelBase,
+        DriveConstants.kTrackWidth);
+
+    m_backRight = new SwerveModule<>(
+        new CANSparkMax(DriveConstants.kBackRightDriveMotorPort, MotorType.kBrushless),
+        new CANSparkMax(DriveConstants.kBackRightTurningMotorPort, MotorType.kBrushless),
+        new CANCoder(DriveConstants.kBackRightAbsoluteEncoderPort), SwerveModule.SwerveModuleLocation.BackRight,
+        ModuleConstants.kDriveMotorGearRatio, ModuleConstants.kTurningMotorGearRatio,
+        DriveConstants.kBackRightDriveAbsoluteEncoderOffset,
+        Units.inchesToMeters(4), DriveConstants.kWheelBase,
+        DriveConstants.kTrackWidth);
+
+    m_drive = new SwerveDrive<CANSparkMax, CANSparkMax>(m_frontLeft, m_backLeft, m_frontRight, m_backRight, m_gyro,
+                                                        DriveConstants.kTeleDriveMaxSpeedMetersPerSecond,
+                                                        DriveConstants.kTeleDriveMaxAngularSpeedRadiansPerSecond,
+                                                        DriveConstants.kTeleDriveMaxAccelerationUnitsPerSecond,
+                                                        DriveConstants.kTeleDriveMaxAngularAccelerationUnitsPerSecond);
+
+    m_drive.zeroGyro();
   }
 
-  public void zeroHeading()
+  /**
+   * Drive function
+   *
+   * @param x                X value
+   * @param y                Y value
+   * @param r                R value
+   * @param fieldOrientation Field oriented drive.
+   */
+  public void drive(double x, double y, double r, boolean fieldOrientation)
   {
-    //gyro.reset();     //Need to figure out what to use to reset the gyro on Pigeon2
+    m_drive.drive(x, y, r, fieldOrientation);
   }
 
-  //Gets the heading of the Robot
-  public double getHeading()
+  public void stop()
   {
-    return gyro.getYaw();
+    m_drive.stopMotor();
   }
 
-  //Gets Heading in Rotation For robot
-  public Rotation2d getRotation2d()
-  {
-    return Rotation2d.fromDegrees(getHeading());
-  }
-
-  public Pose2d getPose()
-  {
-    return odometer.getPoseMeters();
-  }
-
-  public void resetOdometry(Pose2d pose)
-  {
-    odometer.resetPosition(pose, getRotation2d());
-  }
-
-  @Override
-  public void periodic()
-  {
-    odometer.update(getRotation2d(), frontLeft.getState(), frontRight.getState(), backLeft.getState(),
-                    backRight.getState());
-    SmartDashboard.putNumber("Robot Heading", getHeading());
-    SmartDashboard.putString("Robot Location", getPose().getTranslation().toString());
-  }
-
-  //Stops all modules
-  public void stopModules()
-  {
-    frontLeft.stop();
-    frontRight.stop();
-    backLeft.stop();
-    backRight.stop();
-  }
-
-  //Sets Each Module to a state
-  public void setModuleStates(SwerveModuleState[] desiredStates)
-  {
-    SwerveDriveKinematics.desaturateWheelSpeeds(desiredStates,
-                                                DriveConstants.kPhysicalMaxSpeedMetersPerSecond); //Normalizes Wheel
-    // Speeds, Proportionally decreases all wheel speeds to ensure desired effect
-    frontLeft.setDesiredState(desiredStates[0]);
-    frontRight.setDesiredState(desiredStates[1]);
-    backLeft.setDesiredState(desiredStates[2]);
-    backRight.setDesiredState(desiredStates[3]);
-  }
 }

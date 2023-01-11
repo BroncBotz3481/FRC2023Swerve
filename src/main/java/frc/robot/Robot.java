@@ -4,8 +4,6 @@
 
 package frc.robot;
 
-import edu.wpi.first.math.geometry.Rotation2d;
-import edu.wpi.first.math.kinematics.SwerveModuleState;
 import edu.wpi.first.wpilibj.TimedRobot;
 import edu.wpi.first.wpilibj.smartdashboard.SmartDashboard;
 import edu.wpi.first.wpilibj2.command.Command;
@@ -126,12 +124,12 @@ public class Robot extends TimedRobot
   @Override
   public void testPeriodic()
   {
-    SmartDashboard.putNumber("Current Angle",
-                             new Rotation2d(
-                                 m_robotContainer.swerveSubsystem.frontRight.getAbsoluteEncoderRad()).getDegrees());
-
-    double num = SmartDashboard.getNumber("Rotation Degrees", 90);
-    m_robotContainer.swerveSubsystem.frontRight.setDesiredState(
-        new SwerveModuleState(SmartDashboard.getNumber("Drive Velocity", 0), Rotation2d.fromDegrees(num)));
+//    SmartDashboard.putNumber("Current Angle",
+//                             new Rotation2d(
+//                                 m_robotContainer.swerveSubsystem.frontRight.getAbsoluteEncoderRad()).getDegrees());
+//
+//    double num = SmartDashboard.getNumber("Rotation Degrees", 90);
+//    m_robotContainer.swerveSubsystem.frontRight.setDesiredState(
+//        new SwerveModuleState(SmartDashboard.getNumber("Drive Velocity", 0), Rotation2d.fromDegrees(num)));
   }
 }
