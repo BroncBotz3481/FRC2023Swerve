@@ -15,6 +15,7 @@ import edu.wpi.first.util.sendable.SendableRegistry;
 import edu.wpi.first.wpilibj.drive.RobotDriveBase;
 import edu.wpi.first.wpilibj.motorcontrol.MotorController;
 import edu.wpi.first.wpilibj.smartdashboard.Field2d;
+import frc.robot.subsystems.swerve.SwerveModule.SwerveModuleMotorType;
 import java.io.Closeable;
 
 /**
@@ -259,6 +260,48 @@ public class SwerveDrive<DriveMotorType extends MotorController, SteeringMotorTy
     m_backLeft.stopMotor();
     m_frontLeft.stopMotor();
     m_backRight.stopMotor();
+  }
+
+  /**
+   * Set the PIDF coefficients for the closed loop PID onboard the motor controller. Tuning the PID
+   * <p>
+   * <b>P</b> = .5 and increase it by .1 until oscillations occur, then decrease by .05 then .005 until oscillations
+   * stop and angle is perfect or near perfect.
+   * </p>
+   * <p>
+   * <b>I</b> = 0 tune this if your PID never quite reaches the target, after tuning <b>D</b>. Increase this by
+   * <b>P</b>*.01 each time and adjust accordingly.
+   * </p>
+   * <p>
+   * <b>D</b> = 0 tune this if the PID accelerates too fast, it will smooth the motion. Increase this by <b>P</b>*10
+   * and adjust accordingly.
+   * </p>
+   * <p>
+   * <b>F</b> = 0 tune this if the PID is being used for velocity, the <b>F</b> is multiplied by the target and added
+   * to the voltage output. Increase this by 0.01 until the PIDF reaches the desired state in a fast enough manner.
+   * </p>
+   * Documentation for this is best described by CTRE <a
+   * href="https://docs.ctre-phoenix.com/en/stable/ch16_ClosedLoop.html#position-closed-loop-control-mode">here</a>.
+   *
+   * @param p                     Proportional gain for closed loop. This is multiplied by closed loop error in sensor
+   *                              units.
+   * @param i                     Integral gain for closed loop. This is multiplied by closed loop error in sensor units
+   *                              every PID Loop.
+   * @param d                     Derivative gain for closed loop. This is multiplied by derivative error (sensor units
+   *                              per PID loop).
+   * @param f                     Feed Fwd gain for Closed loop.
+   * @param integralZone          Integral Zone can be used to auto clear the integral accumulator if the sensor pos is
+   *                              too far from the target. This prevents unstable oscillation if the kI is too large.
+   *                              Value is in sensor units.
+   * @param swerveModuleMotorType Swerve drive motor type.
+   */
+  public void setPIDF(double p, double i, double d, double f, double integralZone,
+                      SwerveModuleMotorType swerveModuleMotorType)
+  {
+    m_frontRight.setPIDF(p, i, d, f, integralZone, swerveModuleMotorType);
+    m_frontLeft.setPIDF(p, i, d, f, integralZone, swerveModuleMotorType);
+    m_backRight.setPIDF(p, i, d, f, integralZone, swerveModuleMotorType);
+    m_backLeft.setPIDF(p, i, d, f, integralZone, swerveModuleMotorType);
   }
 
   /**
