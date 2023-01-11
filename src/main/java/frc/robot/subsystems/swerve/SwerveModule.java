@@ -217,6 +217,7 @@ public class SwerveModule<DriveMotorType extends MotorController, AngleMotorType
   {
     if (isREVDriveMotor() || isREVSpinMotor())
     {
+      assert (type == SwerveModuleMotorType.DRIVE ? m_driveMotor : m_spinMotor) instanceof CANSparkMax;
       ((CANSparkMax) (type == SwerveModuleMotorType.DRIVE ? m_driveMotor : m_spinMotor))
           .enableVoltageCompensation(nominalVoltage);
     }
