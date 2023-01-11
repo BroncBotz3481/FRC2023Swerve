@@ -2,9 +2,11 @@ package frc.robot.subsystems.swerve;
 
 import static java.util.Objects.requireNonNull;
 
+import com.ctre.phoenix.ParamEnum;
 import com.ctre.phoenix.motorcontrol.ControlMode;
 import com.ctre.phoenix.motorcontrol.FeedbackDevice;
 import com.ctre.phoenix.motorcontrol.NeutralMode;
+import com.ctre.phoenix.motorcontrol.SupplyCurrentLimitConfiguration;
 import com.ctre.phoenix.motorcontrol.can.BaseMotorController;
 import com.ctre.phoenix.motorcontrol.can.BaseTalon;
 import com.ctre.phoenix.motorcontrol.can.TalonFX;
@@ -147,8 +149,8 @@ public class SwerveModule<DriveMotorType extends MotorController, AngleMotorType
       ((CANSparkMax) angleMotor).burnFlash();
     } else if (encoder instanceof CANCoder)
     {
-      setupCTREMotor(((BaseTalon) angleMotor), SwerveModuleMotorType.SPIN, 1);
       setupCANCoderRemoteSensor(((BaseTalon) angleMotor), encoder);
+      setupCTREMotor(((BaseTalon) angleMotor), SwerveModuleMotorType.SPIN, 1);
     }
 
     encoder.configAbsoluteSensorRange(configuredSensorRange);
@@ -219,7 +221,6 @@ public class SwerveModule<DriveMotorType extends MotorController, AngleMotorType
     {
       ((CANSparkMax) m_spinMotor).getEncoder().setPosition(absoluteEncoder.getAbsolutePosition());
     }
-    // TODO: Implement for Falcon
   }
 
   /**
@@ -237,7 +238,13 @@ public class SwerveModule<DriveMotorType extends MotorController, AngleMotorType
       ((CANSparkMax) (type == SwerveModuleMotorType.DRIVE ? m_driveMotor : m_spinMotor))
           .enableVoltageCompensation(nominalVoltage);
     }
-    // TODO: Add CTRE voltage compensation.
+    if (isCTREDriveMotor() || isCTRESpinMotor())
+    {
+      assert (type == SwerveModuleMotorType.DRIVE ? m_driveMotor : m_spinMotor) instanceof BaseTalon;
+      ((BaseTalon) (type == SwerveModuleMotorType.DRIVE ? m_driveMotor : m_spinMotor))
+          .configSetParameter(ParamEnum.eNominalBatteryVoltage, nominalVoltage, 0, 0); // Unsure if this works.
+
+    }
     return this;
   }
 
@@ -258,7 +265,14 @@ public class SwerveModule<DriveMotorType extends MotorController, AngleMotorType
           .setSmartCurrentLimit(currentLimit);
     }
 
-    // TODO: Add CTRE current limits.
+    if (isCTREDriveMotor() || isCTRESpinMotor())
+    {
+      assert (type == SwerveModuleMotorType.SPIN ? m_spinMotor : m_driveMotor) instanceof BaseTalon;
+      ((BaseTalon) (type == SwerveModuleMotorType.SPIN ? m_spinMotor : m_driveMotor))
+          .configSupplyCurrentLimit(new SupplyCurrentLimitConfiguration(true, currentLimit, currentLimit, 2), 100);
+
+    }
+
     return this;
   }
 
@@ -374,13 +388,21 @@ public class SwerveModule<DriveMotorType extends MotorController, AngleMotorType
    */
   private void setupCTREMotor(BaseTalon motor, SwerveModuleMotorType swerveModuleMotorType, double gearRatio)
   {
-    motor.setNeutralMode(NeutralMode.Brake);
 
     // Purposely did not configure status frames since CTRE motors should be on a CANivore
-    // TODO: Set the amperage limits, and nominal voltage to 12.
+
+    motor.setSensorPhase(true);
+    motor.setNeutralMode(NeutralMode.Brake);
+    // Unable to use TalonFX configs since this should support both TalonSRX's and TalonFX's
+    setVoltageCompensation(12, swerveModuleMotorType);
+    // Code is based off of.
+    // https://github.com/SwerveDriveSpecialties/swerve-lib-2022-unmaintained/blob/55f3f1ad9e6bd81e56779d022a40917aacf8d3b3/src/main/java/com/swervedrivespecialties/swervelib/ctre/Falcon500SteerControllerFactoryBuilder.java#L91
+    // and here
+    // https://github.com/SwerveDriveSpecialties/swerve-lib-2022-unmaintained/blob/55f3f1ad9e6bd81e56779d022a40917aacf8d3b3/src/main/java/com/swervedrivespecialties/swervelib/ctre/Falcon500DriveControllerFactoryBuilder.java#L52
 
     if (swerveModuleMotorType == SwerveModuleMotorType.DRIVE)
     {
+      setCurrentLimit(80, swerveModuleMotorType);
       // Math set's the coefficient to the OUTPUT of the ENCODER (ticks/100ms) which is the INPUT to the PID.
       // We want to set the PID to use MPS == meters/second :)
       // Dimensional analysis, solve for K
@@ -390,9 +412,10 @@ public class SwerveModule<DriveMotorType extends MotorController, AngleMotorType
       // ticks/100ms * (pi*diameter)/((ticks[4096]*gearRatio)*10) = meters/second
       // K = (pi*diameter)/((ticks[4096]*gearRatio)*10)
       // Set the feedback sensor up earlier in setCANRemoteFeedbackSensor()
-      motor.configSelectedFeedbackCoefficient((Math.PI * wheelDiameter) / ((4096 * gearRatio) * 10));
+      motor.configSelectedFeedbackCoefficient(((Math.PI * wheelDiameter) / ((4096 * gearRatio)) * 10));
     } else
     {
+      setCurrentLimit(20, swerveModuleMotorType);
       setPIDF(0.2, 0, 0.1, 0, 100, swerveModuleMotorType);
     }
   }
@@ -595,8 +618,6 @@ public class SwerveModule<DriveMotorType extends MotorController, AngleMotorType
 
     return this;
   }
-
-  // TODO: Replace with Oblog eventually.
 
   /**
    * Initializes this {@link Sendable} object.
