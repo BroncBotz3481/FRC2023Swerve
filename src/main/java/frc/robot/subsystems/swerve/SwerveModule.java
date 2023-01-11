@@ -633,6 +633,10 @@ public class SwerveModule<DriveMotorType extends MotorController, AngleMotorType
     assert angle <= 360;
 
     angle = SwerveModuleState.optimize(getState(), Rotation2d.fromDegrees(angle)).angle.getDegrees();
+
+    angle += angle < 0 ? 180 : 0; // Ensure angle is always given within range of 0 to 360.
+    assert angle <= 360;
+
     if (isREVSpinMotor())
     {
       setREVAngle(angle);
