@@ -43,7 +43,7 @@ public class SwerveModule<DriveMotorType extends MotorController, AngleMotorType
   /**
    * Swerve Module location object relative to the center of the robot.
    */
-  public final Translation2d swerveModuleLocation;
+  public final  Translation2d         swerveModuleLocation;
   /**
    * Motor Controllers for drive motor of the swerve module.
    */
@@ -57,22 +57,19 @@ public class SwerveModule<DriveMotorType extends MotorController, AngleMotorType
    * Absolute encoder for the swerve module.
    */
   private final AbsoluteEncoderType   absoluteEncoder;
+  private final double                driveTrainWidth;
   /**
    * The drive gear ratio that is used during configuration of the off-board encoders in the motor controllers.
    */
-  public       double        driveGearRatio = 1;
+  public        double                driveGearRatio = 1;
   /**
    * Angle offset of the CANCoder at initialization.
    */
-  public       double        angleOffset    = 0;
+  public        double                angleOffset    = 0;
   /**
    * Inverted drive motor.
    */
-  private       boolean               inverted   = false;
-  /**
-   * Power to drive motor from -1 to 1.
-   */
-  private       double                drivePower = 0;
+  private       boolean               inverted       = false;
   private       SparkMaxPIDController m_drivePIDController;
   private       SparkMaxPIDController m_spinPIDContrller;
   /**
@@ -80,7 +77,10 @@ public class SwerveModule<DriveMotorType extends MotorController, AngleMotorType
    */
   private final double                wheelDiameter;
   private final double                wheelBase;
-  private final double driveTrainWidth;
+  /**
+   * Power to drive motor from -1 to 1.
+   */
+  private       double                drivePower     = 0;
 
   /**
    * Swerve module constructor. Both motors <b>MUST</b> be a {@link MotorController} class. It is recommended to create
@@ -247,7 +247,8 @@ public class SwerveModule<DriveMotorType extends MotorController, AngleMotorType
   /**
    * Setup REV motors and configure the values in the class for them. Set's the driveMotorTicksPerRotation, and
    * m_drivePIDController for the class. Assumes the absolute encoder reads from 0 to 360. Configures motor controller
-   * in brake mode. Set the smart limit amperage
+   * in brake mode. Set the smart limit amperage. Setup nominal voltage. Configure the smart limits for drive and
+   * steering motors.
    *
    * @param motor                 Motor controller.
    * @param swerveModuleMotorType Spin motor or drive motor.
@@ -267,10 +268,11 @@ public class SwerveModule<DriveMotorType extends MotorController, AngleMotorType
     motor.setIdleMode(IdleMode.kBrake);
 
     motor.setSmartCurrentLimit(40, 60); // Might need to remove this.
+    motor.enableVoltageCompensation(12); // Nominal voltage is 12v
 
     if (swerveModuleMotorType == SwerveModuleMotorType.DRIVE)
     {
-
+      setCurrentLimit(80, swerveModuleMotorType);
       // motor.getEncoder().getCountsPerRevolution()
       m_drivePIDController = motor.getPIDController();
       m_drivePIDController.setFeedbackDevice(encoder);
@@ -285,6 +287,7 @@ public class SwerveModule<DriveMotorType extends MotorController, AngleMotorType
       setREVConversionFactor(motor, (Math.PI * wheelDiameter * gearRatio) / 60, SwerveModuleMotorType.DRIVE);
     } else
     {
+      setCurrentLimit(20, swerveModuleMotorType);
       m_spinPIDContrller = motor.getPIDController();
       m_spinPIDContrller.setFeedbackDevice(encoder);
 
@@ -353,7 +356,7 @@ public class SwerveModule<DriveMotorType extends MotorController, AngleMotorType
     motor.setNeutralMode(NeutralMode.Brake);
 
     // Purposely did not configure status frames since CTRE motors should be on a CANivore
-    // TODO: Set the amperage limits.
+    // TODO: Set the amperage limits, and nominal voltage to 12.
 
     if (swerveModuleMotorType == SwerveModuleMotorType.DRIVE)
     {
@@ -367,6 +370,9 @@ public class SwerveModule<DriveMotorType extends MotorController, AngleMotorType
       // K = (pi*diameter)/((ticks[4096]*gearRatio)*10)
       // Set the feedback sensor up earlier in setCANRemoteFeedbackSensor()
       motor.configSelectedFeedbackCoefficient((Math.PI * wheelDiameter) / ((4096 * gearRatio) * 10));
+    } else
+    {
+      setPIDF(0.2, 0, 0.1, 0, 100, swerveModuleMotorType);
     }
   }
 
