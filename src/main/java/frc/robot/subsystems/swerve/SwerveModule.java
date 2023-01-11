@@ -237,6 +237,7 @@ public class SwerveModule<DriveMotorType extends MotorController, AngleMotorType
   {
     if (isREVSpinMotor() || isREVDriveMotor())
     {
+      assert (type == SwerveModuleMotorType.SPIN ? m_spinMotor : m_driveMotor) instanceof CANSparkMax;
       ((CANSparkMax) (type == SwerveModuleMotorType.SPIN ? m_spinMotor : m_driveMotor))
           .setSmartCurrentLimit(currentLimit);
     }
@@ -563,9 +564,11 @@ public class SwerveModule<DriveMotorType extends MotorController, AngleMotorType
   {
     if (isREVSpinMotor() || isREVDriveMotor())
     {
+      assert (swerveModuleMotorType == SwerveModuleMotorType.SPIN ? m_spinMotor : m_driveMotor) instanceof CANSparkMax;
       setREVPIDF(p, i, d, f, integralZone, swerveModuleMotorType);
     } else
     {
+      assert (swerveModuleMotorType == SwerveModuleMotorType.SPIN ? m_spinMotor : m_driveMotor) instanceof BaseTalon;
       setCTREPIDF(swerveModuleMotorType == SwerveModuleMotorType.DRIVE ? CTRE_slotIdx.Velocity : CTRE_slotIdx.Distance,
                   p, i, d, f, integralZone, swerveModuleMotorType);
     }
