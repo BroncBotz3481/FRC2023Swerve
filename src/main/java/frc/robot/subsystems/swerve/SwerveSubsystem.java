@@ -84,4 +84,9 @@ public class SwerveSubsystem extends SubsystemBase
     m_drive.stopMotor();
   }
 
+  @Override
+  public void periodic()
+  {
+    m_drive.synchronizeEncoders();
+  }
 }

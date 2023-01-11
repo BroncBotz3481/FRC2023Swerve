@@ -207,6 +207,18 @@ public class SwerveModule<DriveMotorType extends MotorController, AngleMotorType
   }
 
   /**
+   * Synchronizes the internal encoder for the steering motor with the value from the absolute encoder.
+   */
+  public void synchronizeSteeringEncoder()
+  {
+    if (isREVSpinMotor() && absoluteEncoder instanceof CANCoder)
+    {
+      ((CANSparkMax) m_spinMotor).getEncoder().setPosition(absoluteEncoder.getAbsolutePosition());
+    }
+    // TODO: Implement for Falcon
+  }
+
+  /**
    * Set the voltage compensation for the swerve module motor.
    *
    * @param nominalVoltage Nominal voltage for operation to output to.

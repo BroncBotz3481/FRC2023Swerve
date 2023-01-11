@@ -305,6 +305,17 @@ public class SwerveDrive<DriveMotorType extends MotorController, SteeringMotorTy
   }
 
   /**
+   * Synchronize internal steering encoders with the absolute encoder.
+   */
+  public void synchronizeEncoders()
+  {
+    m_backRight.synchronizeSteeringEncoder();
+    m_backLeft.synchronizeSteeringEncoder();
+    m_frontRight.synchronizeSteeringEncoder();
+    m_frontLeft.synchronizeSteeringEncoder();
+  }
+
+  /**
    * Get the description of the robot drive base.
    *
    * @return string of the RobotDriveBase
