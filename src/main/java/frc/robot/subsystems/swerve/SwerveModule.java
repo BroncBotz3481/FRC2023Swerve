@@ -59,17 +59,17 @@ public class SwerveModule<DriveMotorType extends MotorController, AngleMotorType
   private final AbsoluteEncoderType   absoluteEncoder;
   private final double                driveTrainWidth;
   /**
+   * Configured sensor range for the Absolute Encoder.
+   */
+  private final AbsoluteSensorRange   configuredSensorRange = AbsoluteSensorRange.Unsigned_0_to_360;
+  /**
    * The drive gear ratio that is used during configuration of the off-board encoders in the motor controllers.
    */
-  public        double                driveGearRatio = 1;
+  public        double                driveGearRatio        = 1;
   /**
    * Angle offset of the CANCoder at initialization.
    */
-  public        double                angleOffset    = 0;
-  /**
-   * Inverted drive motor.
-   */
-  private       boolean               inverted       = false;
+  public        double                angleOffset           = 0;
   private       SparkMaxPIDController m_drivePIDController;
   private       SparkMaxPIDController m_spinPIDContrller;
   /**
@@ -78,9 +78,13 @@ public class SwerveModule<DriveMotorType extends MotorController, AngleMotorType
   private final double                wheelDiameter;
   private final double                wheelBase;
   /**
+   * Inverted drive motor.
+   */
+  private       boolean               inverted              = false;
+  /**
    * Power to drive motor from -1 to 1.
    */
-  private       double                drivePower     = 0;
+  private       double                drivePower            = 0;
 
   /**
    * Swerve module constructor. Both motors <b>MUST</b> be a {@link MotorController} class. It is recommended to create
@@ -147,7 +151,7 @@ public class SwerveModule<DriveMotorType extends MotorController, AngleMotorType
       setupCANCoderRemoteSensor(((BaseTalon) angleMotor), encoder);
     }
 
-    encoder.configAbsoluteSensorRange(AbsoluteSensorRange.Unsigned_0_to_360);
+    encoder.configAbsoluteSensorRange(configuredSensorRange);
     // Convert CANCoder to read data as unsigned 0 to 360 for synchronization purposes.
   }
 
@@ -629,10 +633,8 @@ public class SwerveModule<DriveMotorType extends MotorController, AngleMotorType
    */
   public void setAngle(double angle)
   {
-    angle += angle < 0 ? 180 : 0; // Ensure angle is always given within range of 0 to 360.
-    assert angle <= 360;
-
-    angle = SwerveModuleState.optimize(getState(), Rotation2d.fromDegrees(angle)).angle.getDegrees();
+    angle = SwerveModuleState.optimize(getState(AbsoluteSensorRange.Signed_PlusMinus180),
+                                       Rotation2d.fromDegrees(angle)).angle.getDegrees();
 
     angle += angle < 0 ? 180 : 0; // Ensure angle is always given within range of 0 to 360.
     assert angle <= 360;
@@ -772,16 +774,23 @@ public class SwerveModule<DriveMotorType extends MotorController, AngleMotorType
   /**
    * Get the module state.
    *
+   * @param range Sensor range to retrieve angle in, will convert if different from configured.
    * @return SwerveModuleState with the encoder inputs.
    * @throws RuntimeException Exception if CANCoder doesnt exist
    */
-  public SwerveModuleState getState()
+  public SwerveModuleState getState(AbsoluteSensorRange range)
   {
     double     mps = 0;
     Rotation2d angle;
     if (absoluteEncoder instanceof CANCoder)
     {
-      angle = new Rotation2d(absoluteEncoder.getAbsolutePosition());
+      double position = absoluteEncoder.getAbsolutePosition();
+      if (range != configuredSensorRange)
+      {
+        position += (configuredSensorRange == AbsoluteSensorRange.Unsigned_0_to_360 &&
+                     range == AbsoluteSensorRange.Signed_PlusMinus180) ? -180 : 180;
+      }
+      angle = new Rotation2d(position);
     } else
     {
       throw new RuntimeException("No CANCoder attached.");
@@ -797,13 +806,24 @@ public class SwerveModule<DriveMotorType extends MotorController, AngleMotorType
   }
 
   /**
+   * Get the module state.
+   *
+   * @return SwerveModuleState with the encoder inputs.
+   * @throws RuntimeException Exception if CANCoder doesnt exist
+   */
+  public SwerveModuleState getState()
+  {
+    return getState(configuredSensorRange);
+  }
+
+  /**
    * Set the module speed and angle based off the module state.
    *
    * @param state Module state.
    */
   public void setState(SwerveModuleState state)
   {
-    state = SwerveModuleState.optimize(state, getState().angle);
+    state = SwerveModuleState.optimize(state, getState(AbsoluteSensorRange.Signed_PlusMinus180).angle);
     setAngle(state.angle.getDegrees());
     setVelocity(state.speedMetersPerSecond);
   }

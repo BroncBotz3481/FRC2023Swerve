@@ -1,5 +1,6 @@
 package frc.robot.subsystems.swerve;
 
+import com.ctre.phoenix.sensors.AbsoluteSensorRange;
 import com.ctre.phoenix.sensors.CANCoder;
 import com.ctre.phoenix.sensors.WPI_Pigeon2;
 import edu.wpi.first.math.filter.SlewRateLimiter;
@@ -135,10 +136,10 @@ public class SwerveDrive<DriveMotorType extends MotorController, SteeringMotorTy
   public SwerveDriveOdometry update()
   {
     m_swerveOdometry.update(getRotation(),
-                            m_frontLeft.getState(),
-                            m_frontRight.getState(),
-                            m_backLeft.getState(),
-                            m_backRight.getState());
+                            m_frontLeft.getState(AbsoluteSensorRange.Signed_PlusMinus180),
+                            m_frontRight.getState(AbsoluteSensorRange.Signed_PlusMinus180),
+                            m_backLeft.getState(AbsoluteSensorRange.Signed_PlusMinus180),
+                            m_backRight.getState(AbsoluteSensorRange.Signed_PlusMinus180));
     return m_swerveOdometry;
   }
 
