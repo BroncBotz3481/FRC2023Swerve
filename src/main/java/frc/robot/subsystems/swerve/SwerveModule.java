@@ -585,7 +585,8 @@ public class SwerveModule<DriveMotorType extends MotorController, AngleMotorType
     {
       assert (swerveModuleMotorType == SwerveModuleMotorType.SPIN ? m_spinMotor : m_driveMotor) instanceof CANSparkMax;
       setREVPIDF(p, i, d, f, integralZone, swerveModuleMotorType);
-    } else
+    }
+    if (isCTREDriveMotor() || isCTRESpinMotor())
     {
       assert (swerveModuleMotorType == SwerveModuleMotorType.SPIN ? m_spinMotor : m_driveMotor) instanceof BaseTalon;
       setCTREPIDF(swerveModuleMotorType == SwerveModuleMotorType.DRIVE ? CTRE_slotIdx.Velocity : CTRE_slotIdx.Distance,
@@ -768,28 +769,26 @@ public class SwerveModule<DriveMotorType extends MotorController, AngleMotorType
   /**
    * Set the sensor to be inverted for the motor type.
    *
-   * @param isInverted            The state of inversion, true is inverted.
-   * @param swerveModuleMotorType Swerve module motor's sensors to configure.
+   * @param isInverted     The state of inversion, true is inverted.
+   * @param invertAbsolute Invert the absolute encoder if the type is SPIN too.
+   * @param type           Swerve module motor's sensors to configure.
    */
-  public void setInvertedSensor(boolean isInverted, SwerveModuleMotorType swerveModuleMotorType)
+  public void setInvertedSensor(boolean isInverted, SwerveModuleMotorType type, boolean invertAbsolute)
   {
-    if (swerveModuleMotorType == SwerveModuleMotorType.SPIN)
+    if (isREVSpinMotor() || isREVDriveMotor())
+    {
+      assert (type == SwerveModuleMotorType.SPIN ? m_spinMotor : m_driveMotor) instanceof CANSparkMax;
+      ((CANSparkMax) (type == SwerveModuleMotorType.SPIN ? m_spinMotor : m_driveMotor)).getEncoder().setInverted(
+          inverted);
+    }
+    // TODO: Implement CTRE inversion.
+
+    if (type == SwerveModuleMotorType.SPIN && invertAbsolute)
     {
       if (absoluteEncoder instanceof CANCoder)
       {
         absoluteEncoder.configSensorDirection(isInverted);
       }
-      if (isREVSpinMotor())
-      {
-        ((CANSparkMax) m_spinMotor).getEncoder().setInverted(isInverted);
-      }
-    } else
-    {
-      if (isREVDriveMotor())
-      {
-        ((CANSparkMax) m_driveMotor).getEncoder().setInverted(isInverted);
-      }
-      // TODO: Implement CTRE inversion.
     }
   }
 
