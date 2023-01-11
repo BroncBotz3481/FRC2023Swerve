@@ -63,6 +63,7 @@ public class SwerveSubsystem extends SubsystemBase
                                                         DriveConstants.kTeleDriveMaxAngularAccelerationUnitsPerSecond);
 
     m_drive.zeroGyro();
+    m_drive.setDeadband(0.02);
   }
 
   /**
