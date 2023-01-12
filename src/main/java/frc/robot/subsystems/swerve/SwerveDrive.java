@@ -220,6 +220,17 @@ public class SwerveDrive<DriveMotorType extends MotorController, SteeringMotorTy
   }
 
   /**
+   * Sets the wheels into an X formation to prevent movement.
+   */
+  public void setX()
+  {
+    m_frontLeft.setState(new SwerveModuleState(0, Rotation2d.fromDegrees(45)));
+    m_frontRight.setState(new SwerveModuleState(0, Rotation2d.fromDegrees(-45)));
+    m_backLeft.setState(new SwerveModuleState(0, Rotation2d.fromDegrees(-45)));
+    m_backRight.setState(new SwerveModuleState(0, Rotation2d.fromDegrees(45)));
+  }
+
+  /**
    * Invert the gyroscope reading.
    *
    * @param isInverted Inversion of the gryoscope, true is inverted.
@@ -273,7 +284,6 @@ public class SwerveDrive<DriveMotorType extends MotorController, SteeringMotorTy
     return getPositions(AbsoluteSensorRange.Signed_PlusMinus180);
   }
 
-
   /**
    * Reset the odometry given the position and using current rotation from the PigeonIMU 2.
    *
@@ -282,6 +292,17 @@ public class SwerveDrive<DriveMotorType extends MotorController, SteeringMotorTy
   public void resetOdometry(Pose2d pose)
   {
     m_swerveOdometry.resetPosition(getRotation(), getPositions(), pose);
+  }
+
+  /**
+   * Resets the drive encoders to currently read a position of 0.
+   */
+  public void resetEncoders()
+  {
+    m_frontLeft.resetEncoders();
+    m_backLeft.resetEncoders();
+    m_frontRight.resetEncoders();
+    m_backRight.resetEncoders();
   }
 
   /**

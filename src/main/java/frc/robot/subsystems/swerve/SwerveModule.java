@@ -199,7 +199,8 @@ public class SwerveModule<DriveMotorType extends MotorController, AngleMotorType
   }
 
   /**
-   * Reset the REV encoders onboard the NEO's and SparkMax's to 0, and set's the drive motor to position to 0.
+   * Reset the REV encoders onboard the SparkMax's to 0, and set's the drive motor to position to 0 and synchronizes the
+   * internal steering encoders with the absolute encoder.
    */
   public void resetEncoders()
   {
