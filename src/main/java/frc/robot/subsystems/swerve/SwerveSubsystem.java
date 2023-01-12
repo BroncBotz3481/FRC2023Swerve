@@ -26,9 +26,8 @@ public class SwerveSubsystem extends SubsystemBase
         ModuleConstants.kDriveMotorGearRatio, ModuleConstants.kTurningMotorGearRatio,
         DriveConstants.kFrontLeftDriveAbsoluteEncoderOffset,
         Units.inchesToMeters(4), DriveConstants.kWheelBase,
-        DriveConstants.kTrackWidth); //Drive Train width supposed to be in meters or is there a function to convert?
-    // (I input in inches) Can we use
-//Wheel diameter is in 4 inches, do we need meters? Don't know where to find wheel Base
+        DriveConstants.kTrackWidth);
+
     m_frontRight = new SwerveModule<>(
         new CANSparkMax(DriveConstants.kFrontRightDriveMotorPort, MotorType.kBrushless),
         new CANSparkMax(DriveConstants.kFrontRightTurningMotorPort, MotorType.kBrushless),
@@ -56,12 +55,12 @@ public class SwerveSubsystem extends SubsystemBase
         Units.inchesToMeters(4), DriveConstants.kWheelBase,
         DriveConstants.kTrackWidth);
 
-    m_drive = new SwerveDrive<CANSparkMax, CANSparkMax>(m_frontLeft, m_backLeft, m_frontRight, m_backRight, m_gyro,
-                                                        DriveConstants.kTeleDriveMaxSpeedMetersPerSecond,
-                                                        DriveConstants.kTeleDriveMaxAngularSpeedRadiansPerSecond,
-                                                        DriveConstants.kTeleDriveMaxAccelerationUnitsPerSecond,
-                                                        DriveConstants.kTeleDriveMaxAngularAccelerationUnitsPerSecond,
-                                                        false);
+    m_drive = new SwerveDrive<>(m_frontLeft, m_backLeft, m_frontRight, m_backRight, m_gyro,
+                                DriveConstants.kTeleDriveMaxSpeedMetersPerSecond,
+                                DriveConstants.kTeleDriveMaxAngularSpeedRadiansPerSecond,
+                                DriveConstants.kTeleDriveMaxAccelerationUnitsPerSecond,
+                                DriveConstants.kTeleDriveMaxAngularAccelerationUnitsPerSecond,
+                                false);
 
     m_drive.zeroGyro();
     m_drive.setDeadband(0.02);
