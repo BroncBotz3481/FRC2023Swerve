@@ -703,10 +703,7 @@ public class SwerveModule<DriveMotorType extends MotorController, AngleMotorType
    */
   public void setAngle(double angle)
   {
-//    angle = SwerveModuleState.optimize(getState(AbsoluteSensorRange.Signed_PlusMinus180),
-//                                       Rotation2d.fromDegrees(angle)).angle.getDegrees();
-    angle += 180;
-//    angle += angle < 0 ? 180 : 0; // Ensure angle is always given within range of 0 to 360.
+    angle += 180; // Since the angle is given in the form of -180 to 180, we add 180 to make it 0 to 360.
     assert angle <= 360;
 
     if (isREVTurningMotor())
