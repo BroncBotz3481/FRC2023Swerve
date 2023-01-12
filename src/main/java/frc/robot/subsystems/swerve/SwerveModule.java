@@ -52,9 +52,9 @@ public class SwerveModule<DriveMotorType extends MotorController, AngleMotorType
    */
   private final DriveMotorType        m_driveMotor;
   /***
-   * Motor Controller for the spin motor of the swerve drive module.
+   * Motor Controller for the turning motor of the swerve drive module.
    */
-  private final AngleMotorType        m_spinMotor;
+  private final AngleMotorType        m_turningMotor;
   private final SwerveModuleLocation  swerveLocation;
   /**
    * Absolute encoder for the swerve module.
@@ -74,7 +74,7 @@ public class SwerveModule<DriveMotorType extends MotorController, AngleMotorType
    */
   public        double                angleOffset           = 0;
   private       SparkMaxPIDController m_drivePIDController;
-  private       SparkMaxPIDController m_spinPIDContrller;
+  private       SparkMaxPIDController m_turningPIDController;
   /**
    * Characteristics of the SwerveDriveChasis
    */
@@ -96,15 +96,15 @@ public class SwerveModule<DriveMotorType extends MotorController, AngleMotorType
    * @param mainMotor             Main drive motor. Must be a {@link MotorController} type.
    * @param angleMotor            Angle motor for controlling the angle of the swerve module.
    * @param encoder               Absolute encoder for the swerve module.
-   * @param driveGearRatio        Drive gear ratio in form of (1:rotation AKA 1/rotations) to get the encoder ticks per
+   * @param driveGearRatio        Drive gear ratio in form of (rotation:1 AKA rotations/1) to get the encoder ticks per
    *                              rotation.
    * @param steerGearRatio        Steering motor gear ratio (usually 12.8:1 for MK4 in form of rotations:1 or
    *                              rotations/1), only applied if using Neo's.
    * @param swervePosition        Swerve Module position on the robot.
    * @param steeringOffsetDegrees The current offset of the absolute encoder from 0 in degrees.
    * @param wheelDiameterMeters   The wheel diameter of the swerve drive module in meters.
-   * @param wheelBaseMeters       The wheel base (distance between wheels) of the robot in meters.
-   * @param driveTrainWidthMeters The width of the drive train for the swerve drive in meters.
+   * @param wheelBaseMeters       The  Distance between front and back wheels of the robot in meters.
+   * @param driveTrainWidthMeters The Distance between centers of right and left wheels in meters.
    * @throws RuntimeException if an assertion fails or invalid swerve module location is given.
    */
   public SwerveModule(DriveMotorType mainMotor, AngleMotorType angleMotor, AbsoluteEncoderType encoder,
@@ -121,11 +121,11 @@ public class SwerveModule<DriveMotorType extends MotorController, AngleMotorType
     this.driveTrainWidth = driveTrainWidthMeters;
 
     m_driveMotor = mainMotor;
-    m_spinMotor = angleMotor;
+    m_turningMotor = angleMotor;
     swerveLocation = swervePosition;
 
     assert isCTREDriveMotor() || isREVDriveMotor();
-    assert isCTRESpinMotor() || isREVSpinMotor();
+    assert isCTRETurningMotor() || isREVTurningMotor();
 
     this.driveGearRatio = driveGearRatio;
     absoluteEncoder = encoder;
@@ -142,20 +142,23 @@ public class SwerveModule<DriveMotorType extends MotorController, AngleMotorType
       setupCTREMotor(((BaseTalon) mainMotor), SwerveModuleMotorType.DRIVE, driveGearRatio);
     }
 
-    if (isREVSpinMotor())
+    if (isREVTurningMotor())
     {
-      // MK4 spin motor gear ratio is 12.8:1
-      setupREVMotor(((CANSparkMax) angleMotor), SwerveModuleMotorType.SPIN, steerGearRatio);
+      // MK4 turning motor gear ratio is 12.8:1
+      setupREVMotor(((CANSparkMax) angleMotor), SwerveModuleMotorType.TURNING, steerGearRatio);
       // Might need to sleep for 200ms to 1s before this.
       ((CANSparkMax) angleMotor).burnFlash();
     } else if (encoder instanceof CANCoder)
     {
       setupCANCoderRemoteSensor(((BaseTalon) angleMotor), encoder);
-      setupCTREMotor(((BaseTalon) angleMotor), SwerveModuleMotorType.SPIN, 1);
+      setupCTREMotor(((BaseTalon) angleMotor), SwerveModuleMotorType.TURNING, 1);
     }
 
     encoder.configAbsoluteSensorRange(configuredSensorRange);
     // Convert CANCoder to read data as unsigned 0 to 360 for synchronization purposes.
+
+    burnFlash(SwerveModuleMotorType.TURNING);
+    burnFlash(SwerveModuleMotorType.DRIVE);
   }
 
   /**
@@ -204,19 +207,13 @@ public class SwerveModule<DriveMotorType extends MotorController, AngleMotorType
     {
       ((CANSparkMax) m_driveMotor).getEncoder().setPosition(0);
     }
-    if (isREVSpinMotor())
-    {
-      ((CANSparkMax) m_spinMotor).getEncoder().setPosition(0);
-    }
 
     if (isCTREDriveMotor())
     {
       ((BaseTalon) m_driveMotor).setSelectedSensorPosition(0);
     }
-    if (isCTRESpinMotor())
-    {
-      ((BaseTalon) m_spinMotor).setSelectedSensorPosition(0);
-    }
+
+    synchronizeSteeringEncoder();
 
   }
 
@@ -225,9 +222,30 @@ public class SwerveModule<DriveMotorType extends MotorController, AngleMotorType
    */
   public void synchronizeSteeringEncoder()
   {
-    if (isREVSpinMotor() && absoluteEncoder instanceof CANCoder)
+    if (absoluteEncoder instanceof CANCoder)
     {
-      ((CANSparkMax) m_spinMotor).getEncoder().setPosition(absoluteEncoder.getAbsolutePosition());
+      if (isREVTurningMotor())
+      {
+        ((CANSparkMax) m_turningMotor).getEncoder().setPosition(absoluteEncoder.getAbsolutePosition());
+      }
+      if (isCTRETurningMotor())
+      {
+        ((BaseTalon) m_turningMotor).setSelectedSensorPosition(absoluteEncoder.getAbsolutePosition());
+      }
+    }
+  }
+
+  /**
+   * Burn the current settings to flash.
+   *
+   * @param type Swerve module motor to burn flash of.
+   */
+  public void burnFlash(SwerveModuleMotorType type)
+  {
+    if (isREVTurningMotor() || isREVDriveMotor())
+    {
+      assert (type == SwerveModuleMotorType.DRIVE ? m_driveMotor : m_turningMotor) instanceof CANSparkMax;
+      ((CANSparkMax) (type == SwerveModuleMotorType.DRIVE ? m_driveMotor : m_turningMotor)).burnFlash();
     }
   }
 
@@ -240,16 +258,17 @@ public class SwerveModule<DriveMotorType extends MotorController, AngleMotorType
    */
   public SwerveModule setVoltageCompensation(double nominalVoltage, SwerveModuleMotorType type)
   {
-    if (isREVDriveMotor() || isREVSpinMotor())
+    if (isREVDriveMotor() || isREVTurningMotor())
     {
-      assert (type == SwerveModuleMotorType.DRIVE ? m_driveMotor : m_spinMotor) instanceof CANSparkMax;
-      ((CANSparkMax) (type == SwerveModuleMotorType.DRIVE ? m_driveMotor : m_spinMotor))
+      assert (type == SwerveModuleMotorType.DRIVE ? m_driveMotor : m_turningMotor) instanceof CANSparkMax;
+      ((CANSparkMax) (type == SwerveModuleMotorType.DRIVE ? m_driveMotor : m_turningMotor))
           .enableVoltageCompensation(nominalVoltage);
+      burnFlash(type);
     }
-    if (isCTREDriveMotor() || isCTRESpinMotor())
+    if (isCTREDriveMotor() || isCTRETurningMotor())
     {
-      assert (type == SwerveModuleMotorType.DRIVE ? m_driveMotor : m_spinMotor) instanceof BaseTalon;
-      ((BaseTalon) (type == SwerveModuleMotorType.DRIVE ? m_driveMotor : m_spinMotor))
+      assert (type == SwerveModuleMotorType.DRIVE ? m_driveMotor : m_turningMotor) instanceof BaseTalon;
+      ((BaseTalon) (type == SwerveModuleMotorType.DRIVE ? m_driveMotor : m_turningMotor))
           .configSetParameter(ParamEnum.eNominalBatteryVoltage, nominalVoltage, 0, 0); // Unsure if this works.
 
     }
@@ -266,17 +285,18 @@ public class SwerveModule<DriveMotorType extends MotorController, AngleMotorType
    */
   public SwerveModule setCurrentLimit(int currentLimit, SwerveModuleMotorType type)
   {
-    if (isREVSpinMotor() || isREVDriveMotor())
+    if (isREVTurningMotor() || isREVDriveMotor())
     {
-      assert (type == SwerveModuleMotorType.SPIN ? m_spinMotor : m_driveMotor) instanceof CANSparkMax;
-      ((CANSparkMax) (type == SwerveModuleMotorType.SPIN ? m_spinMotor : m_driveMotor))
+      assert (type == SwerveModuleMotorType.TURNING ? m_turningMotor : m_driveMotor) instanceof CANSparkMax;
+      ((CANSparkMax) (type == SwerveModuleMotorType.TURNING ? m_turningMotor : m_driveMotor))
           .setSmartCurrentLimit(currentLimit);
+      burnFlash(type);
     }
 
-    if (isCTREDriveMotor() || isCTRESpinMotor())
+    if (isCTREDriveMotor() || isCTRETurningMotor())
     {
-      assert (type == SwerveModuleMotorType.SPIN ? m_spinMotor : m_driveMotor) instanceof BaseTalon;
-      ((BaseTalon) (type == SwerveModuleMotorType.SPIN ? m_spinMotor : m_driveMotor))
+      assert (type == SwerveModuleMotorType.TURNING ? m_turningMotor : m_driveMotor) instanceof BaseTalon;
+      ((BaseTalon) (type == SwerveModuleMotorType.TURNING ? m_turningMotor : m_driveMotor))
           .configSupplyCurrentLimit(new SupplyCurrentLimitConfiguration(true, currentLimit, currentLimit, 2), 100);
 
     }
@@ -291,7 +311,7 @@ public class SwerveModule<DriveMotorType extends MotorController, AngleMotorType
    * steering motors.
    *
    * @param motor                 Motor controller.
-   * @param swerveModuleMotorType Spin motor or drive motor.
+   * @param swerveModuleMotorType Turning motor or drive motor.
    * @param gearRatio             Gear ratio for the motor.
    */
   private void setupREVMotor(CANSparkMax motor, SwerveModuleMotorType swerveModuleMotorType, double gearRatio)
@@ -327,21 +347,31 @@ public class SwerveModule<DriveMotorType extends MotorController, AngleMotorType
       // r/min * K = m/s
       // r/min * 1min/60s * (pi*diameter*gear)/r = m/s
       // r/min * (pi*diameter*gear)/60 = m/s
-      setREVConversionFactor(motor, (Math.PI * wheelDiameter * gearRatio) / 60, SwerveModuleMotorType.DRIVE);
+      setREVConversionFactor(motor, (Math.PI * wheelDiameter) / (60 * gearRatio), SwerveModuleMotorType.DRIVE);
     } else
     {
       setCurrentLimit(20, swerveModuleMotorType);
-      m_spinPIDContrller = motor.getPIDController();
-      m_spinPIDContrller.setFeedbackDevice(encoder);
+      m_turningPIDController = motor.getPIDController();
 
+      m_turningPIDController.setFeedbackDevice(encoder);
+      m_turningPIDController.setPositionPIDWrappingEnabled(true);
+      if (configuredSensorRange == AbsoluteSensorRange.Unsigned_0_to_360)
+      {
+        m_turningPIDController.setPositionPIDWrappingMinInput(0);
+        m_turningPIDController.setPositionPIDWrappingMaxInput(360);
+      } else
+      {
+        m_turningPIDController.setPositionPIDWrappingMinInput(-180);
+        m_turningPIDController.setPositionPIDWrappingMaxInput(180);
+      }
       // Math set's the coefficient to the OUTPUT of the ENCODER (ticks) which is the INPUT to the PID.
       // We want to set the PID to use degrees :)
       // Dimensional Analysis
       // deg * K = ticks
       // deg * (360deg/(42*gearRatio)ticks) = ticks
       // K = 360/(42*gearRatio)
-      setREVConversionFactor(motor, 360 / (42 * gearRatio), SwerveModuleMotorType.SPIN);
-      setPIDF(1, 0, 0.1, 0, 100, SwerveModuleMotorType.SPIN);
+      setREVConversionFactor(motor, 360 / (42 * gearRatio), SwerveModuleMotorType.TURNING);
+      setPIDF(1, 0, 0.1, 0, 100, SwerveModuleMotorType.TURNING);
     }
 
   }
@@ -420,7 +450,7 @@ public class SwerveModule<DriveMotorType extends MotorController, AngleMotorType
       // ticks/100ms * (pi*diameter)/((ticks[4096]*gearRatio)*10) = meters/second
       // K = (pi*diameter)/((ticks[4096]*gearRatio)*10)
       // Set the feedback sensor up earlier in setCANRemoteFeedbackSensor()
-      motor.configSelectedFeedbackCoefficient(((Math.PI * wheelDiameter) / ((4096 * gearRatio)) * 10));
+      motor.configSelectedFeedbackCoefficient(((Math.PI * wheelDiameter) / ((4096 / gearRatio)) * 10));
     } else
     {
       setCurrentLimit(20, swerveModuleMotorType);
@@ -432,14 +462,14 @@ public class SwerveModule<DriveMotorType extends MotorController, AngleMotorType
    * Configures the conversion factor based upon which motor.
    *
    * @param motor                 motor controller to configure
-   * @param conversionFactor      Conversion from RPM to MPS for drive motor, and rotations to degrees for the spin
+   * @param conversionFactor      Conversion from RPM to MPS for drive motor, and rotations to degrees for the turning
    *                              motor.
-   * @param swerveModuleMotorType Spin motor or drive motor for conversion factor setting.
+   * @param swerveModuleMotorType Turning motor or drive motor for conversion factor setting.
    */
   private void setREVConversionFactor(CANSparkMax motor, double conversionFactor,
                                       SwerveModuleMotorType swerveModuleMotorType)
   {
-    if (swerveModuleMotorType == SwerveModuleMotorType.SPIN)
+    if (swerveModuleMotorType == SwerveModuleMotorType.TURNING)
     {
       motor.getEncoder().setPositionConversionFactor(conversionFactor);
     } else
@@ -469,13 +499,15 @@ public class SwerveModule<DriveMotorType extends MotorController, AngleMotorType
   {
     // Example at
     // https://github.com/REVrobotics/SPARK-MAX-Examples/blob/master/Java/Velocity%20Closed%20Loop%20Control/src/main/java/frc/robot/Robot.java#L65-L71
-    (swerveModuleMotorType == SwerveModuleMotorType.DRIVE ? m_drivePIDController : m_spinPIDContrller).setP(P);
-    (swerveModuleMotorType == SwerveModuleMotorType.DRIVE ? m_drivePIDController : m_spinPIDContrller).setI(I);
-    (swerveModuleMotorType == SwerveModuleMotorType.DRIVE ? m_drivePIDController : m_spinPIDContrller).setD(D);
-    (swerveModuleMotorType == SwerveModuleMotorType.DRIVE ? m_drivePIDController : m_spinPIDContrller).setFF(F);
-    (swerveModuleMotorType == SwerveModuleMotorType.DRIVE ? m_drivePIDController : m_spinPIDContrller).setIZone(
+    (swerveModuleMotorType == SwerveModuleMotorType.DRIVE ? m_drivePIDController : m_turningPIDController).setP(P);
+    (swerveModuleMotorType == SwerveModuleMotorType.DRIVE ? m_drivePIDController : m_turningPIDController).setI(I);
+    (swerveModuleMotorType == SwerveModuleMotorType.DRIVE ? m_drivePIDController : m_turningPIDController).setD(D);
+    (swerveModuleMotorType == SwerveModuleMotorType.DRIVE ? m_drivePIDController : m_turningPIDController).setFF(F);
+    (swerveModuleMotorType == SwerveModuleMotorType.DRIVE ? m_drivePIDController : m_turningPIDController).setIZone(
         integralZone);
-    ((CANSparkMax) (swerveModuleMotorType == SwerveModuleMotorType.DRIVE ? m_driveMotor : m_spinMotor)).burnFlash();
+    (swerveModuleMotorType == SwerveModuleMotorType.DRIVE ? m_drivePIDController
+                                                          : m_turningPIDController).setOutputRange(-1, 1);
+    burnFlash(swerveModuleMotorType);
   }
 
 
@@ -486,7 +518,7 @@ public class SwerveModule<DriveMotorType extends MotorController, AngleMotorType
    */
   private void setCTREAngle(double angle)
   {
-    ((BaseTalon) m_spinMotor).set(ControlMode.Position, angle);
+    ((BaseTalon) m_turningMotor).set(ControlMode.Position, angle);
   }
 
   /**
@@ -506,7 +538,7 @@ public class SwerveModule<DriveMotorType extends MotorController, AngleMotorType
    */
   private void setREVAngle(double angle)
   {
-    m_spinPIDContrller.setReference(angle, ControlType.kPosition);
+    m_turningPIDController.setReference(angle, ControlType.kPosition);
   }
 
   /**
@@ -547,30 +579,31 @@ public class SwerveModule<DriveMotorType extends MotorController, AngleMotorType
   private void setCTREPIDF(CTRE_slotIdx profile, double P, double I, double D, double F, double integralZone,
                            SwerveModuleMotorType swerveModuleMotorType)
   {
-    ((BaseTalon) (swerveModuleMotorType == SwerveModuleMotorType.DRIVE ? m_driveMotor : m_spinMotor)).selectProfileSlot(
+    ((BaseTalon) (swerveModuleMotorType == SwerveModuleMotorType.DRIVE ? m_driveMotor
+                                                                       : m_turningMotor)).selectProfileSlot(
         profile.ordinal(), CTRE_pidIdx.PRIMARY_PID.ordinal());
     // More Closed-Loop Configs at
     // https://docs.ctre-phoenix.com/en/stable/ch16_ClosedLoop.html#closed-loop-configs-per-slot-four-slots-available
     // Example at
     // https://github.com/CrossTheRoadElec/Phoenix-Examples-Languages/blob/master/Java%20General/VelocityClosedLoop_ArbFeedForward/src/main/java/frc/robot/Robot.java
-    ((BaseTalon) (swerveModuleMotorType == SwerveModuleMotorType.DRIVE ? m_driveMotor : m_spinMotor)).config_kP(
+    ((BaseTalon) (swerveModuleMotorType == SwerveModuleMotorType.DRIVE ? m_driveMotor : m_turningMotor)).config_kP(
         profile.ordinal(), P);
-    ((BaseTalon) (swerveModuleMotorType == SwerveModuleMotorType.DRIVE ? m_driveMotor : m_spinMotor)).config_kI(
+    ((BaseTalon) (swerveModuleMotorType == SwerveModuleMotorType.DRIVE ? m_driveMotor : m_turningMotor)).config_kI(
         profile.ordinal(), I);
-    ((BaseTalon) (swerveModuleMotorType == SwerveModuleMotorType.DRIVE ? m_driveMotor : m_spinMotor)).config_kD(
+    ((BaseTalon) (swerveModuleMotorType == SwerveModuleMotorType.DRIVE ? m_driveMotor : m_turningMotor)).config_kD(
         profile.ordinal(), D);
-    ((BaseTalon) (swerveModuleMotorType == SwerveModuleMotorType.DRIVE ? m_driveMotor : m_spinMotor)).config_kF(
+    ((BaseTalon) (swerveModuleMotorType == SwerveModuleMotorType.DRIVE ? m_driveMotor : m_turningMotor)).config_kF(
         profile.ordinal(), F);
 
     ((BaseTalon) (swerveModuleMotorType == SwerveModuleMotorType.DRIVE ? m_driveMotor
-                                                                       : m_spinMotor)).config_IntegralZone(
+                                                                       : m_turningMotor)).config_IntegralZone(
         profile.ordinal(), integralZone);
 
     // If the closed loop error is within this threshold, the motor output will be neutral. Set to 0 to disable.
     // Value is in sensor units.
 
     ((BaseTalon) (swerveModuleMotorType == SwerveModuleMotorType.DRIVE ? m_driveMotor
-                                                                       : m_spinMotor)).configAllowableClosedloopError(
+                                                                       : m_turningMotor)).configAllowableClosedloopError(
         profile.ordinal(), 0);
 
   }
@@ -612,14 +645,16 @@ public class SwerveModule<DriveMotorType extends MotorController, AngleMotorType
   public SwerveModule setPIDF(double p, double i, double d, double f, double integralZone,
                               SwerveModuleMotorType swerveModuleMotorType)
   {
-    if (isREVSpinMotor() || isREVDriveMotor())
+    if (isREVTurningMotor() || isREVDriveMotor())
     {
-      assert (swerveModuleMotorType == SwerveModuleMotorType.SPIN ? m_spinMotor : m_driveMotor) instanceof CANSparkMax;
+      assert (swerveModuleMotorType == SwerveModuleMotorType.TURNING ? m_turningMotor
+                                                                     : m_driveMotor) instanceof CANSparkMax;
       setREVPIDF(p, i, d, f, integralZone, swerveModuleMotorType);
     }
-    if (isCTREDriveMotor() || isCTRESpinMotor())
+    if (isCTREDriveMotor() || isCTRETurningMotor())
     {
-      assert (swerveModuleMotorType == SwerveModuleMotorType.SPIN ? m_spinMotor : m_driveMotor) instanceof BaseTalon;
+      assert (swerveModuleMotorType == SwerveModuleMotorType.TURNING ? m_turningMotor
+                                                                     : m_driveMotor) instanceof BaseTalon;
       setCTREPIDF(swerveModuleMotorType == SwerveModuleMotorType.DRIVE ? CTRE_slotIdx.Velocity : CTRE_slotIdx.Distance,
                   p, i, d, f, integralZone, swerveModuleMotorType);
     }
@@ -648,13 +683,14 @@ public class SwerveModule<DriveMotorType extends MotorController, AngleMotorType
       builder.addDoubleProperty("Drive Motor Velocity MPS", ((CANSparkMax) m_driveMotor).getEncoder()::getVelocity,
                                 this::setREVDrive);
     }
-    if (isCTRESpinMotor())
+    if (isCTRETurningMotor())
     {
-      builder.addDoubleProperty("Steering Motor Angle Degrees", ((BaseTalon) m_spinMotor)::getSelectedSensorPosition,
+      builder.addDoubleProperty("Steering Motor Angle Degrees", ((BaseTalon) m_turningMotor)::getSelectedSensorPosition,
                                 this::setCTREAngle);
     } else
     {
-      builder.addDoubleProperty("Steering Motor Angle Degrees", ((CANSparkMax) m_spinMotor).getEncoder()::getVelocity,
+      builder.addDoubleProperty("Steering Motor Angle Degrees",
+                                ((CANSparkMax) m_turningMotor).getEncoder()::getVelocity,
                                 this::setREVAngle);
     }
   }
@@ -672,7 +708,7 @@ public class SwerveModule<DriveMotorType extends MotorController, AngleMotorType
     angle += angle < 0 ? 180 : 0; // Ensure angle is always given within range of 0 to 360.
     assert angle <= 360;
 
-    if (isREVSpinMotor())
+    if (isREVTurningMotor())
     {
       setREVAngle(angle);
     } else
@@ -721,13 +757,13 @@ public class SwerveModule<DriveMotorType extends MotorController, AngleMotorType
   }
 
   /**
-   * Returns whether the spin motor is a CTRE motor.
+   * Returns whether the turning motor is a CTRE motor.
    *
-   * @return is the spin motor a CTRE motor?
+   * @return is the turning motor a CTRE motor?
    */
-  private boolean isCTRESpinMotor()
+  private boolean isCTRETurningMotor()
   {
-    return m_spinMotor instanceof BaseMotorController;
+    return m_turningMotor instanceof BaseMotorController;
   }
 
   /**
@@ -747,9 +783,9 @@ public class SwerveModule<DriveMotorType extends MotorController, AngleMotorType
    *
    * @return is the drive motor a SparkMax?
    */
-  private boolean isREVSpinMotor()
+  private boolean isREVTurningMotor()
   {
-    return m_spinMotor instanceof CANSparkMax;
+    return m_turningMotor instanceof CANSparkMax;
   }
 
   /**
@@ -792,27 +828,27 @@ public class SwerveModule<DriveMotorType extends MotorController, AngleMotorType
    */
   public void setInvertedSteering(boolean isInverted)
   {
-    m_spinMotor.setInverted(isInverted);
+    m_turningMotor.setInverted(isInverted);
   }
 
   /**
    * Set the sensor to be inverted for the motor type.
    *
    * @param isInverted     The state of inversion, true is inverted.
-   * @param invertAbsolute Invert the absolute encoder if the type is SPIN too.
+   * @param invertAbsolute Invert the absolute encoder if the type is SwerveModuleMotorType.TURNING too.
    * @param type           Swerve module motor's sensors to configure.
    */
   public void setInvertedSensor(boolean isInverted, SwerveModuleMotorType type, boolean invertAbsolute)
   {
-    if (isREVSpinMotor() || isREVDriveMotor())
+    if (isREVTurningMotor() || isREVDriveMotor())
     {
-      assert (type == SwerveModuleMotorType.SPIN ? m_spinMotor : m_driveMotor) instanceof CANSparkMax;
-      ((CANSparkMax) (type == SwerveModuleMotorType.SPIN ? m_spinMotor : m_driveMotor)).getEncoder().setInverted(
+      assert (type == SwerveModuleMotorType.TURNING ? m_turningMotor : m_driveMotor) instanceof CANSparkMax;
+      ((CANSparkMax) (type == SwerveModuleMotorType.TURNING ? m_turningMotor : m_driveMotor)).getEncoder().setInverted(
           inverted);
     }
     // TODO: Implement CTRE inversion.
 
-    if (type == SwerveModuleMotorType.SPIN && invertAbsolute)
+    if (type == SwerveModuleMotorType.TURNING && invertAbsolute)
     {
       if (absoluteEncoder instanceof CANCoder)
       {
@@ -917,7 +953,7 @@ public class SwerveModule<DriveMotorType extends MotorController, AngleMotorType
   public void stopMotor()
   {
     m_driveMotor.stopMotor();
-    m_spinMotor.stopMotor();
+    m_turningMotor.stopMotor();
   }
 
   /**
@@ -970,7 +1006,7 @@ public class SwerveModule<DriveMotorType extends MotorController, AngleMotorType
     /**
      * Steering Motor
      */
-    SPIN
+    TURNING
   }
 
   /**
