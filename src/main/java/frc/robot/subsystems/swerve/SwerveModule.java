@@ -13,6 +13,7 @@ import com.ctre.phoenix.motorcontrol.can.TalonFX;
 import com.ctre.phoenix.motorcontrol.can.TalonSRX;
 import com.ctre.phoenix.sensors.AbsoluteSensorRange;
 import com.ctre.phoenix.sensors.CANCoder;
+import com.ctre.phoenix.sensors.MagnetFieldStrength;
 import com.revrobotics.CANSparkMax;
 import com.revrobotics.CANSparkMax.ControlType;
 import com.revrobotics.CANSparkMax.IdleMode;
@@ -693,6 +694,13 @@ public class SwerveModule<DriveMotorType extends MotorController, AngleMotorType
       builder.addDoubleProperty("Steering Motor Angle Degrees",
                                 ((CANSparkMax) m_turningMotor).getEncoder()::getPosition,
                                 this::setREVAngle);
+    }
+    if (absoluteEncoder instanceof CANCoder)
+    {
+      builder.addBooleanProperty("CANCoder Magnet", () -> {
+        return absoluteEncoder.getMagnetFieldStrength() == MagnetFieldStrength.Good_GreenLED;
+      }, (x) -> {
+      });
     }
   }
 
