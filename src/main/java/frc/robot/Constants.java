@@ -33,7 +33,7 @@ public final class Constants
 
     public static final double kWheelDiameterMeters         = Units.inchesToMeters(
         4); //Wheel Diameter is 4 inches - converted to meters
-    public static final double kDriveMotorGearRatio         = 1 / 6.75; //Gear Ratio
+    public static final double kDriveMotorGearRatio         = 6.75; //Gear Ratio
     public static final double kTurningMotorGearRatio       = 12.8; //Gear Ratio
     public static final double kDriveEncoderRot2Meter       = kDriveMotorGearRatio * Math.PI *
                                                               kWheelDiameterMeters; //Takes the Gear Ratio of the
