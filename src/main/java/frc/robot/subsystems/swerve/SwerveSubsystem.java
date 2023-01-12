@@ -12,8 +12,7 @@ import frc.robot.Constants.ModuleConstants;
 public class SwerveSubsystem extends SubsystemBase
 {
 
-  public final  SwerveDrive<CANSparkMax, CANSparkMax> m_drive;
-  private final WPI_Pigeon2                           m_gyro = new WPI_Pigeon2(DriveConstants.PigeonCANID);
+  public final SwerveDrive<CANSparkMax, CANSparkMax> m_drive;
   //Creates Pigeon2 Gyroscope
 
   public SwerveSubsystem()
@@ -56,7 +55,11 @@ public class SwerveSubsystem extends SubsystemBase
         Units.inchesToMeters(4), DriveConstants.kWheelBase,
         DriveConstants.kTrackWidth);
 
-    m_drive = new SwerveDrive<>(m_frontLeft, m_backLeft, m_frontRight, m_backRight, m_gyro,
+    m_drive = new SwerveDrive<>(m_frontLeft,
+                                m_backLeft,
+                                m_frontRight,
+                                m_backRight,
+                                new WPI_Pigeon2(DriveConstants.PigeonCANID),
                                 DriveConstants.kTeleDriveMaxSpeedMetersPerSecond,
                                 DriveConstants.kTeleDriveMaxAngularSpeedRadiansPerSecond,
                                 DriveConstants.kTeleDriveMaxAccelerationUnitsPerSecond,
