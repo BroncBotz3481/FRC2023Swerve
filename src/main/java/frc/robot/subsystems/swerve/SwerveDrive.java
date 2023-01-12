@@ -22,7 +22,10 @@ import frc.robot.subsystems.swerve.SwerveModule.SwerveModuleMotorType;
 import java.io.Closeable;
 
 /**
- * SwerveDrive base which is meant to be platform agnostic.
+ * SwerveDrive base which is meant to be platform agnostic. This implementation expect second order kinematics because
+ * second order kinematics prevents the drift that builds up when using first order kinematics. As per this <a
+ * href="https://www.chiefdelphi.com/t/whitepaper-swerve-drive-skew-and-second-order-kinematics/416964">ChiefDelphi
+ * post</a>
  *
  * @param <DriveMotorType>    Drive motor type (CANSparkMax, TalonSRX, TalonFX)
  * @param <SteeringMotorType> Steering/Azimuth Motor (CANSparkMax, TalonSRX, TalonFX)
