@@ -347,7 +347,7 @@ public class SwerveModule<DriveMotorType extends MotorController, AngleMotorType
       // r/min * K = m/s
       // r/min * 1min/60s * (pi*diameter*gear)/r = m/s
       // r/min * (pi*diameter*gear)/60 = m/s
-      setREVConversionFactor(motor, (Math.PI * wheelDiameter) / (60 * driveGearRatio), SwerveModuleMotorType.DRIVE);
+      setREVConversionFactor(motor, (Math.PI * wheelDiameter) / (60 * gearRatio), SwerveModuleMotorType.DRIVE);
     } else
     {
       setCurrentLimit(20, swerveModuleMotorType);
