@@ -691,7 +691,7 @@ public class SwerveModule<DriveMotorType extends MotorController, AngleMotorType
     } else
     {
       builder.addDoubleProperty("Steering Motor Angle Degrees",
-                                ((CANSparkMax) m_turningMotor).getEncoder()::getVelocity,
+                                ((CANSparkMax) m_turningMotor).getEncoder()::getPosition,
                                 this::setREVAngle);
     }
   }
