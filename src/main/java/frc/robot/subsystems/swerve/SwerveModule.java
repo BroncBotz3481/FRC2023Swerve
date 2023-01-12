@@ -697,10 +697,9 @@ public class SwerveModule<DriveMotorType extends MotorController, AngleMotorType
     }
     if (absoluteEncoder instanceof CANCoder)
     {
-      builder.addBooleanProperty("CANCoder Magnet", () -> {
-        return absoluteEncoder.getMagnetFieldStrength() == MagnetFieldStrength.Good_GreenLED;
-      }, (x) -> {
-      });
+      builder.addBooleanProperty("CANCoder Magnet",
+                                 () -> absoluteEncoder.getMagnetFieldStrength() == MagnetFieldStrength.Good_GreenLED,
+                                 null);
     }
   }
 

@@ -12,13 +12,14 @@ import frc.robot.Constants.ModuleConstants;
 public class SwerveSubsystem extends SubsystemBase
 {
 
-  public final SwerveModule<CANSparkMax, CANSparkMax, CANCoder> m_frontRight, m_frontLeft, m_backRight, m_backLeft;
   public final  SwerveDrive<CANSparkMax, CANSparkMax> m_drive;
   private final WPI_Pigeon2                           m_gyro = new WPI_Pigeon2(DriveConstants.PigeonCANID);
   //Creates Pigeon2 Gyroscope
 
   public SwerveSubsystem()
   {
+    SwerveModule<CANSparkMax, CANSparkMax, CANCoder> m_frontRight, m_frontLeft, m_backRight, m_backLeft;
+
     m_frontLeft = new SwerveModule<>(
         new CANSparkMax(DriveConstants.kFrontLeftDriveMotorPort, MotorType.kBrushless),
         new CANSparkMax(DriveConstants.kFrontLeftTurningMotorPort, MotorType.kBrushless),
