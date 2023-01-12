@@ -1047,7 +1047,7 @@ public class SwerveModule<DriveMotorType extends MotorController, AngleMotorType
                     lastAngle :
                     state.angle.getDegrees()); // Prevents module rotation if speed is less than 1%
 
-    setAngle(angle, state.omegaRadPerSecond * moduleRadkV);
+    setAngle(angle, state.angularVelocityRadPerSecond * moduleRadkV);
     setVelocity(state.speedMetersPerSecond);
 
     lastAngle = angle;

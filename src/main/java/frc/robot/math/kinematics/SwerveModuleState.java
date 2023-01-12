@@ -6,7 +6,10 @@ import edu.wpi.first.math.geometry.Rotation2d;
 public class SwerveModuleState extends edu.wpi.first.math.kinematics.SwerveModuleState
 {
 
-  public double omegaRadPerSecond = 0;
+  /**
+   * Angular velocity in radians per second. Angular Velocity = omega.
+   */
+  public double angularVelocityRadPerSecond = 0;
 
   /**
    * Constructs a SwerveModuleState with zeros for speed and angle.
@@ -23,21 +26,20 @@ public class SwerveModuleState extends edu.wpi.first.math.kinematics.SwerveModul
    */
   public SwerveModuleState(double speedMetersPerSecond, Rotation2d angle)
   {
-    this.speedMetersPerSecond = speedMetersPerSecond;
-    this.angle = angle;
+    super(speedMetersPerSecond, angle);
+    this.angularVelocityRadPerSecond = 0;
   }
 
   /**
    * Constructs a SwerveModuleState.
    *
-   * @param speedMetersPerSecond The speed of the wheel of the module.
-   * @param angle                The angle of the module.
-   * @param omegaRadPerSecond    The angular velocity of the module.
+   * @param speedMetersPerSecond        The speed of the wheel of the module.
+   * @param angle                       The angle of the module.
+   * @param angularVelocityRadPerSecond The angular velocity of the module.
    */
-  public SwerveModuleState(double speedMetersPerSecond, Rotation2d angle, double omegaRadPerSecond)
+  public SwerveModuleState(double speedMetersPerSecond, Rotation2d angle, double angularVelocityRadPerSecond)
   {
-    this.speedMetersPerSecond = speedMetersPerSecond;
-    this.angle = angle;
-    this.omegaRadPerSecond = omegaRadPerSecond;
+    super(speedMetersPerSecond, angle);
+    this.angularVelocityRadPerSecond = angularVelocityRadPerSecond;
   }
 }
