@@ -5,6 +5,7 @@ import com.ctre.phoenix.sensors.WPI_Pigeon2;
 import com.revrobotics.CANSparkMax;
 import com.revrobotics.CANSparkMaxLowLevel.MotorType;
 import edu.wpi.first.math.util.Units;
+import edu.wpi.first.wpilibj.smartdashboard.SmartDashboard;
 import edu.wpi.first.wpilibj2.command.SubsystemBase;
 import frc.robot.Constants.DriveConstants;
 import frc.robot.Constants.ModuleConstants;
@@ -68,6 +69,7 @@ public class SwerveSubsystem extends SubsystemBase
 
     m_drive.zeroGyro();
     m_drive.setDeadband(0.02);
+    SmartDashboard.putData(m_drive);
   }
 
   /**
