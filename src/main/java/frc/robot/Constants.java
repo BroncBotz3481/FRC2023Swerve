@@ -108,6 +108,7 @@ public final class Constants
         kPhysicalMaxAngularSpeedRadiansPerSecond / 4;
     public static final double kTeleDriveMaxAccelerationUnitsPerSecond        = 3;
     public static final double kTeleDriveMaxAngularAccelerationUnitsPerSecond = 3;
+    public static final double kFreeSpeedRpm                                  = 5676;
   }
 
   public static final class AutoConstants

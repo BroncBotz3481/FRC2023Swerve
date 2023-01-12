@@ -20,15 +20,16 @@ import com.revrobotics.CANSparkMax.IdleMode;
 import com.revrobotics.CANSparkMaxLowLevel.PeriodicFrame;
 import com.revrobotics.RelativeEncoder;
 import com.revrobotics.SparkMaxPIDController;
+import edu.wpi.first.math.controller.SimpleMotorFeedforward;
 import edu.wpi.first.math.geometry.Rotation2d;
 import edu.wpi.first.math.geometry.Translation2d;
 import edu.wpi.first.math.kinematics.SwerveModulePosition;
-import edu.wpi.first.math.kinematics.SwerveModuleState;
 import edu.wpi.first.util.sendable.Sendable;
 import edu.wpi.first.util.sendable.SendableBuilder;
 import edu.wpi.first.util.sendable.SendableRegistry;
 import edu.wpi.first.wpilibj.motorcontrol.MotorController;
 import edu.wpi.first.wpilibj.motorcontrol.PWMSparkMax;
+import frc.robot.math.kinematics.SwerveModuleState;
 import java.io.Closeable;
 
 
@@ -47,71 +48,104 @@ public class SwerveModule<DriveMotorType extends MotorController, AngleMotorType
   /**
    * Swerve Module location object relative to the center of the robot.
    */
-  public final  Translation2d         swerveModuleLocation;
+  public final  Translation2d          swerveModuleLocation;
   /**
    * Motor Controllers for drive motor of the swerve module.
    */
-  private final DriveMotorType        m_driveMotor;
+  private final DriveMotorType         m_driveMotor;
   /***
    * Motor Controller for the turning motor of the swerve drive module.
    */
-  private final AngleMotorType        m_turningMotor;
-  private final SwerveModuleLocation  swerveLocation;
+  private final AngleMotorType         m_turningMotor;
+  /**
+   * Enum representing the swerve module's location on the robot, assuming square.
+   */
+  private final SwerveModuleLocation   swerveLocation;
   /**
    * Absolute encoder for the swerve module.
    */
-  private final AbsoluteEncoderType   absoluteEncoder;
-  private final double                driveTrainWidth;
+  private final AbsoluteEncoderType    absoluteEncoder;
+  /**
+   * The Distance between centers of right and left wheels in meters.
+   */
+  private final double                 driveTrainWidth;
   /**
    * Configured sensor range for the Absolute Encoder.
    */
-  private final AbsoluteSensorRange   configuredSensorRange = AbsoluteSensorRange.Unsigned_0_to_360;
-  /**
-   * The drive gear ratio that is used during configuration of the off-board encoders in the motor controllers.
-   */
-  public        double                driveGearRatio        = 1;
-  /**
-   * Angle offset of the CANCoder at initialization.
-   */
-  public        double                angleOffset           = 0;
-  private       SparkMaxPIDController m_drivePIDController;
-  private       SparkMaxPIDController m_turningPIDController;
+  private final AbsoluteSensorRange    configuredSensorRange   = AbsoluteSensorRange.Unsigned_0_to_360;
   /**
    * Characteristics of the SwerveDriveChasis
    */
-  private final double                wheelDiameter;
-  private final double                wheelBase;
+  private final double                 wheelDiameter;
+  /**
+   * The Distance between front and back wheels of the robot in meters.
+   */
+  private final double                 wheelBase;
+  /**
+   * The drive gear ratio that is used during configuration of the off-board encoders in the motor controllers.
+   */
+  public        double                 driveGearRatio          = 1;
+  /**
+   * Angle offset of the CANCoder at initialization.
+   */
+  public        double                 angleOffset             = 0;
+  /**
+   * Maximum speed in meters per second, used to eliminate unnecessary movement of the module.
+   */
+  public        double                 maxDriveSpeedMPS        = 0;
   /**
    * Inverted drive motor.
    */
-  private       boolean               inverted              = false;
+  private       boolean                inverted                = false;
   /**
    * Power to drive motor from -1 to 1.
    */
-  private       double                drivePower            = 0;
+  private       double                 drivePower              = 0;
+  /**
+   * Maximum free speed RPM for the steering motor.
+   */
+  private       double                 maxSteeringFreeSpeedRPM = 0;
+  /**
+   * kV feed forward for PID
+   */
+  private       double                 moduleRadkV;
+  /**
+   * Store the last angle for optimization.
+   */
+  private       double                 lastAngle               = 0;
+  /**
+   * Drive feedforward for PID when driving by velocity.
+   */
+  private       SimpleMotorFeedforward driveFeedforward;
+  private       SparkMaxPIDController  m_drivePIDController;
+  private       SparkMaxPIDController  m_turningPIDController;
 
   /**
    * Swerve module constructor. Both motors <b>MUST</b> be a {@link MotorController} class. It is recommended to create
    * a command to reset the encoders when triggered and
    *
-   * @param mainMotor             Main drive motor. Must be a {@link MotorController} type.
-   * @param angleMotor            Angle motor for controlling the angle of the swerve module.
-   * @param encoder               Absolute encoder for the swerve module.
-   * @param driveGearRatio        Drive gear ratio in form of (rotation:1 AKA rotations/1) to get the encoder ticks per
-   *                              rotation.
-   * @param steerGearRatio        Steering motor gear ratio (usually 12.8:1 for MK4 in form of rotations:1 or
-   *                              rotations/1), only applied if using Neo's.
-   * @param swervePosition        Swerve Module position on the robot.
-   * @param steeringOffsetDegrees The current offset of the absolute encoder from 0 in degrees.
-   * @param wheelDiameterMeters   The wheel diameter of the swerve drive module in meters.
-   * @param wheelBaseMeters       The  Distance between front and back wheels of the robot in meters.
-   * @param driveTrainWidthMeters The Distance between centers of right and left wheels in meters.
+   * @param mainMotor                 Main drive motor. Must be a {@link MotorController} type.
+   * @param angleMotor                Angle motor for controlling the angle of the swerve module.
+   * @param encoder                   Absolute encoder for the swerve module.
+   * @param driveGearRatio            Drive gear ratio in form of (rotation:1 AKA rotations/1) to get the encoder ticks
+   *                                  per rotation.
+   * @param steerGearRatio            Steering motor gear ratio (usually 12.8:1 for MK4 in form of rotations:1 or
+   *                                  rotations/1), only applied if using Neo's.
+   * @param swervePosition            Swerve Module position on the robot.
+   * @param steeringOffsetDegrees     The current offset of the absolute encoder from 0 in degrees.
+   * @param wheelDiameterMeters       The wheel diameter of the swerve drive module in meters.
+   * @param wheelBaseMeters           The Distance between front and back wheels of the robot in meters.
+   * @param driveTrainWidthMeters     The Distance between centers of right and left wheels in meters.
+   * @param steeringMotorFreeSpeedRPM The RPM free speed of the steering motor.
+   * @param maxSpeedMPS               The maximum drive speed in meters per second.
+   * @param maxDriveAcceleration      The maximum drive acceleration in meters^2 per second.
    * @throws RuntimeException if an assertion fails or invalid swerve module location is given.
    */
   public SwerveModule(DriveMotorType mainMotor, AngleMotorType angleMotor, AbsoluteEncoderType encoder,
                       SwerveModuleLocation swervePosition, double driveGearRatio, double steerGearRatio,
                       double steeringOffsetDegrees,
-                      double wheelDiameterMeters, double wheelBaseMeters, double driveTrainWidthMeters)
+                      double wheelDiameterMeters, double wheelBaseMeters, double driveTrainWidthMeters,
+                      double steeringMotorFreeSpeedRPM, double maxSpeedMPS, double maxDriveAcceleration)
   {
     requireNonNull(mainMotor);
     requireNonNull(angleMotor);
@@ -120,6 +154,17 @@ public class SwerveModule<DriveMotorType extends MotorController, AngleMotorType
     this.wheelDiameter = wheelDiameterMeters;
     this.wheelBase = wheelBaseMeters;
     this.driveTrainWidth = driveTrainWidthMeters;
+    maxSteeringFreeSpeedRPM = steeringMotorFreeSpeedRPM;
+
+    // Set the maximum speed for each swerve module for use when trying to optimize movements.
+    // Drive feedforward gains
+    //        public static final double KS = 0;
+    //        public static final double KV = 12 / MAX_SPEED; // Volt-seconds per meter (max voltage divided by max
+    //        speed)
+    //        public static final double KA = 12 / MAX_ACCELERATION; // Volt-seconds^2 per meter (max voltage divided
+    //        by max accel)
+    maxDriveSpeedMPS = maxSpeedMPS;
+    driveFeedforward = new SimpleMotorFeedforward(0, 12 / maxDriveSpeedMPS, 12 / maxDriveAcceleration);
 
     m_driveMotor = mainMotor;
     m_turningMotor = angleMotor;
@@ -137,7 +182,7 @@ public class SwerveModule<DriveMotorType extends MotorController, AngleMotorType
     {
       setupREVMotor(((CANSparkMax) mainMotor), SwerveModuleMotorType.DRIVE, driveGearRatio);
       // Might need to sleep for 200ms to 1s before this.
-      ((CANSparkMax) mainMotor).burnFlash();
+      burnFlash(SwerveModuleMotorType.DRIVE);
     } else
     {
       setupCTREMotor(((BaseTalon) mainMotor), SwerveModuleMotorType.DRIVE, driveGearRatio);
@@ -148,7 +193,7 @@ public class SwerveModule<DriveMotorType extends MotorController, AngleMotorType
       // MK4 turning motor gear ratio is 12.8:1
       setupREVMotor(((CANSparkMax) angleMotor), SwerveModuleMotorType.TURNING, steerGearRatio);
       // Might need to sleep for 200ms to 1s before this.
-      ((CANSparkMax) angleMotor).burnFlash();
+      burnFlash(SwerveModuleMotorType.TURNING);
     } else if (encoder instanceof CANCoder)
     {
       setupCANCoderRemoteSensor(((BaseTalon) angleMotor), encoder);
@@ -306,6 +351,7 @@ public class SwerveModule<DriveMotorType extends MotorController, AngleMotorType
     return this;
   }
 
+
   /**
    * Setup REV motors and configure the values in the class for them. Set's the driveMotorTicksPerRotation, and
    * m_drivePIDController for the class. Assumes the absolute encoder reads from 0 to 360. Configures motor controller
@@ -349,7 +395,11 @@ public class SwerveModule<DriveMotorType extends MotorController, AngleMotorType
       // r/min * K = m/s
       // r/min * 1min/60s * (pi*diameter*gear)/r = m/s
       // r/min * (pi*diameter*gear)/60 = m/s
-      setREVConversionFactor(motor, (Math.PI * wheelDiameter) / (60 * gearRatio), SwerveModuleMotorType.DRIVE);
+      // setREVConversionFactor(motor, (Math.PI * wheelDiameter) / (60 * gearRatio), SwerveModuleMotorType.DRIVE);
+      // Stolen from https://github.com/first95/FRC2022/blob/1f57d6837e04d8c8a89f4d83d71b5d2172f41a0e/SwervyBot/src/main/java/frc/robot/SwerveModule.java#L68
+      // and https://github.com/first95/FRC2022/blob/1f57d6837e04d8c8a89f4d83d71b5d2172f41a0e/SwervyBot/src/main/java/frc/robot/Constants.java#L89
+      setREVConversionFactor(motor, ((Math.PI * wheelDiameter) / gearRatio) / 60, SwerveModuleMotorType.DRIVE);
+
     } else
     {
       setCurrentLimit(20, swerveModuleMotorType);
@@ -372,7 +422,12 @@ public class SwerveModule<DriveMotorType extends MotorController, AngleMotorType
       // deg * K = ticks
       // deg * (360deg/(42*gearRatio)ticks) = ticks
       // K = 360/(42*gearRatio)
-      setREVConversionFactor(motor, 360 / (42 * gearRatio), SwerveModuleMotorType.TURNING);
+      // setREVConversionFactor(motor, 360 / (42 * gearRatio), SwerveModuleMotorType.TURNING);
+      // Sotlen from https://github.com/first95/FRC2022/blob/1f57d6837e04d8c8a89f4d83d71b5d2172f41a0e/SwervyBot/src/main/java/frc/robot/Constants.java#L91
+      // and https://github.com/first95/FRC2022/blob/1f57d6837e04d8c8a89f4d83d71b5d2172f41a0e/SwervyBot/src/main/java/frc/robot/SwerveModule.java#L53
+      setREVConversionFactor(motor, 360 / gearRatio, SwerveModuleMotorType.TURNING);
+      moduleRadkV = (12 * 60) / (maxSteeringFreeSpeedRPM * Math.toRadians(360 / gearRatio));
+
       setPIDF(1, 0, 0.1, 0, 100, SwerveModuleMotorType.TURNING);
     }
 
@@ -474,9 +529,13 @@ public class SwerveModule<DriveMotorType extends MotorController, AngleMotorType
     if (swerveModuleMotorType == SwerveModuleMotorType.TURNING)
     {
       motor.getEncoder().setPositionConversionFactor(conversionFactor);
+      motor.getEncoder().setVelocityConversionFactor(conversionFactor / 60);
+
     } else
     {
       motor.getEncoder().setVelocityConversionFactor(conversionFactor);
+      motor.getEncoder().setPositionConversionFactor(conversionFactor * 60);
+
     }
 
   }
@@ -521,6 +580,7 @@ public class SwerveModule<DriveMotorType extends MotorController, AngleMotorType
   private void setCTREAngle(double angle)
   {
     ((BaseTalon) m_turningMotor).set(ControlMode.Position, angle);
+    // TODO: Pass feedforward down.
   }
 
   /**
@@ -530,7 +590,23 @@ public class SwerveModule<DriveMotorType extends MotorController, AngleMotorType
    */
   private void setCTREDrive(double velocity)
   {
-    ((BaseTalon) m_driveMotor).set(ControlMode.Velocity, velocity);
+    ((BaseTalon) m_driveMotor).set(ControlMode.Velocity, driveFeedforward.calculate(velocity));
+  }
+
+  /**
+   * Set the angle using the onboard controller when working with REV SparkMax's
+   *
+   * @param angle       angle to set the motor too in degrees.
+   * @param feedforward The feedforward for the PID.
+   */
+  private void setREVAngle(double angle, double feedforward)
+  {
+    if (feedforward == 0)
+    {
+      // Intended if setting the angle via crafted unoptimized swerve module state.
+      setREVAngle(angle);
+    }
+    m_turningPIDController.setReference(angle, ControlType.kPosition, 0, feedforward);
   }
 
   /**
@@ -550,9 +626,7 @@ public class SwerveModule<DriveMotorType extends MotorController, AngleMotorType
    */
   private void setREVDrive(double velocity)
   {
-//    double rotationsPerSecond = (DriveTrain.wheelDiameter * Math.PI) * velocity;
-//    double rotationsPerMinute = rotationsPerSecond / 60;
-    m_drivePIDController.setReference(velocity, ControlType.kVelocity);
+    m_drivePIDController.setReference(velocity, ControlType.kVelocity, 0, driveFeedforward.calculate(velocity));
   }
 
   /**
@@ -705,6 +779,26 @@ public class SwerveModule<DriveMotorType extends MotorController, AngleMotorType
 
   /**
    * Set the angle of the swerve module.
+   *
+   * @param angle       Angle in degrees.
+   * @param feedforward The feedforward for the PID.
+   */
+  public void setAngle(double angle, double feedforward)
+  {
+    angle += 180; // Since the angle is given in the form of -180 to 180, we add 180 to make it 0 to 360.
+    assert angle <= 360;
+
+    if (isREVTurningMotor())
+    {
+      setREVAngle(angle, feedforward);
+    } else
+    {
+      setCTREAngle(angle);
+    }
+  }
+
+  /**
+   * Set the angle of the swerve module without feedforward.
    *
    * @param angle Angle in degrees.
    */
@@ -946,9 +1040,17 @@ public class SwerveModule<DriveMotorType extends MotorController, AngleMotorType
    */
   public void setState(SwerveModuleState state)
   {
-    state = SwerveModuleState.optimize(state, getState(AbsoluteSensorRange.Signed_PlusMinus180).angle);
-    setAngle(state.angle.getDegrees());
+    // inspired by https://github.com/first95/FRC2022/blob/1f57d6837e04d8c8a89f4d83d71b5d2172f41a0e/SwervyBot/src/main/java/frc/robot/SwerveModule.java#L22
+    state = (SwerveModuleState) SwerveModuleState.optimize(state,
+                                                           getState(AbsoluteSensorRange.Signed_PlusMinus180).angle);
+    double angle = (Math.abs(state.speedMetersPerSecond) <= (maxDriveSpeedMPS * 0.01) ?
+                    lastAngle :
+                    state.angle.getDegrees()); // Prevents module rotation if speed is less than 1%
+
+    setAngle(angle, state.omegaRadPerSecond * moduleRadkV);
     setVelocity(state.speedMetersPerSecond);
+
+    lastAngle = angle;
   }
 
   /**

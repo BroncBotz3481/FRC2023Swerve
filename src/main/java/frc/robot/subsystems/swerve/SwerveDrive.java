@@ -7,10 +7,8 @@ import edu.wpi.first.math.filter.SlewRateLimiter;
 import edu.wpi.first.math.geometry.Pose2d;
 import edu.wpi.first.math.geometry.Rotation2d;
 import edu.wpi.first.math.kinematics.ChassisSpeeds;
-import edu.wpi.first.math.kinematics.SwerveDriveKinematics;
 import edu.wpi.first.math.kinematics.SwerveDriveOdometry;
 import edu.wpi.first.math.kinematics.SwerveModulePosition;
-import edu.wpi.first.math.kinematics.SwerveModuleState;
 import edu.wpi.first.util.sendable.Sendable;
 import edu.wpi.first.util.sendable.SendableBuilder;
 import edu.wpi.first.util.sendable.SendableRegistry;
@@ -18,6 +16,8 @@ import edu.wpi.first.wpilibj.drive.RobotDriveBase;
 import edu.wpi.first.wpilibj.motorcontrol.MotorController;
 import edu.wpi.first.wpilibj.smartdashboard.Field2d;
 import edu.wpi.first.wpilibj.smartdashboard.SmartDashboard;
+import frc.robot.math.kinematics.SwerveDriveKinematics;
+import frc.robot.math.kinematics.SwerveModuleState;
 import frc.robot.subsystems.swerve.SwerveModule.SwerveModuleMotorType;
 import java.io.Closeable;
 
@@ -226,10 +226,10 @@ public class SwerveDrive<DriveMotorType extends MotorController, SteeringMotorTy
    */
   public void setX()
   {
-    m_frontLeft.setState(new SwerveModuleState(0, Rotation2d.fromDegrees(45)));
-    m_frontRight.setState(new SwerveModuleState(0, Rotation2d.fromDegrees(-45)));
-    m_backLeft.setState(new SwerveModuleState(0, Rotation2d.fromDegrees(-45)));
-    m_backRight.setState(new SwerveModuleState(0, Rotation2d.fromDegrees(45)));
+    m_frontLeft.setState(new SwerveModuleState(0, Rotation2d.fromDegrees(45), 0));
+    m_frontRight.setState(new SwerveModuleState(0, Rotation2d.fromDegrees(-45), 0));
+    m_backLeft.setState(new SwerveModuleState(0, Rotation2d.fromDegrees(-45), 0));
+    m_backRight.setState(new SwerveModuleState(0, Rotation2d.fromDegrees(45), 0));
   }
 
   /**

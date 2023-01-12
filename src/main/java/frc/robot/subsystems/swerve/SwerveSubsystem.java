@@ -26,7 +26,8 @@ public class SwerveSubsystem extends SubsystemBase
         ModuleConstants.kDriveMotorGearRatio, ModuleConstants.kTurningMotorGearRatio,
         DriveConstants.kFrontLeftDriveAbsoluteEncoderOffset,
         Units.inchesToMeters(4), DriveConstants.kWheelBase,
-        DriveConstants.kTrackWidth);
+        DriveConstants.kTrackWidth, DriveConstants.kFreeSpeedRpm,
+        DriveConstants.kTeleDriveMaxSpeedMetersPerSecond, DriveConstants.kTeleDriveMaxAccelerationUnitsPerSecond);
 
     m_frontRight = new SwerveModule<>(
         new CANSparkMax(DriveConstants.kFrontRightDriveMotorPort, MotorType.kBrushless),
@@ -35,7 +36,8 @@ public class SwerveSubsystem extends SubsystemBase
         ModuleConstants.kDriveMotorGearRatio, ModuleConstants.kTurningMotorGearRatio,
         DriveConstants.kFrontRightDriveAbsoluteEncoderOffset,
         Units.inchesToMeters(4), DriveConstants.kWheelBase,
-        DriveConstants.kTrackWidth);
+        DriveConstants.kTrackWidth, DriveConstants.kFreeSpeedRpm,
+        DriveConstants.kTeleDriveMaxSpeedMetersPerSecond, DriveConstants.kTeleDriveMaxAccelerationUnitsPerSecond);
 
     m_backLeft = new SwerveModule<>(
         new CANSparkMax(DriveConstants.kBackLeftDriveMotorPort, MotorType.kBrushless),
@@ -44,7 +46,8 @@ public class SwerveSubsystem extends SubsystemBase
         ModuleConstants.kDriveMotorGearRatio, ModuleConstants.kTurningMotorGearRatio,
         DriveConstants.kBackLeftDriveAbsoluteEncoderOffset,
         Units.inchesToMeters(4), DriveConstants.kWheelBase,
-        DriveConstants.kTrackWidth);
+        DriveConstants.kTrackWidth, DriveConstants.kFreeSpeedRpm,
+        DriveConstants.kTeleDriveMaxSpeedMetersPerSecond, DriveConstants.kTeleDriveMaxAccelerationUnitsPerSecond);
 
     m_backRight = new SwerveModule<>(
         new CANSparkMax(DriveConstants.kBackRightDriveMotorPort, MotorType.kBrushless),
@@ -53,7 +56,8 @@ public class SwerveSubsystem extends SubsystemBase
         ModuleConstants.kDriveMotorGearRatio, ModuleConstants.kTurningMotorGearRatio,
         DriveConstants.kBackRightDriveAbsoluteEncoderOffset,
         Units.inchesToMeters(4), DriveConstants.kWheelBase,
-        DriveConstants.kTrackWidth);
+        DriveConstants.kTrackWidth, DriveConstants.kFreeSpeedRpm,
+        DriveConstants.kTeleDriveMaxSpeedMetersPerSecond, DriveConstants.kTeleDriveMaxAccelerationUnitsPerSecond);
 
     m_drive = new SwerveDrive<>(m_frontLeft,
                                 m_backLeft,
