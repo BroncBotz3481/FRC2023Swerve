@@ -271,6 +271,11 @@ public class SwerveModule<DriveMotorType extends MotorController, AngleMotorType
   {
     if (absoluteEncoder instanceof CANCoder)
     {
+      if (absoluteEncoder.getMagnetFieldStrength() != MagnetFieldStrength.Good_GreenLED)
+      {
+        System.err.println("CANCoder magnetic field strength is unacceptable, will not synchronize encoders.");
+        return;
+      }
       if (isREVTurningMotor())
       {
         ((CANSparkMax) m_turningMotor).getEncoder().setPosition(absoluteEncoder.getAbsolutePosition());
