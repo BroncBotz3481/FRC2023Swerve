@@ -984,7 +984,7 @@ public class SwerveModule<DriveMotorType extends MotorController, AngleMotorType
         position += (configuredSensorRange == AbsoluteSensorRange.Unsigned_0_to_360 &&
                      range == AbsoluteSensorRange.Signed_PlusMinus180) ? -180 : 180;
       }
-      angle = new Rotation2d(position);
+      angle = Rotation2d.fromDegrees(position);
     } else
     {
       throw new RuntimeException("No CANCoder attached.");
