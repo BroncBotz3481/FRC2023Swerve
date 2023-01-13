@@ -228,6 +228,7 @@ public class SwerveModule<DriveMotorType extends MotorController, AngleMotorType
 
     // burnFlash(SwerveModuleMotorType.TURNING);
     // burnFlash(SwerveModuleMotorType.DRIVE);
+    publish(Verbosity.SETUP);
   }
 
   /**
@@ -1275,6 +1276,28 @@ public class SwerveModule<DriveMotorType extends MotorController, AngleMotorType
     String name = "SwerveDrive/" + SwerveModule.SwerveModuleLocationToString(swerveLocation); // TODO: Move to attribute
     switch (level)
     {
+      case SETUP:
+        // PID
+        SmartDashboard.putNumber(name + "/drive/pid/kP", kPdrive);
+        SmartDashboard.putNumber(name + "/drive/pid/kI", kIdrive);
+        SmartDashboard.putNumber(name + "/drive/pid/kD", kDdrive);
+        SmartDashboard.putNumber(name + "/drive/pid/kF", kFdrive);
+        SmartDashboard.putNumber(name + "/drive/pid/kIZ", kIZdrive);
+
+        SmartDashboard.putNumber(name + "/steer/pid/kP", kPturn);
+        SmartDashboard.putNumber(name + "/steer/pid/kI", kIturn);
+        SmartDashboard.putNumber(name + "/steer/pid/kD", kDturn);
+        SmartDashboard.putNumber(name + "/steer/pid/kF", kFturn);
+        SmartDashboard.putNumber(name + "/steer/pid/kIZ", kIZturn);
+        SmartDashboard.putNumber(name + "/steer/pid/deadband", angleDeadband);
+
+        // Inverted Motors.
+        SmartDashboard.putBoolean(name + "/steer/inverted", invertedTurn);
+        SmartDashboard.putBoolean(name + "/drive/inverted", invertedDrive);
+
+        // Angle Constants
+        SmartDashboard.putNumber(name + "/steer/encoder/offset", angleOffset);
+
       case HIGH:
         // Update if button is set.
         if (SmartDashboard.getBoolean(name + "/update", false))
@@ -1300,27 +1323,10 @@ public class SwerveModule<DriveMotorType extends MotorController, AngleMotorType
         // CAN Bus is accessible
         SmartDashboard.putBoolean(name + "/status", activeCAN());
       case LOW:
-        // Inverted Motors.
-        SmartDashboard.putBoolean(name + "/steer/inverted", invertedTurn);
-        SmartDashboard.putBoolean(name + "/drive/inverted", invertedDrive);
-
-        // Angle Constants
-        SmartDashboard.putNumber(name + "/steer/encoder/offset", angleOffset);
         // PID
         SmartDashboard.putNumber(name + "/drive/pid/target", targetVelocity);
-        SmartDashboard.putNumber(name + "/drive/pid/kP", kPdrive);
-        SmartDashboard.putNumber(name + "/drive/pid/kI", kIdrive);
-        SmartDashboard.putNumber(name + "/drive/pid/kD", kDdrive);
-        SmartDashboard.putNumber(name + "/drive/pid/kF", kFdrive);
-        SmartDashboard.putNumber(name + "/drive/pid/kIZ", kIZdrive);
-
         SmartDashboard.putNumber(name + "/steer/pid/target", targetAngle);
-        SmartDashboard.putNumber(name + "/steer/pid/deadband", angleDeadband);
-        SmartDashboard.putNumber(name + "/steer/pid/kP", kPturn);
-        SmartDashboard.putNumber(name + "/steer/pid/kI", kIturn);
-        SmartDashboard.putNumber(name + "/steer/pid/kD", kDturn);
-        SmartDashboard.putNumber(name + "/steer/pid/kF", kFturn);
-        SmartDashboard.putNumber(name + "/steer/pid/kIZ", kIZturn);
+
     }
   }
 
@@ -1407,6 +1413,10 @@ public class SwerveModule<DriveMotorType extends MotorController, AngleMotorType
     /**
      * Extensively use the CAN bus to fetch data and report back.
      */
-    HIGH
+    HIGH,
+    /**
+     * Creates every field for the module.
+     */
+    SETUP
   }
 }
