@@ -30,7 +30,7 @@ import edu.wpi.first.util.sendable.SendableRegistry;
 import edu.wpi.first.wpilibj.motorcontrol.MotorController;
 import edu.wpi.first.wpilibj.motorcontrol.PWMSparkMax;
 import edu.wpi.first.wpilibj.smartdashboard.SmartDashboard;
-import frc.robot.math.kinematics.SwerveModuleStatev2;
+import frc.robot.math.kinematics.SwerveModuleState2;
 import java.io.Closeable;
 
 
@@ -1079,7 +1079,7 @@ public class SwerveModule<DriveMotorType extends MotorController, AngleMotorType
    * @return SwerveModuleState with the encoder inputs.
    * @throws RuntimeException Exception if CANCoder doesnt exist
    */
-  public SwerveModuleStatev2 getState(AbsoluteSensorRange range)
+  public SwerveModuleState2 getState(AbsoluteSensorRange range)
   {
     double     mps = 0;
     Rotation2d angle;
@@ -1103,7 +1103,7 @@ public class SwerveModule<DriveMotorType extends MotorController, AngleMotorType
     {
       mps = (((CANSparkMax) m_driveMotor).getEncoder().getVelocity());
     }
-    return new SwerveModuleStatev2(mps, angle, 0);
+    return new SwerveModuleState2(mps, angle, 0);
   }
 
   /**
@@ -1112,7 +1112,7 @@ public class SwerveModule<DriveMotorType extends MotorController, AngleMotorType
    * @return SwerveModuleState with the encoder inputs.
    * @throws RuntimeException Exception if CANCoder doesnt exist
    */
-  public SwerveModuleStatev2 getState()
+  public SwerveModuleState2 getState()
   {
     return getState(configuredSensorRange);
   }
@@ -1136,12 +1136,12 @@ public class SwerveModule<DriveMotorType extends MotorController, AngleMotorType
    *
    * @param state Module state.
    */
-  public void setState(SwerveModuleStatev2 state)
+  public void setState(SwerveModuleState2 state)
   {
     // inspired by https://github.com/first95/FRC2022/blob/1f57d6837e04d8c8a89f4d83d71b5d2172f41a0e/SwervyBot/src/main/java/frc/robot/SwerveModule.java#L22
-    state = new SwerveModuleStatev2(SwerveModuleStatev2.optimize(state,
-                                                                 getState(
-                                                                     AbsoluteSensorRange.Signed_PlusMinus180).angle));
+    state = new SwerveModuleState2(SwerveModuleState2.optimize(state,
+                                                               getState(
+                                                                   AbsoluteSensorRange.Signed_PlusMinus180).angle));
     /*
     double angle = (Math.abs(state.speedMetersPerSecond) <= (maxDriveSpeedMPS * 0.01) ?
                     lastAngle :
