@@ -119,5 +119,10 @@ public class SwerveSubsystem extends SubsystemBase
       m_drive.synchronizeEncoders();
       m_drive.publish(Verbosity.HIGH);
     }
+    if (SmartDashboard.getBoolean("Update Swerve Drive", false))
+    {
+      SmartDashboard.putBoolean("Update Swerve Drive", false);
+      m_drive.subscribe();
+    }
   }
 }

@@ -237,13 +237,13 @@ public class SwerveModule<DriveMotorType extends MotorController, AngleMotorType
     switch (swerveLocation)
     {
       case FrontLeft:
-        return "Front Left";
+        return "FrontLeft";
       case BackLeft:
-        return "Back Left";
+        return "BackLeft";
       case FrontRight:
-        return "Front Right";
+        return "FrontRight";
       case BackRight:
-        return "Back Right";
+        return "BackRight";
       default:
         return "Unknown";
     }
@@ -1167,7 +1167,7 @@ public class SwerveModule<DriveMotorType extends MotorController, AngleMotorType
    */
   public void subscribe()
   {
-    String name = "Swerve Module/" + SwerveModule.SwerveModuleLocationToString(swerveLocation);
+    String name = "SwerveDrive/" + SwerveModule.SwerveModuleLocationToString(swerveLocation);
 
     // PID
     double velocity = SmartDashboard.getNumber(name + "/drive/pid/setpoint", targetVelocity);
@@ -1212,17 +1212,23 @@ public class SwerveModule<DriveMotorType extends MotorController, AngleMotorType
   /**
    * Publish data to the smart dashboard relating to this swerve moduule.
    *
-   * @param level Verbosity level, affects the CAN utilization.
+   * @param level Verbosity level, affects the CAN utilization, on HIGH it will enable the update button.
    */
   public void publish(Verbosity level)
   {
-    String name = "Swerve Module/" + SwerveModule.SwerveModuleLocationToString(swerveLocation);
+    String name = "SwerveDrive/" + SwerveModule.SwerveModuleLocationToString(swerveLocation);
     switch (level)
     {
       case HIGH:
-        SmartDashboard.putBoolean(name + "/steer/encoder/field",
-                                  absoluteEncoder.getMagnetFieldStrength() == MagnetFieldStrength.Good_GreenLED ||
-                                  absoluteEncoder.getMagnetFieldStrength() == MagnetFieldStrength.Adequate_OrangeLED);
+        // Update if button is set.
+        if (SmartDashboard.getBoolean(name + "/update", false))
+        {
+          SmartDashboard.putBoolean(name + "/update", false);
+          subscribe();
+        }
+
+        // The higher the better, 2 and 3 are what we want.
+        SmartDashboard.putNumber(name + "/steer/encoder/field", absoluteEncoder.getMagnetFieldStrength().value);
       case NORMAL:
         double integratedPosition = isREVTurningMotor() ? ((CANSparkMax) m_turningMotor).getEncoder().getPosition() :
                                     absoluteEncoder.getAbsolutePosition();
