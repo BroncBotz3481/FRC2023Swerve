@@ -13,7 +13,10 @@ import com.ctre.phoenix.motorcontrol.can.TalonFX;
 import com.ctre.phoenix.motorcontrol.can.TalonSRX;
 import com.ctre.phoenix.sensors.AbsoluteSensorRange;
 import com.ctre.phoenix.sensors.CANCoder;
+import com.ctre.phoenix.sensors.CANCoderConfiguration;
 import com.ctre.phoenix.sensors.MagnetFieldStrength;
+import com.ctre.phoenix.sensors.SensorInitializationStrategy;
+import com.ctre.phoenix.sensors.SensorTimeBase;
 import com.revrobotics.CANSparkMax;
 import com.revrobotics.CANSparkMax.ControlType;
 import com.revrobotics.CANSparkMax.IdleMode;
@@ -74,7 +77,7 @@ public class SwerveModule<DriveMotorType extends MotorController, AngleMotorType
   /**
    * Configured sensor range for the Absolute Encoder.
    */
-  private final AbsoluteSensorRange    configuredSensorRange   = AbsoluteSensorRange.Unsigned_0_to_360;
+  private final AbsoluteSensorRange    configuredSensorRange;
   /**
    * Characteristics of the SwerveDriveChasis
    */
@@ -170,6 +173,19 @@ public class SwerveModule<DriveMotorType extends MotorController, AngleMotorType
                       double wheelDiameterMeters, double wheelBaseMeters, double driveTrainWidthMeters,
                       double steeringMotorFreeSpeedRPM, double maxSpeedMPS, double maxDriveAcceleration)
   {
+    // Steps to configure swerve drive are as follows
+    // 1.  Set Current limit of turning motor to 20 amps
+    // 2.  Enable voltage compensation with optimal battery voltage
+    // 3.  Configure CANCoder
+    // 4.  Set inverted motors.
+    // 5.  Configure status frames
+    // 6.  Set all motors to brake mode.
+    // 7.  Set velocity and position conversion factors on drive motor encoder.
+    // 8.  Set PIDF with integral zone on drive motor controller PID.
+    // 9.  Set velocity and position conversion factors on turning motor controller. (Usually P=0.01,I=0,D=0,F=0,IZ=1)
+    // 10. Set PIDF with integral zone on turning motor controller.
+    // 11. Check all CAN devices are active.
+    // 12. Reset the angle on the internal encoder to the absolute encoder.
     requireNonNull(mainMotor);
     requireNonNull(angleMotor);
     requireNonNull(encoder);
@@ -218,13 +234,25 @@ public class SwerveModule<DriveMotorType extends MotorController, AngleMotorType
       setupREVMotor(((CANSparkMax) angleMotor), SwerveModuleMotorType.TURNING, steerGearRatio);
       // Might need to sleep for 200ms to 1s before this.
       // burnFlash(SwerveModuleMotorType.TURNING);
-    } else if (encoder instanceof CANCoder)
+    } else if (isCTRETurningMotor())
     {
       setupCANCoderRemoteSensor(((BaseTalon) angleMotor), encoder);
       setupCTREMotor(((BaseTalon) angleMotor), SwerveModuleMotorType.TURNING, 1);
     }
 
-    encoder.configAbsoluteSensorRange(configuredSensorRange);
+    configuredSensorRange = AbsoluteSensorRange.Unsigned_0_to_360;
+    if (encoder instanceof CANCoder)
+    {
+      ((CANCoder) encoder).configFactoryDefault();
+      CANCoderConfiguration sensorConfig = new CANCoderConfiguration();
+
+      sensorConfig.absoluteSensorRange = configuredSensorRange;
+      sensorConfig.initializationStrategy = SensorInitializationStrategy.BootToAbsolutePosition;
+      sensorConfig.sensorTimeBase = SensorTimeBase.PerSecond;
+      ((CANCoder) encoder).configAllSettings(sensorConfig);
+      resetEncoders();
+      synchronizeSteeringEncoder();
+    }
     // Convert CANCoder to read data as unsigned 0 to 360 for synchronization purposes.
 
     // burnFlash(SwerveModuleMotorType.TURNING);
@@ -398,12 +426,15 @@ public class SwerveModule<DriveMotorType extends MotorController, AngleMotorType
     motor.restoreFactoryDefaults();
     motor.clearFaults();
 
-    motor.setPeriodicFramePeriod(PeriodicFrame.kStatus0, 100); // Applied Output, Faults, Sticky Faults, Is Follower
-    motor.setPeriodicFramePeriod(PeriodicFrame.kStatus1,
-                                 20); // Motor Velocity, Motor Temperature, Motor Voltage, Motor Current
-    motor.setPeriodicFramePeriod(PeriodicFrame.kStatus2, 20); // Motor Position
-    // TODO: Configure Status Frame 3 and 4 if necessary
-    //  https://docs.revrobotics.com/sparkmax/operating-modes/control-interfaces
+    int CANStatus0; // Applied Output, Faults, Sticky Faults, Is Follower
+    int CANStatus1;  // Motor Velocity, Motor Temperature, Motor Voltage, Motor Current
+    int CANStatus2;  // Motor Position
+
+    int currentLimit; // Current max
+
+    double kP, kI, kD, kF, kIZ; // PID Values
+
+    double conversionFactor; // Conversion factor for velocity or position.
 
     motor.setIdleMode(IdleMode.kBrake);
 
@@ -412,10 +443,11 @@ public class SwerveModule<DriveMotorType extends MotorController, AngleMotorType
 
     if (swerveModuleMotorType == SwerveModuleMotorType.DRIVE)
     {
-      // Based off current limit used in swerve-lib
-      // URL: https://github.com/SwerveDriveSpecialties/swerve-lib-2022-unmaintained/blob/55f3f1ad9e6bd81e56779d022a40917aacf8d3b3/src/main/java/com/swervedrivespecialties/swervelib/rev/NeoDriveControllerFactoryBuilder.java#L38
+      CANStatus0 = 100;
+      CANStatus1 = 20;
+      CANStatus2 = 20;
 
-      setCurrentLimit(80, swerveModuleMotorType);
+      currentLimit = 80;
       // motor.getEncoder().getCountsPerRevolution()
       m_drivePIDController = motor.getPIDController();
       m_drivePIDController.setFeedbackDevice(encoder);
@@ -428,16 +460,23 @@ public class SwerveModule<DriveMotorType extends MotorController, AngleMotorType
       // r/min * 1min/60s * (pi*diameter*gear)/r = m/s
       // r/min * (pi*diameter*gear)/60 = m/s
       // setREVConversionFactor(motor, (Math.PI * wheelDiameter) / (60 * gearRatio), SwerveModuleMotorType.DRIVE);
-      // Stolen from https://github.com/first95/FRC2022/blob/1f57d6837e04d8c8a89f4d83d71b5d2172f41a0e/SwervyBot/src/main/java/frc/robot/SwerveModule.java#L68
-      // and https://github.com/first95/FRC2022/blob/1f57d6837e04d8c8a89f4d83d71b5d2172f41a0e/SwervyBot/src/main/java/frc/robot/Constants.java#L89
-      setREVConversionFactor(motor, ((Math.PI * wheelDiameter) / gearRatio) / 60, SwerveModuleMotorType.DRIVE);
-
+      conversionFactor = ((Math.PI * wheelDiameter) / gearRatio) / 60;
+      kP = 0.01;
+      kI = 0;
+      kD = 0;
+      kF = 0;
+      kIZ = 1;
     } else
     {
-      setCurrentLimit(40, swerveModuleMotorType);
-      m_turningPIDController = motor.getPIDController();
+      CANStatus0 = 10;
+      CANStatus1 = 20;
+      CANStatus2 = 50;
 
+      currentLimit = 40;
+
+      m_turningPIDController = motor.getPIDController();
       m_turningPIDController.setFeedbackDevice(encoder);
+
       m_turningPIDController.setPositionPIDWrappingEnabled(true);
       if (configuredSensorRange == AbsoluteSensorRange.Unsigned_0_to_360)
       {
@@ -455,13 +494,31 @@ public class SwerveModule<DriveMotorType extends MotorController, AngleMotorType
       // deg * (360deg/(42*gearRatio)ticks) = ticks
       // K = 360/(42*gearRatio)
       // setREVConversionFactor(motor, 360 / (42 * gearRatio), SwerveModuleMotorType.TURNING);
-      // Sotlen from https://github.com/first95/FRC2022/blob/1f57d6837e04d8c8a89f4d83d71b5d2172f41a0e/SwervyBot/src/main/java/frc/robot/Constants.java#L91
-      // and https://github.com/first95/FRC2022/blob/1f57d6837e04d8c8a89f4d83d71b5d2172f41a0e/SwervyBot/src/main/java/frc/robot/SwerveModule.java#L53
-      setREVConversionFactor(motor, 360 / gearRatio, SwerveModuleMotorType.TURNING);
+      conversionFactor = 360 / gearRatio;
       moduleRadkV = (12 * 60) / (maxSteeringFreeSpeedRPM * Math.toRadians(360 / gearRatio));
-
-      setPIDF(0.07, 0, 0.3, 0, 10, SwerveModuleMotorType.TURNING);
+      kP = 0.1;
+      kI = 0;
+      kD = 0;
+      kF = 0;
+      kIZ = 0;
     }
+
+    motor.setPeriodicFramePeriod(PeriodicFrame.kStatus0, CANStatus0);
+    motor.setPeriodicFramePeriod(PeriodicFrame.kStatus1, CANStatus1);
+    motor.setPeriodicFramePeriod(PeriodicFrame.kStatus2, CANStatus2);
+    // TODO: Configure Status Frame 3 and 4 if necessary
+    //  https://docs.revrobotics.com/sparkmax/operating-modes/control-interfaces
+
+    // Based off current limit used in swerve-lib
+    // URL: https://github.com/SwerveDriveSpecialties/swerve-lib-2022-unmaintained/blob/55f3f1ad9e6bd81e56779d022a40917aacf8d3b3/src/main/java/com/swervedrivespecialties/swervelib/rev/NeoDriveControllerFactoryBuilder.java#L38
+    setCurrentLimit(currentLimit, swerveModuleMotorType);
+
+    // Stolen from https://github.com/first95/FRC2022/blob/1f57d6837e04d8c8a89f4d83d71b5d2172f41a0e/SwervyBot/src/main/java/frc/robot/SwerveModule.java#L68
+    // and https://github.com/first95/FRC2022/blob/1f57d6837e04d8c8a89f4d83d71b5d2172f41a0e/SwervyBot/src/main/java/frc/robot/Constants.java#L89
+    setREVConversionFactor(motor, conversionFactor, swerveModuleMotorType);
+
+    setPIDF(kP, kI, kD, kF, kIZ, swerveModuleMotorType);
+
 
   }
 
@@ -864,8 +921,8 @@ public class SwerveModule<DriveMotorType extends MotorController, AngleMotorType
     // currentAngle is always updated in getState which is called during setState which calls this function.
     if ((angle - angleDeadband) <= currentAngle && currentAngle <= (angle + angleDeadband))
     {
-      m_turningMotor.setVoltage(0);
-      return;
+//      m_turningMotor.setVoltage(0);
+//      return;
     }
 
     if (isREVTurningMotor())
@@ -1150,6 +1207,10 @@ public class SwerveModule<DriveMotorType extends MotorController, AngleMotorType
                     state.angle.getDegrees()); // Prevents module rotation if speed is less than 1%
     */ // Commented out since we want to test rotations.
     double angle = state.angle.getDegrees();
+
+    // turn motor code
+    // Prevent rotating module if speed is less then 1%. Prevents Jittering.
+    angle = (Math.abs(state.speedMetersPerSecond) <= (maxDriveSpeedMPS * 0.01)) ? targetAngle : angle;
 
     setAngle(angle, state.angularVelocityRadPerSecond * moduleRadkV);
     setVelocity(state.speedMetersPerSecond);
