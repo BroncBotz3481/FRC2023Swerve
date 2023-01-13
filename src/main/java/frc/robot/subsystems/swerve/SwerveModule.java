@@ -439,29 +439,6 @@ public class SwerveModule<DriveMotorType extends MotorController, AngleMotorType
     angleDeadband = deadband;
   }
 
-  /**
-   * Convert {@link SwerveModuleLocation} to {@link String} representation.
-   *
-   * @param swerveLocation Swerve position to convert.
-   * @return {@link String} name of the {@link SwerveModuleLocation} enum.
-   */
-  public static String SwerveModuleLocationToString(SwerveModuleLocation swerveLocation)
-  {
-    switch (swerveLocation)
-    {
-      case FrontLeft:
-        return "FrontLeft";
-      case BackLeft:
-        return "BackLeft";
-      case FrontRight:
-        return "FrontRight";
-      case BackRight:
-        return "BackRight";
-      default:
-        return "Unknown";
-    }
-  }
-
   /////////////////////// END OF CONFIGURATION FUNCTIONS //////////////////////////
 
   //////////////////////// REV FUNCTIONS ///////////////////////////////////////////
@@ -1485,6 +1462,29 @@ public class SwerveModule<DriveMotorType extends MotorController, AngleMotorType
   {
     drivePower = speed;
     m_driveMotor.set(speed);
+  }
+
+  /**
+   * Convert {@link SwerveModuleLocation} to {@link String} representation.
+   *
+   * @param swerveLocation Swerve position to convert.
+   * @return {@link String} name of the {@link SwerveModuleLocation} enum.
+   */
+  public static String SwerveModuleLocationToString(SwerveModuleLocation swerveLocation)
+  {
+    switch (swerveLocation)
+    {
+      case FrontLeft:
+        return "FrontLeft";
+      case BackLeft:
+        return "BackLeft";
+      case FrontRight:
+        return "FrontRight";
+      case BackRight:
+        return "BackRight";
+      default:
+        return "Unknown";
+    }
   }
 
   //////////////////////////////////// END OF OVERRIDES ////////////////////////////////////////////
