@@ -15,7 +15,6 @@ import edu.wpi.first.util.sendable.SendableRegistry;
 import edu.wpi.first.wpilibj.drive.RobotDriveBase;
 import edu.wpi.first.wpilibj.motorcontrol.MotorController;
 import edu.wpi.first.wpilibj.smartdashboard.Field2d;
-import edu.wpi.first.wpilibj.smartdashboard.SmartDashboard;
 import frc.robot.math.kinematics.SwerveDriveKinematics;
 import frc.robot.math.kinematics.SwerveModuleStatev2;
 import frc.robot.subsystems.swerve.SwerveModule.SwerveModuleMotorType;
@@ -129,7 +128,6 @@ public class SwerveDrive<DriveMotorType extends MotorController, SteeringMotorTy
     m_turningLimiter = new SlewRateLimiter(maxAngularAccelerationRadiansPerSecond);
 
     // Inspired by https://github.com/Team364/BaseFalconSwerve/blob/main/src/main/java/frc/robot/subsystems/Swerve.java
-    SmartDashboard.putData(this);
   }
 
   /**

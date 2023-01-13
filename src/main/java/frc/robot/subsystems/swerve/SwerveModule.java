@@ -407,7 +407,7 @@ public class SwerveModule<DriveMotorType extends MotorController, AngleMotorType
 
     } else
     {
-      setCurrentLimit(20, swerveModuleMotorType);
+      setCurrentLimit(40, swerveModuleMotorType);
       m_turningPIDController = motor.getPIDController();
 
       m_turningPIDController.setFeedbackDevice(encoder);
@@ -433,7 +433,7 @@ public class SwerveModule<DriveMotorType extends MotorController, AngleMotorType
       setREVConversionFactor(motor, 360 / gearRatio, SwerveModuleMotorType.TURNING);
       moduleRadkV = (12 * 60) / (maxSteeringFreeSpeedRPM * Math.toRadians(360 / gearRatio));
 
-      setPIDF(0.07, 0, 0.3, 0, 100, SwerveModuleMotorType.TURNING);
+      setPIDF(0.07, 0, 0.3, 0, 10, SwerveModuleMotorType.TURNING);
     }
 
   }

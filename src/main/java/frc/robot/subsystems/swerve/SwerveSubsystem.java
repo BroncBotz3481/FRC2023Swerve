@@ -6,6 +6,7 @@ import com.revrobotics.CANSparkMax;
 import com.revrobotics.CANSparkMaxLowLevel.MotorType;
 import edu.wpi.first.math.util.Units;
 import edu.wpi.first.wpilibj.Timer;
+import edu.wpi.first.wpilibj.smartdashboard.SmartDashboard;
 import edu.wpi.first.wpilibj2.command.SubsystemBase;
 import frc.robot.Constants.DriveConstants;
 import frc.robot.Constants.ModuleConstants;
@@ -84,8 +85,10 @@ public class SwerveSubsystem extends SubsystemBase
 
     m_drive.zeroGyro();
     m_drive.setDeadband(0.5);
-    m_drive.setPIDF(0.07, 0, 0.3, 0, 100, SwerveModuleMotorType.TURNING); // TODO: Change PIDF here.
+    m_drive.setPIDF(0.07, 0, 0.1, 0, 10, SwerveModuleMotorType.TURNING); // TODO: Change PIDF here.
     m_drive.setAngleDeadband(5);
+
+    SmartDashboard.putData(m_drive);
 
   }
 
