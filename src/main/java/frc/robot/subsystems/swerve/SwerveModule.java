@@ -19,6 +19,7 @@ import com.revrobotics.CANSparkMax.ControlType;
 import com.revrobotics.CANSparkMax.IdleMode;
 import com.revrobotics.RelativeEncoder;
 import com.revrobotics.SparkMaxPIDController;
+import com.revrobotics.SparkMaxPIDController.ArbFFUnits;
 import edu.wpi.first.math.controller.SimpleMotorFeedforward;
 import edu.wpi.first.math.geometry.Rotation2d;
 import edu.wpi.first.math.geometry.Translation2d;
@@ -112,6 +113,14 @@ public class SwerveModule<DriveMotorType extends MotorController, AngleMotorType
    * Store the last angle for optimization.
    */
   private       double                 lastAngle               = 0;
+  /**
+   * The current angle reported by the absolute encoder.
+   */
+  private       double                 currentAngle;
+  /**
+   * Acceptable range between current and desired angle.
+   */
+  private       double                 angleDeadband           = 5;
   /**
    * Drive feedforward for PID when driving by velocity.
    */
@@ -371,6 +380,8 @@ public class SwerveModule<DriveMotorType extends MotorController, AngleMotorType
     RelativeEncoder encoder = motor.getEncoder();
 
     motor.restoreFactoryDefaults();
+    motor.clearFaults();
+
     /*motor.setPeriodicFramePeriod(PeriodicFrame.kStatus0, 100); // Applied Output, Faults, Sticky Faults, Is Follower
     motor.setPeriodicFramePeriod(PeriodicFrame.kStatus1,
                                  20); // Motor Velocity, Motor Temperature, Motor Voltage, Motor Current
@@ -611,7 +622,7 @@ public class SwerveModule<DriveMotorType extends MotorController, AngleMotorType
       // Intended if setting the angle via crafted unoptimized swerve module state.
       setREVAngle(angle);
     }
-    m_turningPIDController.setReference(angle, ControlType.kPosition, 0, feedforward);
+    m_turningPIDController.setReference(angle, ControlType.kPosition, 0, feedforward, ArbFFUnits.kVoltage);
   }
 
   /**
@@ -754,35 +765,34 @@ public class SwerveModule<DriveMotorType extends MotorController, AngleMotorType
     builder.setSmartDashboardType(SwerveModuleLocationToString(swerveLocation) + " SwerveDriveModule");
     builder.setActuator(true);
     builder.setSafeState(this::stopMotor);
-    if (isCTREDriveMotor())
-    {
-      builder.addDoubleProperty("Drive Motor Velocity MPS", ((BaseTalon) m_driveMotor)::getSelectedSensorVelocity,
-                                this::setCTREDrive);
-
-    } else
-    {
-      builder.addDoubleProperty("Drive Motor Velocity MPS", ((CANSparkMax) m_driveMotor).getEncoder()::getVelocity,
-                                this::setREVDrive);
-    }
-    if (isCTRETurningMotor())
-    {
-      builder.addDoubleProperty("Steering Motor Angle Degrees", ((BaseTalon) m_turningMotor)::getSelectedSensorPosition,
-                                this::setCTREAngle);
-    } else
-    {
-      builder.addDoubleProperty("Steering Motor Angle Degrees",
-                                ((CANSparkMax) m_turningMotor).getEncoder()::getPosition,
-                                this::setREVAngle);
-    }
-    if (absoluteEncoder instanceof CANCoder)
-    {
-      builder.addBooleanProperty("CANCoder Magnet",
-                                 () -> absoluteEncoder.getMagnetFieldStrength() == MagnetFieldStrength.Good_GreenLED,
-                                 null);
-    }
+//    if (isCTREDriveMotor())
+//    {
+//      builder.addDoubleProperty("Drive Motor Velocity MPS", ((BaseTalon) m_driveMotor)::getSelectedSensorVelocity,
+//                                this::setCTREDrive);
+//
+//    } else
+//    {
+//      builder.addDoubleProperty("Drive Motor Velocity MPS", ((CANSparkMax) m_driveMotor).getEncoder()::getVelocity,
+//                                this::setREVDrive);
+//    }
+//    if (isCTRETurningMotor())
+//    {
+//      builder.addDoubleProperty("Steering Motor Angle Degrees", ((BaseTalon) m_turningMotor)
+//      ::getSelectedSensorPosition,
+//                                this::setCTREAngle);
+//    } else
+//    {
+//      builder.addDoubleProperty("Steering Motor Angle Degrees",
+//                                ((CANSparkMax) m_turningMotor).getEncoder()::getPosition,
+//                                this::setREVAngle);
+//    }
+//    if (absoluteEncoder instanceof CANCoder)
+//    {
+//      builder.addBooleanProperty("CANCoder Magnet",
+//                                 () -> absoluteEncoder.getMagnetFieldStrength() == MagnetFieldStrength.Good_GreenLED,
+//                                 null);
+//    }
   }
-
-  private double angleDeadband = 5;
 
   /**
    * Set the angle deadband for the setAngle function.
@@ -800,16 +810,17 @@ public class SwerveModule<DriveMotorType extends MotorController, AngleMotorType
    * @param angle       Angle in degrees.
    * @param feedforward The feedforward for the PID.
    */
-  public void setAngle(double angle, double feedforward)
+  private void setAngle(double angle, double feedforward)
   {
     angle += 180; // Since the angle is given in the form of -180 to 180, we add 180 to make it 0 to 360.
     assert angle <= 360;
-    double currentAngle = absoluteEncoder.getAbsolutePosition(); // TODO: Find a better way to do this.
-    if ((angle - angleDeadband) < currentAngle && currentAngle < (angle + angleDeadband))
+    // currentAngle is always updated in getState which is called during setState which calls this function.
+    if ((angle - angleDeadband) <= currentAngle && currentAngle <= (angle + angleDeadband))
     {
-      stopMotor();
+      m_turningMotor.setVoltage(0);
       return;
     }
+
     if (isREVTurningMotor())
     {
       setREVAngle(angle, feedforward);
@@ -824,7 +835,7 @@ public class SwerveModule<DriveMotorType extends MotorController, AngleMotorType
    *
    * @param angle Angle in degrees.
    */
-  public void setAngle(double angle)
+  private void setAngle(double angle)
   {
     angle += 180; // Since the angle is given in the form of -180 to 180, we add 180 to make it 0 to 360.
     assert angle <= 360;
@@ -987,6 +998,7 @@ public class SwerveModule<DriveMotorType extends MotorController, AngleMotorType
     stopMotor();
   }
 
+
   /**
    * Get the module state.
    *
@@ -1000,13 +1012,13 @@ public class SwerveModule<DriveMotorType extends MotorController, AngleMotorType
     Rotation2d angle;
     if (absoluteEncoder instanceof CANCoder)
     {
-      double position = absoluteEncoder.getAbsolutePosition();
+      currentAngle = absoluteEncoder.getAbsolutePosition();
       if (range != configuredSensorRange)
       {
-        position += (configuredSensorRange == AbsoluteSensorRange.Unsigned_0_to_360 &&
-                     range == AbsoluteSensorRange.Signed_PlusMinus180) ? -180 : 180;
+        currentAngle += (configuredSensorRange == AbsoluteSensorRange.Unsigned_0_to_360 &&
+                         range == AbsoluteSensorRange.Signed_PlusMinus180) ? -180 : 180;
       }
-      angle = Rotation2d.fromDegrees(position);
+      angle = Rotation2d.fromDegrees(currentAngle);
     } else
     {
       throw new RuntimeException("No CANCoder attached.");
@@ -1035,24 +1047,15 @@ public class SwerveModule<DriveMotorType extends MotorController, AngleMotorType
   /**
    * Get the swerve module position based off the sensors.
    *
-   * @return Swerve Module position.
+   * @return Swerve Module position, with the angle as what the angle is supposed to be, not what it actually is.
    */
-  public SwerveModulePosition getPosition(AbsoluteSensorRange range)
+  public SwerveModulePosition getPosition()
   {
     double distanceMeters = isREVDriveMotor() ? ((CANSparkMax) m_driveMotor).getEncoder().getPosition()
                                               : ((BaseTalon) m_driveMotor).getSelectedSensorPosition();
 
-    return new SwerveModulePosition(distanceMeters, getState(range).angle);
-  }
-
-  /**
-   * Get the swerve module position based off the sensors.
-   *
-   * @return Swerve Module position.
-   */
-  public SwerveModulePosition getPosition()
-  {
-    return getPosition(configuredSensorRange);
+    return new SwerveModulePosition(distanceMeters, Rotation2d.fromDegrees(lastAngle));
+    ///^ Assume our current angle is what it is supposed to be.
   }
 
   /**
@@ -1064,10 +1067,14 @@ public class SwerveModule<DriveMotorType extends MotorController, AngleMotorType
   {
     // inspired by https://github.com/first95/FRC2022/blob/1f57d6837e04d8c8a89f4d83d71b5d2172f41a0e/SwervyBot/src/main/java/frc/robot/SwerveModule.java#L22
     state = new SwerveModuleStatev2(SwerveModuleStatev2.optimize(state,
-                                                                 getState(AbsoluteSensorRange.Signed_PlusMinus180).angle));
+                                                                 getState(
+                                                                     AbsoluteSensorRange.Signed_PlusMinus180).angle));
+    /*
     double angle = (Math.abs(state.speedMetersPerSecond) <= (maxDriveSpeedMPS * 0.01) ?
                     lastAngle :
                     state.angle.getDegrees()); // Prevents module rotation if speed is less than 1%
+    */ // Commented out since we want to test rotations.
+    double angle = state.angle.getDegrees();
 
     setAngle(angle, state.angularVelocityRadPerSecond * moduleRadkV);
     setVelocity(state.speedMetersPerSecond);
@@ -1084,7 +1091,7 @@ public class SwerveModule<DriveMotorType extends MotorController, AngleMotorType
 //    m_driveMotor.stopMotor();
 //    m_turningMotor.stopMotor();
     m_turningMotor.set(0);
-    m_turningMotor.set(0);
+    m_driveMotor.set(0);
   }
 
   /**

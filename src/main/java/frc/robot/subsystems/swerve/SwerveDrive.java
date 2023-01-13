@@ -1,6 +1,5 @@
 package frc.robot.subsystems.swerve;
 
-import com.ctre.phoenix.sensors.AbsoluteSensorRange;
 import com.ctre.phoenix.sensors.CANCoder;
 import com.ctre.phoenix.sensors.WPI_Pigeon2;
 import edu.wpi.first.math.filter.SlewRateLimiter;
@@ -265,27 +264,15 @@ public class SwerveDrive<DriveMotorType extends MotorController, SteeringMotorTy
     return m_swerveOdometry.getPoseMeters();
   }
 
-
   /**
    * Get current swerve module positions in order.
-   *
-   * @param range Sensor range to use.
-   * @return Swerve module positions array.
-   */
-  public SwerveModulePosition[] getPositions(AbsoluteSensorRange range)
-  {
-    return new SwerveModulePosition[]{m_frontLeft.getPosition(range), m_frontRight.getPosition(range),
-                                      m_backLeft.getPosition(range), m_backRight.getPosition(range)};
-  }
-
-  /**
-   * Get current swerve module positions in order. Returns the angle in the range of -180 to 180.
    *
    * @return Swerve module positions array.
    */
   public SwerveModulePosition[] getPositions()
   {
-    return getPositions(AbsoluteSensorRange.Signed_PlusMinus180);
+    return new SwerveModulePosition[]{m_frontLeft.getPosition(), m_frontRight.getPosition(),
+                                      m_backLeft.getPosition(), m_backRight.getPosition()};
   }
 
   /**
