@@ -37,7 +37,6 @@ import edu.wpi.first.wpilibj.smartdashboard.SmartDashboard;
 import frc.robot.math.kinematics.SwerveModuleState2;
 import java.io.Closeable;
 
-
 /**
  * Swerve module for representing a single swerve module of the robot.
  *
@@ -261,41 +260,7 @@ public class SwerveModule<DriveMotorType extends MotorController, AngleMotorType
     publish(Verbosity.SETUP);
   }
 
-  /**
-   * Convert {@link SwerveModuleLocation} to {@link String} representation.
-   *
-   * @param swerveLocation Swerve position to convert.
-   * @return {@link String} name of the {@link SwerveModuleLocation} enum.
-   */
-  public static String SwerveModuleLocationToString(SwerveModuleLocation swerveLocation)
-  {
-    switch (swerveLocation)
-    {
-      case FrontLeft:
-        return "FrontLeft";
-      case BackLeft:
-        return "BackLeft";
-      case FrontRight:
-        return "FrontRight";
-      case BackRight:
-        return "BackRight";
-      default:
-        return "Unknown";
-    }
-  }
-
-  /**
-   * Configure the magnetic offset in the CANCoder.
-   *
-   * @param offset Magnetic offset in degrees.
-   * @return SwerveModule for one line configuration.
-   */
-  public SwerveModule setAngleOffset(double offset)
-  {
-    angleOffset = offset;
-    absoluteEncoder.configMagnetOffset(offset);
-    return this;
-  }
+  ///////////////////////////// CONFIGURATION FUNCTIONS ///////////////////////////////////////////////////
 
   /**
    * Reset the REV encoders onboard the SparkMax's to 0, and set's the drive motor to position to 0 and synchronizes the
@@ -314,7 +279,6 @@ public class SwerveModule<DriveMotorType extends MotorController, AngleMotorType
     }
 
     synchronizeSteeringEncoder();
-
   }
 
   /**
@@ -337,20 +301,6 @@ public class SwerveModule<DriveMotorType extends MotorController, AngleMotorType
       {
         ((BaseTalon) m_turningMotor).setSelectedSensorPosition(absoluteEncoder.getAbsolutePosition());
       }
-    }
-  }
-
-  /**
-   * Burn the current settings to flash.
-   *
-   * @param type Swerve module motor to burn flash of.
-   */
-  public void burnFlash(SwerveModuleMotorType type)
-  {
-    if (isREVTurningMotor() || isREVDriveMotor())
-    {
-      assert (type == SwerveModuleMotorType.DRIVE ? m_driveMotor : m_turningMotor) instanceof CANSparkMax;
-      ((CANSparkMax) (type == SwerveModuleMotorType.DRIVE ? m_driveMotor : m_turningMotor)).burnFlash();
     }
   }
 
@@ -406,6 +356,126 @@ public class SwerveModule<DriveMotorType extends MotorController, AngleMotorType
 
     }
 
+    return this;
+  }
+
+  /**
+   * Set the PIDF coefficients for the closed loop PID onboard the motor controller. Tuning the PID
+   * <p>
+   * <b>P</b> = .5 and increase it by .1 until oscillations occur, then decrease by .05 then .005 until oscillations
+   * stop and angle is perfect or near perfect.
+   * </p>
+   * <p>
+   * <b>I</b> = 0 tune this if your PID never quite reaches the target, after tuning <b>D</b>. Increase this by
+   * <b>P</b>*.01 each time and adjust accordingly.
+   * </p>
+   * <p>
+   * <b>D</b> = 0 tune this if the PID accelerates too fast, it will smooth the motion. Increase this by <b>P</b>*10
+   * and adjust accordingly.
+   * </p>
+   * <p>
+   * <b>F</b> = 0 tune this if the PID is being used for velocity, the <b>F</b> is multiplied by the target and added
+   * to the voltage output. Increase this by 0.01 until the PIDF reaches the desired state in a fast enough manner.
+   * </p>
+   * Documentation for this is best described by CTRE <a
+   * href="https://docs.ctre-phoenix.com/en/stable/ch16_ClosedLoop.html#position-closed-loop-control-mode">here</a>.
+   *
+   * @param p                     Proportional gain for closed loop. This is multiplied by closed loop error in sensor
+   *                              units.
+   * @param i                     Integral gain for closed loop. This is multiplied by closed loop error in sensor units
+   *                              every PID Loop.
+   * @param d                     Derivative gain for closed loop. This is multiplied by derivative error (sensor units
+   *                              per PID loop).
+   * @param f                     Feed Fwd gain for Closed loop.
+   * @param integralZone          Integral Zone can be used to auto clear the integral accumulator if the sensor pos is
+   *                              too far from the target. This prevents unstable oscillation if the kI is too large.
+   *                              Value is in sensor units.
+   * @param swerveModuleMotorType Swerve drive motor type.
+   * @return self for one line configuration.
+   */
+  public SwerveModule setPIDF(double p, double i, double d, double f, double integralZone,
+                              SwerveModuleMotorType swerveModuleMotorType)
+  {
+    if (swerveModuleMotorType == SwerveModuleMotorType.TURNING)
+    {
+      kPturn = p;
+      kIturn = i;
+      kDturn = d;
+      kFturn = f;
+      kIZturn = integralZone;
+    } else
+    {
+      kPdrive = p;
+      kIdrive = i;
+      kDdrive = d;
+      kFdrive = f;
+      kIZdrive = integralZone;
+    }
+
+    if (isREVTurningMotor() || isREVDriveMotor())
+    {
+      assert (swerveModuleMotorType == SwerveModuleMotorType.TURNING ? m_turningMotor
+                                                                     : m_driveMotor) instanceof CANSparkMax;
+      setREVPIDF(p, i, d, f, integralZone, swerveModuleMotorType);
+    }
+    if (isCTREDriveMotor() || isCTRETurningMotor())
+    {
+      assert (swerveModuleMotorType == SwerveModuleMotorType.TURNING ? m_turningMotor
+                                                                     : m_driveMotor) instanceof BaseTalon;
+      setCTREPIDF(swerveModuleMotorType == SwerveModuleMotorType.DRIVE ? CTRE_slotIdx.Velocity : CTRE_slotIdx.Distance,
+                  p, i, d, f, integralZone, swerveModuleMotorType);
+    }
+
+    return this;
+  }
+
+  /**
+   * Set the angle deadband for the setAngle function.
+   *
+   * @param deadband Deadband angle in degrees.
+   */
+  public void setAngleDeadband(double deadband)
+  {
+    angleDeadband = deadband;
+  }
+
+  /**
+   * Convert {@link SwerveModuleLocation} to {@link String} representation.
+   *
+   * @param swerveLocation Swerve position to convert.
+   * @return {@link String} name of the {@link SwerveModuleLocation} enum.
+   */
+  public static String SwerveModuleLocationToString(SwerveModuleLocation swerveLocation)
+  {
+    switch (swerveLocation)
+    {
+      case FrontLeft:
+        return "FrontLeft";
+      case BackLeft:
+        return "BackLeft";
+      case FrontRight:
+        return "FrontRight";
+      case BackRight:
+        return "BackRight";
+      default:
+        return "Unknown";
+    }
+  }
+
+  /////////////////////// END OF CONFIGURATION FUNCTIONS //////////////////////////
+
+  //////////////////////// REV FUNCTIONS ///////////////////////////////////////////
+
+  /**
+   * Configure the magnetic offset in the CANCoder.
+   *
+   * @param offset Magnetic offset in degrees.
+   * @return SwerveModule for one line configuration.
+   */
+  public SwerveModule setAngleOffset(double offset)
+  {
+    angleOffset = offset;
+    absoluteEncoder.configMagnetOffset(offset);
     return this;
   }
 
@@ -515,32 +585,6 @@ public class SwerveModule<DriveMotorType extends MotorController, AngleMotorType
   }
 
   /**
-   * Get the swerve module position in {@link Translation2d} from the enum passed.
-   *
-   * @param swerveLocation Swerve module location enum.
-   * @return Location as {@link Translation2d}.
-   * @throws RuntimeException If Enum value is not defined.
-   */
-  private Translation2d getSwerveModulePosition(SwerveModuleLocation swerveLocation)
-  {
-    // Modeling off of https://github.com/Stampede3630/2022-Code/blob/master/src/main/java/frc/robot/SwerveDrive.java
-    switch (swerveLocation)
-    {
-      case FrontLeft:
-        return new Translation2d(wheelBase / 2, driveTrainWidth / 2);
-      case BackLeft:
-        return new Translation2d(-wheelBase / 2, driveTrainWidth / 2);
-      case FrontRight:
-        return new Translation2d(wheelBase / 2, -driveTrainWidth / 2);
-      case BackRight:
-        return new Translation2d(-wheelBase / 2, -driveTrainWidth / 2);
-      default:
-        throw new RuntimeException("Invalid location given");
-    }
-  }
-
-
-  /**
    * Set the PIDF coefficients for the closed loop PID onboard the SparkMax.
    *
    * @param P                     Proportional gain for closed loop. This is multiplied by closed loop error in sensor
@@ -578,7 +622,7 @@ public class SwerveModule<DriveMotorType extends MotorController, AngleMotorType
       m_turningPIDController.setIZone(integralZone, REV_slotIdx.Position.ordinal());
       m_turningPIDController.setOutputRange(-1, 1, REV_slotIdx.Position.ordinal());
     }
-    burnFlash(swerveModuleMotorType);
+    REVburnFlash(swerveModuleMotorType);
   }
 
   /**
@@ -620,123 +664,133 @@ public class SwerveModule<DriveMotorType extends MotorController, AngleMotorType
   }
 
   /**
-   * Set the PIDF coefficients for the closed loop PID onboard the motor controller. Tuning the PID
-   * <p>
-   * <b>P</b> = .5 and increase it by .1 until oscillations occur, then decrease by .05 then .005 until oscillations
-   * stop and angle is perfect or near perfect.
-   * </p>
-   * <p>
-   * <b>I</b> = 0 tune this if your PID never quite reaches the target, after tuning <b>D</b>. Increase this by
-   * <b>P</b>*.01 each time and adjust accordingly.
-   * </p>
-   * <p>
-   * <b>D</b> = 0 tune this if the PID accelerates too fast, it will smooth the motion. Increase this by <b>P</b>*10
-   * and adjust accordingly.
-   * </p>
-   * <p>
-   * <b>F</b> = 0 tune this if the PID is being used for velocity, the <b>F</b> is multiplied by the target and added
-   * to the voltage output. Increase this by 0.01 until the PIDF reaches the desired state in a fast enough manner.
-   * </p>
-   * Documentation for this is best described by CTRE <a
-   * href="https://docs.ctre-phoenix.com/en/stable/ch16_ClosedLoop.html#position-closed-loop-control-mode">here</a>.
+   * Configures the conversion factor based upon which motor.
    *
-   * @param p                     Proportional gain for closed loop. This is multiplied by closed loop error in sensor
-   *                              units.
-   * @param i                     Integral gain for closed loop. This is multiplied by closed loop error in sensor units
-   *                              every PID Loop.
-   * @param d                     Derivative gain for closed loop. This is multiplied by derivative error (sensor units
-   *                              per PID loop).
-   * @param f                     Feed Fwd gain for Closed loop.
-   * @param integralZone          Integral Zone can be used to auto clear the integral accumulator if the sensor pos is
-   *                              too far from the target. This prevents unstable oscillation if the kI is too large.
-   *                              Value is in sensor units.
-   * @param swerveModuleMotorType Swerve drive motor type.
-   * @return self for one line configuration.
+   * @param motor                 motor controller to configure
+   * @param conversionFactor      Conversion from RPM to MPS for drive motor, and rotations to degrees for the turning
+   *                              motor.
+   * @param swerveModuleMotorType Turning motor or drive motor for conversion factor setting.
    */
-  public SwerveModule setPIDF(double p, double i, double d, double f, double integralZone,
-                              SwerveModuleMotorType swerveModuleMotorType)
+  private void setREVConversionFactor(CANSparkMax motor, double conversionFactor,
+                                      SwerveModuleMotorType swerveModuleMotorType)
   {
     if (swerveModuleMotorType == SwerveModuleMotorType.TURNING)
     {
-      kPturn = p;
-      kIturn = i;
-      kDturn = d;
-      kFturn = f;
-      kIZturn = integralZone;
+      motor.getEncoder().setPositionConversionFactor(conversionFactor);
+      motor.getEncoder().setVelocityConversionFactor(conversionFactor / 60);
+
     } else
     {
-      kPdrive = p;
-      kIdrive = i;
-      kDdrive = d;
-      kFdrive = f;
-      kIZdrive = integralZone;
-    }
+      motor.getEncoder().setVelocityConversionFactor(conversionFactor);
+      motor.getEncoder().setPositionConversionFactor(conversionFactor * 60);
 
+    }
+  }
+
+  /**
+   * Returns whether the drive motor is a REV motor. The only REV Motor Controller is the SparkMax. We will not support
+   * {@link PWMSparkMax}
+   *
+   * @return is the drive motor a SparkMax?
+   */
+  private boolean isREVTurningMotor()
+  {
+    return m_turningMotor instanceof CANSparkMax;
+  }
+
+  /**
+   * Returns whether the drive motor is a CTRE motor.
+   *
+   * @return is the drive motor a SparkMax?
+   */
+  private boolean isREVDriveMotor()
+  {
+    return m_driveMotor instanceof CANSparkMax;
+  }
+
+  ////////////// END OF REV FUNCTIONS ////////////////////////////////
+
+  ////////////// CUSTOM INVERSION FUNCTIONS //////////////////////////
+
+  /**
+   * Set the steering motor to be inverted.
+   *
+   * @param isInverted The state of inversion, true is inverted.
+   */
+  public void setInvertedSteering(boolean isInverted)
+  {
+    invertedTurn = isInverted;
+    m_turningMotor.setInverted(isInverted);
+  }
+
+  /**
+   * Set the sensor to be inverted for the motor type.
+   *
+   * @param isInverted     The state of inversion, true is inverted.
+   * @param invertAbsolute Invert the absolute encoder if the type is SwerveModuleMotorType.TURNING too.
+   * @param type           Swerve module motor's sensors to configure.
+   */
+  public void setInvertedSensor(boolean isInverted, SwerveModuleMotorType type, boolean invertAbsolute)
+  {
     if (isREVTurningMotor() || isREVDriveMotor())
     {
-      assert (swerveModuleMotorType == SwerveModuleMotorType.TURNING ? m_turningMotor
-                                                                     : m_driveMotor) instanceof CANSparkMax;
-      setREVPIDF(p, i, d, f, integralZone, swerveModuleMotorType);
+      assert (type == SwerveModuleMotorType.TURNING ? m_turningMotor : m_driveMotor) instanceof CANSparkMax;
+      ((CANSparkMax) (type == SwerveModuleMotorType.TURNING ? m_turningMotor : m_driveMotor)).getEncoder().setInverted(
+          invertedDrive);
     }
-    if (isCTREDriveMotor() || isCTRETurningMotor())
+    // TODO: Implement CTRE inversion.
+
+    if (type == SwerveModuleMotorType.TURNING && invertAbsolute)
     {
-      assert (swerveModuleMotorType == SwerveModuleMotorType.TURNING ? m_turningMotor
-                                                                     : m_driveMotor) instanceof BaseTalon;
-      setCTREPIDF(swerveModuleMotorType == SwerveModuleMotorType.DRIVE ? CTRE_slotIdx.Velocity : CTRE_slotIdx.Distance,
-                  p, i, d, f, integralZone, swerveModuleMotorType);
+      if (absoluteEncoder instanceof CANCoder)
+      {
+        absoluteEncoder.configSensorDirection(isInverted);
+      }
     }
-
-    return this;
   }
 
-  /**
-   * Initializes this {@link Sendable} object.
-   *
-   * @param builder sendable builder
-   */
-  @Override
-  public void initSendable(SendableBuilder builder)
-  {
-    builder.setSmartDashboardType(SwerveModuleLocationToString(swerveLocation) + " SwerveDriveModule");
-    builder.setActuator(true);
-    builder.setSafeState(this::stopMotor);
-//    if (isCTREDriveMotor())
-//    {
-//      builder.addDoubleProperty("Drive Motor Velocity MPS", ((BaseTalon) m_driveMotor)::getSelectedSensorVelocity,
-//                                this::setCTREDrive);
-//
-//    } else
-//    {
-//      builder.addDoubleProperty("Drive Motor Velocity MPS", ((CANSparkMax) m_driveMotor).getEncoder()::getVelocity,
-//                                this::setREVDrive);
-//    }
-//    if (isCTRETurningMotor())
-//    {
-//      builder.addDoubleProperty("Steering Motor Angle Degrees", ((BaseTalon) m_turningMotor)
-//      ::getSelectedSensorPosition,
-//                                this::setCTREAngle);
-//    } else
-//    {
-//      builder.addDoubleProperty("Steering Motor Angle Degrees",
-//                                ((CANSparkMax) m_turningMotor).getEncoder()::getPosition,
-//                                this::setREVAngle);
-//    }
-//    if (absoluteEncoder instanceof CANCoder)
-//    {
-//      builder.addBooleanProperty("CANCoder Magnet",
-//                                 () -> absoluteEncoder.getMagnetFieldStrength() == MagnetFieldStrength.Good_GreenLED,
-//                                 null);
-//    }
-  }
+  ////////////////////////////// END OF CUSTOM INVERSION FUNCTIONS /////////////////////////////////////////
+
+  ///////////////////////////// STATUS FUNCTIONS ///////////////////////////////////////////////////////////
 
   /**
-   * Set the angle deadband for the setAngle function.
+   * Check that the link is good on the swerve module and CAN bus is able to retrieve data.
    *
-   * @param deadband Deadband angle in degrees.
+   * @return true on all devices are accessible over CAN.
    */
-  public void setAngleDeadband(double deadband)
+  public boolean activeCAN()
   {
-    angleDeadband = deadband;
+    // Based off of https://github.com/DigitalDislocators/SDS-MK4i-NEO-Swerve-Template/blob/main/src/main/java/frc/robot/subsystems/SwerveModuleSparkMax.java#L490
+    boolean drive = true, turn = true, encoder = true;
+    if (isREVDriveMotor())
+    {
+      drive = ((CANSparkMax) m_driveMotor).getFirmwareVersion() != 0;
+    }
+    if (isREVTurningMotor())
+    {
+      turn = ((CANSparkMax) m_turningMotor).getFirmwareVersion() != 0;
+    }
+    if (absoluteEncoder instanceof CANCoder)
+    {
+      encoder = absoluteEncoder.getFirmwareVersion() > 0;
+    }
+    // TODO: Implement CTRE
+    return drive && turn && encoder;
+  }
+
+  //////////////////////////// END OF STATUS FUNCTIONS ///////////////////////////////////////////////////////
+
+  //////////////////////////// ODOMETRY AND STATE FUNCTIONS //////////////////////////////////////////////////
+
+  /**
+   * Burn the current settings to flash.
+   *
+   * @param type Swerve module motor to burn flash of.
+   */
+  public void REVburnFlash(SwerveModuleMotorType type)
+  {
+    assert (type == SwerveModuleMotorType.DRIVE ? m_driveMotor : m_turningMotor) instanceof CANSparkMax;
+    ((CANSparkMax) (type == SwerveModuleMotorType.DRIVE ? m_driveMotor : m_turningMotor)).burnFlash();
   }
 
   /**
@@ -801,144 +855,6 @@ public class SwerveModule<DriveMotorType extends MotorController, AngleMotorType
     {
       setREVDrive(velocity);
     }
-  }
-
-  /**
-   * Common interface for setting the speed of a motor controller.
-   *
-   * @param speed The speed to set. Value should be between -1.0 and 1.0.
-   */
-  @Override
-  public void set(double speed)
-  {
-    drivePower = speed;
-    m_driveMotor.set(speed);
-  }
-
-  /**
-   * Common interface for getting the current set speed of a motor controller.
-   *
-   * @return The current set speed. Value is between -1.0 and 1.0.
-   */
-  @Override
-  public double get()
-  {
-    return drivePower;
-  }
-
-  /**
-   * Returns whether the drive motor is a REV motor. The only REV Motor Controller is the SparkMax. We will not support
-   * {@link PWMSparkMax}
-   *
-   * @return is the drive motor a SparkMax?
-   */
-  private boolean isREVTurningMotor()
-  {
-    return m_turningMotor instanceof CANSparkMax;
-  }
-
-  /**
-   * Returns whether the drive motor is a CTRE motor.
-   *
-   * @return is the drive motor a SparkMax?
-   */
-  private boolean isREVDriveMotor()
-  {
-    return m_driveMotor instanceof CANSparkMax;
-  }
-
-  /**
-   * Common interface for returning if a motor controller is in the inverted state or not.
-   *
-   * @return isInverted The state of the inversion true is inverted.
-   */
-  @Override
-  public boolean getInverted()
-  {
-    return invertedDrive;
-  }
-
-  /**
-   * Common interface for inverting direction of a motor controller.
-   *
-   * @param isInverted The state of inversion, true is inverted.
-   */
-  @Override
-  public void setInverted(boolean isInverted)
-  {
-    invertedDrive = isInverted;
-    m_driveMotor.setInverted(isInverted);
-  }
-
-  /**
-   * Set the steering motor to be inverted.
-   *
-   * @param isInverted The state of inversion, true is inverted.
-   */
-  public void setInvertedSteering(boolean isInverted)
-  {
-    invertedTurn = isInverted;
-    m_turningMotor.setInverted(isInverted);
-  }
-
-  /**
-   * Set the sensor to be inverted for the motor type.
-   *
-   * @param isInverted     The state of inversion, true is inverted.
-   * @param invertAbsolute Invert the absolute encoder if the type is SwerveModuleMotorType.TURNING too.
-   * @param type           Swerve module motor's sensors to configure.
-   */
-  public void setInvertedSensor(boolean isInverted, SwerveModuleMotorType type, boolean invertAbsolute)
-  {
-    if (isREVTurningMotor() || isREVDriveMotor())
-    {
-      assert (type == SwerveModuleMotorType.TURNING ? m_turningMotor : m_driveMotor) instanceof CANSparkMax;
-      ((CANSparkMax) (type == SwerveModuleMotorType.TURNING ? m_turningMotor : m_driveMotor)).getEncoder().setInverted(
-          invertedDrive);
-    }
-    // TODO: Implement CTRE inversion.
-
-    if (type == SwerveModuleMotorType.TURNING && invertAbsolute)
-    {
-      if (absoluteEncoder instanceof CANCoder)
-      {
-        absoluteEncoder.configSensorDirection(isInverted);
-      }
-    }
-  }
-
-  /**
-   * Disable the motor controller.
-   */
-  @Override
-  public void disable()
-  {
-    stopMotor();
-  }
-
-  /**
-   * Check that the link is good on the swerve module and CAN bus is able to retrieve data.
-   *
-   * @return true on all devices are accessible over CAN.
-   */
-  public boolean activeCAN()
-  {
-    // Based off of https://github.com/DigitalDislocators/SDS-MK4i-NEO-Swerve-Template/blob/main/src/main/java/frc/robot/subsystems/SwerveModuleSparkMax.java#L490
-    boolean drive = true, turn = true, encoder = true;
-    if (isREVDriveMotor())
-    {
-      drive = ((CANSparkMax) m_driveMotor).getFirmwareVersion() != 0;
-    }
-    if (isREVTurningMotor())
-    {
-      turn = ((CANSparkMax) m_turningMotor).getFirmwareVersion() != 0;
-    }
-    if (absoluteEncoder instanceof CANCoder)
-    {
-      encoder = absoluteEncoder.getFirmwareVersion() > 0;
-    }
-    // TODO: Implement CTRE
-    return drive && turn && encoder;
   }
 
   /**
@@ -1026,55 +942,9 @@ public class SwerveModule<DriveMotorType extends MotorController, AngleMotorType
 
   }
 
-  /**
-   * Stops motor movement. Motor can be moved again by calling set without having to re-enable the motor.
-   */
-  @Override
-  public void stopMotor()
-  {
-//    m_driveMotor.stopMotor();
-//    m_turningMotor.stopMotor();
-    m_turningMotor.set(0);
-    m_driveMotor.set(0);
-  }
+  /////////////////// END OF ODOMETRY AND STATE FUNCTIONS ////////////////////////////////////////
 
-  /**
-   * Closes this resource, relinquishing any underlying resources. This method is invoked automatically on objects
-   * managed by the {@code try}-with-resources statement.
-   *
-   * <p>While this interface method is declared to throw {@code
-   * Exception}, implementers are <em>strongly</em> encouraged to declare concrete implementations of the {@code close}
-   * method to throw more specific exceptions, or to throw no exception at all if the close operation cannot fail.
-   *
-   * <p> Cases where the close operation may fail require careful
-   * attention by implementers. It is strongly advised to relinquish the underlying resources and to internally
-   * <em>mark</em> the resource as closed, prior to throwing the exception. The {@code close} method is unlikely to be
-   * invoked more than once and so this ensures that the resources are released in a timely manner. Furthermore it
-   * reduces problems that could arise when the resource wraps, or is wrapped, by another resource.
-   *
-   * <p><em>Implementers of this interface are also strongly advised
-   * to not have the {@code close} method throw {@link InterruptedException}.</em>
-   * <p>
-   * This exception interacts with a thread's interrupted status, and runtime misbehavior is likely to occur if an
-   * {@code InterruptedException} is {@linkplain Throwable#addSuppressed suppressed}.
-   * <p>
-   * More generally, if it would cause problems for an exception to be suppressed, the {@code AutoCloseable.close}
-   * method should not throw it.
-   *
-   * <p>Note that unlike the {@link Closeable#close close}
-   * method of {@link Closeable}, this {@code close} method is <em>not</em> required to be idempotent.  In other words,
-   * calling this {@code close} method more than once may have some visible side effect, unlike {@code Closeable.close}
-   * which is required to have no effect if called more than once.
-   * <p>
-   * However, implementers of this interface are strongly encouraged to make their {@code close} methods idempotent.
-   *
-   * @throws Exception if this resource cannot be closed
-   */
-  @Override
-  public void close() throws Exception
-  {
-    SendableRegistry.remove(this);
-  }
+  /////////////////// DIAGNOSTIC AND TUNING FUNCTIONS ////////////////////////////////////////////
 
   /**
    * Subscribe from data within smart dashboard to make changes to the swerve module.
@@ -1202,6 +1072,10 @@ public class SwerveModule<DriveMotorType extends MotorController, AngleMotorType
     }
   }
 
+  //////////////////////////// END OF DIAGNOSTIC AND TUNING FUNCTIONS /////////////////////////
+
+  //////////////////////////// ENUMS //////////////////////////////////////////////////////////
+
   /**
    * Motor type for the swerve drive module
    */
@@ -1292,6 +1166,9 @@ public class SwerveModule<DriveMotorType extends MotorController, AngleMotorType
     SETUP
   }
 
+  //////////////////////////////////// END OF ENUMS /////////////////////////////////////////////////////
+
+  //////////////////////////////////// CTRE FUNCTIONS ///////////////////////////////////////////////////
 
   /**
    * Set the PIDF coefficients for the closed loop PID onboard the TalonSRX.
@@ -1345,32 +1222,6 @@ public class SwerveModule<DriveMotorType extends MotorController, AngleMotorType
     ((BaseTalon) (swerveModuleMotorType == SwerveModuleMotorType.DRIVE ? m_driveMotor
                                                                        : m_turningMotor)).configAllowableClosedloopError(
         profile.ordinal(), 0);
-
-  }
-
-
-  /**
-   * Configures the conversion factor based upon which motor.
-   *
-   * @param motor                 motor controller to configure
-   * @param conversionFactor      Conversion from RPM to MPS for drive motor, and rotations to degrees for the turning
-   *                              motor.
-   * @param swerveModuleMotorType Turning motor or drive motor for conversion factor setting.
-   */
-  private void setREVConversionFactor(CANSparkMax motor, double conversionFactor,
-                                      SwerveModuleMotorType swerveModuleMotorType)
-  {
-    if (swerveModuleMotorType == SwerveModuleMotorType.TURNING)
-    {
-      motor.getEncoder().setPositionConversionFactor(conversionFactor);
-      motor.getEncoder().setVelocityConversionFactor(conversionFactor / 60);
-
-    } else
-    {
-      motor.getEncoder().setVelocityConversionFactor(conversionFactor);
-      motor.getEncoder().setPositionConversionFactor(conversionFactor * 60);
-
-    }
 
   }
 
@@ -1472,4 +1323,183 @@ public class SwerveModule<DriveMotorType extends MotorController, AngleMotorType
   {
     return m_driveMotor instanceof TalonFX || m_driveMotor instanceof TalonSRX;
   }
+
+  ////////////////////////////////// END OF CTRE FUNCTIONS /////////////////////////////////
+
+  ///////////////////////////////// OVERRIDES //////////////////////////////////////////////
+
+  /**
+   * Get the swerve module position in {@link Translation2d} from the enum passed.
+   *
+   * @param swerveLocation Swerve module location enum.
+   * @return Location as {@link Translation2d}.
+   * @throws RuntimeException If Enum value is not defined.
+   */
+  private Translation2d getSwerveModulePosition(SwerveModuleLocation swerveLocation)
+  {
+    // Modeling off of https://github.com/Stampede3630/2022-Code/blob/master/src/main/java/frc/robot/SwerveDrive.java
+    switch (swerveLocation)
+    {
+      case FrontLeft:
+        return new Translation2d(wheelBase / 2, driveTrainWidth / 2);
+      case BackLeft:
+        return new Translation2d(-wheelBase / 2, driveTrainWidth / 2);
+      case FrontRight:
+        return new Translation2d(wheelBase / 2, -driveTrainWidth / 2);
+      case BackRight:
+        return new Translation2d(-wheelBase / 2, -driveTrainWidth / 2);
+      default:
+        throw new RuntimeException("Invalid location given");
+    }
+  }
+
+  /**
+   * Initializes this {@link Sendable} object.
+   *
+   * @param builder sendable builder
+   */
+  @Override
+  public void initSendable(SendableBuilder builder)
+  {
+    builder.setSmartDashboardType(SwerveModuleLocationToString(swerveLocation) + " SwerveDriveModule");
+    builder.setActuator(true);
+    builder.setSafeState(this::stopMotor);
+//    if (isCTREDriveMotor())
+//    {
+//      builder.addDoubleProperty("Drive Motor Velocity MPS", ((BaseTalon) m_driveMotor)::getSelectedSensorVelocity,
+//                                this::setCTREDrive);
+//
+//    } else
+//    {
+//      builder.addDoubleProperty("Drive Motor Velocity MPS", ((CANSparkMax) m_driveMotor).getEncoder()::getVelocity,
+//                                this::setREVDrive);
+//    }
+//    if (isCTRETurningMotor())
+//    {
+//      builder.addDoubleProperty("Steering Motor Angle Degrees", ((BaseTalon) m_turningMotor)
+//      ::getSelectedSensorPosition,
+//                                this::setCTREAngle);
+//    } else
+//    {
+//      builder.addDoubleProperty("Steering Motor Angle Degrees",
+//                                ((CANSparkMax) m_turningMotor).getEncoder()::getPosition,
+//                                this::setREVAngle);
+//    }
+//    if (absoluteEncoder instanceof CANCoder)
+//    {
+//      builder.addBooleanProperty("CANCoder Magnet",
+//                                 () -> absoluteEncoder.getMagnetFieldStrength() == MagnetFieldStrength.Good_GreenLED,
+//                                 null);
+//    }
+  }
+
+  /**
+   * Closes this resource, relinquishing any underlying resources. This method is invoked automatically on objects
+   * managed by the {@code try}-with-resources statement.
+   *
+   * <p>While this interface method is declared to throw {@code
+   * Exception}, implementers are <em>strongly</em> encouraged to declare concrete implementations of the {@code close}
+   * method to throw more specific exceptions, or to throw no exception at all if the close operation cannot fail.
+   *
+   * <p> Cases where the close operation may fail require careful
+   * attention by implementers. It is strongly advised to relinquish the underlying resources and to internally
+   * <em>mark</em> the resource as closed, prior to throwing the exception. The {@code close} method is unlikely to be
+   * invoked more than once and so this ensures that the resources are released in a timely manner. Furthermore it
+   * reduces problems that could arise when the resource wraps, or is wrapped, by another resource.
+   *
+   * <p><em>Implementers of this interface are also strongly advised
+   * to not have the {@code close} method throw {@link InterruptedException}.</em>
+   * <p>
+   * This exception interacts with a thread's interrupted status, and runtime misbehavior is likely to occur if an
+   * {@code InterruptedException} is {@linkplain Throwable#addSuppressed suppressed}.
+   * <p>
+   * More generally, if it would cause problems for an exception to be suppressed, the {@code AutoCloseable.close}
+   * method should not throw it.
+   *
+   * <p>Note that unlike the {@link Closeable#close close}
+   * method of {@link Closeable}, this {@code close} method is <em>not</em> required to be idempotent.  In other words,
+   * calling this {@code close} method more than once may have some visible side effect, unlike {@code Closeable.close}
+   * which is required to have no effect if called more than once.
+   * <p>
+   * However, implementers of this interface are strongly encouraged to make their {@code close} methods idempotent.
+   *
+   * @throws Exception if this resource cannot be closed
+   */
+  @Override
+  public void close() throws Exception
+  {
+    SendableRegistry.remove(this);
+  }
+
+  /**
+   * Common interface for returning if a motor controller is in the inverted state or not.
+   *
+   * @return isInverted The state of the inversion true is inverted.
+   */
+  @Override
+  public boolean getInverted()
+  {
+    return invertedDrive;
+  }
+
+  /**
+   * Common interface for inverting direction of a motor controller.
+   *
+   * @param isInverted The state of inversion, true is inverted.
+   */
+  @Override
+  public void setInverted(boolean isInverted)
+  {
+    invertedDrive = isInverted;
+    m_driveMotor.setInverted(isInverted);
+  }
+
+  /**
+   * Disable the motor controller.
+   */
+  @Override
+  public void disable()
+  {
+    stopMotor();
+  }
+
+  /**
+   * Stops motor movement. Motor can be moved again by calling set without having to re-enable the motor.
+   */
+  @Override
+  public void stopMotor()
+  {
+//    m_driveMotor.stopMotor();
+//    m_turningMotor.stopMotor();
+    m_turningMotor.set(0);
+    m_driveMotor.set(0);
+  }
+
+  /**
+   * Common interface for setting the speed of a motor controller.
+   *
+   * @param speed The speed to set. Value should be between -1.0 and 1.0.
+   */
+  @Override
+  public void set(double speed)
+  {
+    drivePower = speed;
+    m_driveMotor.set(speed);
+  }
+
+  //////////////////////////////////// END OF OVERRIDES ////////////////////////////////////////////
+
+  //////////////////////////////////// STATIC FUNCTIONS ////////////////////////////////////////////
+
+  /**
+   * Common interface for getting the current set speed of a motor controller.
+   *
+   * @return The current set speed. Value is between -1.0 and 1.0.
+   */
+  @Override
+  public double get()
+  {
+    return drivePower;
+  }
+  /////////////////////////////////// END OF STATIC FUNCTIONS //////////////////////////////////////////
 }
