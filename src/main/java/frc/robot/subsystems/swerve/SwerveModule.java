@@ -1054,6 +1054,7 @@ public class SwerveModule<DriveMotorType extends MotorController, AngleMotorType
    */
   public boolean activeCAN()
   {
+    // Based off of https://github.com/DigitalDislocators/SDS-MK4i-NEO-Swerve-Template/blob/main/src/main/java/frc/robot/subsystems/SwerveModuleSparkMax.java#L490
     boolean drive = true, turn = true, encoder = true;
     if (isREVDriveMotor())
     {
