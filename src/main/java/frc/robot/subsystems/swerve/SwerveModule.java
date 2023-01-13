@@ -17,6 +17,7 @@ import com.ctre.phoenix.sensors.MagnetFieldStrength;
 import com.revrobotics.CANSparkMax;
 import com.revrobotics.CANSparkMax.ControlType;
 import com.revrobotics.CANSparkMax.IdleMode;
+import com.revrobotics.CANSparkMaxLowLevel.PeriodicFrame;
 import com.revrobotics.RelativeEncoder;
 import com.revrobotics.SparkMaxPIDController;
 import com.revrobotics.SparkMaxPIDController.ArbFFUnits;
@@ -397,11 +398,11 @@ public class SwerveModule<DriveMotorType extends MotorController, AngleMotorType
     motor.restoreFactoryDefaults();
     motor.clearFaults();
 
-    /*motor.setPeriodicFramePeriod(PeriodicFrame.kStatus0, 100); // Applied Output, Faults, Sticky Faults, Is Follower
+    motor.setPeriodicFramePeriod(PeriodicFrame.kStatus0, 100); // Applied Output, Faults, Sticky Faults, Is Follower
     motor.setPeriodicFramePeriod(PeriodicFrame.kStatus1,
                                  20); // Motor Velocity, Motor Temperature, Motor Voltage, Motor Current
     motor.setPeriodicFramePeriod(PeriodicFrame.kStatus2, 20); // Motor Position
-    */// TODO: Configure Status Frame 3 and 4 if necessary
+    // TODO: Configure Status Frame 3 and 4 if necessary
     //  https://docs.revrobotics.com/sparkmax/operating-modes/control-interfaces
 
     motor.setIdleMode(IdleMode.kBrake);
