@@ -97,7 +97,11 @@ public class SwerveModule<DriveMotorType extends MotorController, AngleMotorType
   /**
    * Inverted drive motor.
    */
-  private       boolean                inverted                = false;
+  private       boolean                invertedDrive           = false;
+  /**
+   * Inverted turning motor.
+   */
+  private       boolean                invertedTurn            = false;
   /**
    * Power to drive motor from -1 to 1.
    */
@@ -586,14 +590,24 @@ public class SwerveModule<DriveMotorType extends MotorController, AngleMotorType
   {
     // Example at
     // https://github.com/REVrobotics/SPARK-MAX-Examples/blob/master/Java/Velocity%20Closed%20Loop%20Control/src/main/java/frc/robot/Robot.java#L65-L71
-    (swerveModuleMotorType == SwerveModuleMotorType.DRIVE ? m_drivePIDController : m_turningPIDController).setP(P);
-    (swerveModuleMotorType == SwerveModuleMotorType.DRIVE ? m_drivePIDController : m_turningPIDController).setI(I);
-    (swerveModuleMotorType == SwerveModuleMotorType.DRIVE ? m_drivePIDController : m_turningPIDController).setD(D);
-    (swerveModuleMotorType == SwerveModuleMotorType.DRIVE ? m_drivePIDController : m_turningPIDController).setFF(F);
-    (swerveModuleMotorType == SwerveModuleMotorType.DRIVE ? m_drivePIDController : m_turningPIDController).setIZone(
-        integralZone);
-    (swerveModuleMotorType == SwerveModuleMotorType.DRIVE ? m_drivePIDController
-                                                          : m_turningPIDController).setOutputRange(-1, 1);
+    if (swerveModuleMotorType == SwerveModuleMotorType.DRIVE)
+    {
+      m_drivePIDController.setP(P, REV_slotIdx.Velocity.ordinal());
+      m_drivePIDController.setI(I, REV_slotIdx.Velocity.ordinal());
+      m_drivePIDController.setD(D, REV_slotIdx.Velocity.ordinal());
+      m_drivePIDController.setFF(F, REV_slotIdx.Velocity.ordinal());
+      m_drivePIDController.setIZone(integralZone, REV_slotIdx.Velocity.ordinal());
+      m_turningPIDController.setOutputRange(-1, -1, REV_slotIdx.Velocity.ordinal());
+
+    } else
+    {
+      m_turningPIDController.setP(P, REV_slotIdx.Position.ordinal());
+      m_turningPIDController.setI(I, REV_slotIdx.Position.ordinal());
+      m_turningPIDController.setD(D, REV_slotIdx.Position.ordinal());
+      m_turningPIDController.setFF(F, REV_slotIdx.Position.ordinal());
+      m_turningPIDController.setIZone(integralZone, REV_slotIdx.Position.ordinal());
+      m_turningPIDController.setOutputRange(-1, -1, REV_slotIdx.Position.ordinal());
+    }
     burnFlash(swerveModuleMotorType);
   }
 
@@ -632,7 +646,8 @@ public class SwerveModule<DriveMotorType extends MotorController, AngleMotorType
       // Intended if setting the angle via crafted unoptimized swerve module state.
       setREVAngle(angle);
     }
-    m_turningPIDController.setReference(angle, ControlType.kPosition, 0, feedforward, ArbFFUnits.kVoltage);
+    m_turningPIDController.setReference(angle, ControlType.kPosition, REV_slotIdx.Position.ordinal(), feedforward,
+                                        ArbFFUnits.kVoltage);
   }
 
   /**
@@ -642,7 +657,7 @@ public class SwerveModule<DriveMotorType extends MotorController, AngleMotorType
    */
   private void setREVAngle(double angle)
   {
-    m_turningPIDController.setReference(angle, ControlType.kPosition);
+    m_turningPIDController.setReference(angle, ControlType.kPosition, REV_slotIdx.Position.ordinal());
   }
 
   /**
@@ -652,7 +667,8 @@ public class SwerveModule<DriveMotorType extends MotorController, AngleMotorType
    */
   private void setREVDrive(double velocity)
   {
-    m_drivePIDController.setReference(velocity, ControlType.kVelocity, 0, driveFeedforward.calculate(velocity));
+    m_drivePIDController.setReference(velocity, ControlType.kVelocity, REV_slotIdx.Velocity.ordinal(),
+                                      driveFeedforward.calculate(velocity));
   }
 
   /**
@@ -969,7 +985,7 @@ public class SwerveModule<DriveMotorType extends MotorController, AngleMotorType
   @Override
   public boolean getInverted()
   {
-    return inverted;
+    return invertedDrive;
   }
 
   /**
@@ -980,7 +996,7 @@ public class SwerveModule<DriveMotorType extends MotorController, AngleMotorType
   @Override
   public void setInverted(boolean isInverted)
   {
-    inverted = isInverted;
+    invertedDrive = isInverted;
     m_driveMotor.setInverted(isInverted);
   }
 
@@ -991,6 +1007,7 @@ public class SwerveModule<DriveMotorType extends MotorController, AngleMotorType
    */
   public void setInvertedSteering(boolean isInverted)
   {
+    invertedTurn = isInverted;
     m_turningMotor.setInverted(isInverted);
   }
 
@@ -1007,7 +1024,7 @@ public class SwerveModule<DriveMotorType extends MotorController, AngleMotorType
     {
       assert (type == SwerveModuleMotorType.TURNING ? m_turningMotor : m_driveMotor) instanceof CANSparkMax;
       ((CANSparkMax) (type == SwerveModuleMotorType.TURNING ? m_turningMotor : m_driveMotor)).getEncoder().setInverted(
-          inverted);
+          invertedDrive);
     }
     // TODO: Implement CTRE inversion.
 
@@ -1029,6 +1046,30 @@ public class SwerveModule<DriveMotorType extends MotorController, AngleMotorType
     stopMotor();
   }
 
+  /**
+   * Check that the link is good on the swerve module and CAN bus is able to retrieve data.
+   *
+   * @return true on all devices are accessible over CAN.
+   */
+  public boolean activeCAN()
+  {
+    boolean drive = true, turn = true, encoder = true;
+    if (isREVDriveMotor())
+    {
+      drive = ((CANSparkMax) m_driveMotor).getFirmwareVersion() != 0;
+    }
+    if (isREVTurningMotor())
+    {
+      turn = ((CANSparkMax) m_turningMotor).getFirmwareVersion() != 0;
+    }
+    if (absoluteEncoder instanceof CANCoder)
+    {
+      encoder = absoluteEncoder.getFirmwareVersion() > 0;
+    }
+    // TODO: Implement CTRE
+    return drive && turn && encoder;
+
+  }
 
   /**
    * Get the module state.
@@ -1194,6 +1235,7 @@ public class SwerveModule<DriveMotorType extends MotorController, AngleMotorType
       setAngle(angle);
     }
 
+    // Deadband
     double deadband = SmartDashboard.getNumber(name + "/steer/pid/deadband", angleDeadband);
     if (deadband != angleDeadband)
     {
@@ -1207,6 +1249,20 @@ public class SwerveModule<DriveMotorType extends MotorController, AngleMotorType
       setAngleOffset(offset);
       synchronizeSteeringEncoder();
     }
+
+    // Inversion
+    boolean turnInvert = SmartDashboard.getBoolean(name + "/steer/inverted", invertedTurn);
+    if (turnInvert != invertedTurn)
+    {
+      setInvertedSteering(turnInvert);
+    }
+
+    boolean driveInvert = SmartDashboard.getBoolean(name + "/drive/inverted", invertedDrive);
+    if (driveInvert != invertedDrive)
+    {
+      setInverted(driveInvert);
+    }
+
   }
 
   /**
@@ -1216,7 +1272,7 @@ public class SwerveModule<DriveMotorType extends MotorController, AngleMotorType
    */
   public void publish(Verbosity level)
   {
-    String name = "SwerveDrive/" + SwerveModule.SwerveModuleLocationToString(swerveLocation);
+    String name = "SwerveDrive/" + SwerveModule.SwerveModuleLocationToString(swerveLocation); // TODO: Move to attribute
     switch (level)
     {
       case HIGH:
@@ -1240,7 +1296,14 @@ public class SwerveModule<DriveMotorType extends MotorController, AngleMotorType
 
         // Driving Encoder Values
         SmartDashboard.putNumber(name + "/drive/encoder/velocity", integratedVelocity);
+
+        // CAN Bus is accessible
+        SmartDashboard.putBoolean(name + "/status", activeCAN());
       case LOW:
+        // Inverted Motors.
+        SmartDashboard.putBoolean(name + "/steer/inverted", invertedTurn);
+        SmartDashboard.putBoolean(name + "/drive/inverted", invertedDrive);
+
         // Angle Constants
         SmartDashboard.putNumber(name + "/steer/encoder/offset", angleOffset);
         // PID
@@ -1282,6 +1345,14 @@ public class SwerveModule<DriveMotorType extends MotorController, AngleMotorType
   enum CTRE_slotIdx
   {
     Distance, Turning, Velocity, MotionProfile
+  }
+
+  /**
+   * REV Slots for PID configuration.
+   */
+  enum REV_slotIdx
+  {
+    Position, Velocity, Simulation
   }
 
   /**
