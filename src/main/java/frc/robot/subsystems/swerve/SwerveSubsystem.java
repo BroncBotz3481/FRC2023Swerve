@@ -9,12 +9,13 @@ import edu.wpi.first.wpilibj.Timer;
 import edu.wpi.first.wpilibj2.command.SubsystemBase;
 import frc.robot.Constants.DriveConstants;
 import frc.robot.Constants.ModuleConstants;
+import frc.robot.subsystems.swerve.SwerveModule.SwerveModuleMotorType;
 
 public class SwerveSubsystem extends SubsystemBase
 {
 
-  private      Timer                                 syncTimer = new Timer();
-  public  SwerveDrive<CANSparkMax, CANSparkMax> m_drive;
+  private final Timer                                 syncTimer = new Timer();
+  public        SwerveDrive<CANSparkMax, CANSparkMax> m_drive;
   //Creates Pigeon2 Gyroscope
 
   public SwerveSubsystem()
@@ -71,10 +72,11 @@ public class SwerveSubsystem extends SubsystemBase
                                 DriveConstants.kTeleDriveMaxAccelerationUnitsPerSecond,
                                 DriveConstants.kTeleDriveMaxAngularAccelerationUnitsPerSecond,
                                 false);
-    
+
     m_drive.zeroGyro();
     m_drive.setDeadband(0.5);
-  
+    m_drive.setPIDF(0.07, 0, 0.3, 0, 100, SwerveModuleMotorType.TURNING); // TODO: Change PIDF here.
+
   }
 
   /**
@@ -100,7 +102,7 @@ public class SwerveSubsystem extends SubsystemBase
   {
     if (syncTimer.advanceIfElapsed(1))
     {
-      // m_drive.synchronizeEncoders();
+      m_drive.synchronizeEncoders();
     }
   }
 }
