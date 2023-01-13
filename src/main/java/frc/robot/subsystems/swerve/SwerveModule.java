@@ -29,6 +29,7 @@ import edu.wpi.first.util.sendable.SendableBuilder;
 import edu.wpi.first.util.sendable.SendableRegistry;
 import edu.wpi.first.wpilibj.motorcontrol.MotorController;
 import edu.wpi.first.wpilibj.motorcontrol.PWMSparkMax;
+import edu.wpi.first.wpilibj.smartdashboard.SmartDashboard;
 import frc.robot.math.kinematics.SwerveModuleStatev2;
 import java.io.Closeable;
 
@@ -112,7 +113,11 @@ public class SwerveModule<DriveMotorType extends MotorController, AngleMotorType
   /**
    * Store the last angle for optimization.
    */
-  private       double                 lastAngle               = 0;
+  private       double                 targetAngle             = 0;
+  /**
+   * Target velocity for the swerve module.
+   */
+  private       double                 targetVelocity          = 0;
   /**
    * The current angle reported by the absolute encoder.
    */
@@ -125,8 +130,13 @@ public class SwerveModule<DriveMotorType extends MotorController, AngleMotorType
    * Drive feedforward for PID when driving by velocity.
    */
   private final SimpleMotorFeedforward driveFeedforward;
-  private       SparkMaxPIDController  m_drivePIDController;
-  private       SparkMaxPIDController  m_turningPIDController;
+  /**
+   * PIDF Values for the modules.
+   */
+  private       double                 kPdrive, kIdrive, kDdrive, kFdrive, kIZdrive, kPturn, kIturn, kDturn, kFturn,
+      kIZturn;
+  private SparkMaxPIDController m_drivePIDController;
+  private SparkMaxPIDController m_turningPIDController;
 
   /**
    * Swerve module constructor. Both motors <b>MUST</b> be a {@link MotorController} class. It is recommended to create
@@ -185,6 +195,7 @@ public class SwerveModule<DriveMotorType extends MotorController, AngleMotorType
     absoluteEncoder = encoder;
     swerveModuleLocation = getSwerveModulePosition(swervePosition);
     setAngleOffset(steeringOffsetDegrees);
+    resetEncoders();
 
     if (isREVDriveMotor())
     {
@@ -248,7 +259,6 @@ public class SwerveModule<DriveMotorType extends MotorController, AngleMotorType
   {
     angleOffset = offset;
     absoluteEncoder.configMagnetOffset(offset);
-    resetEncoders();
     return this;
   }
 
@@ -700,6 +710,7 @@ public class SwerveModule<DriveMotorType extends MotorController, AngleMotorType
 
   }
 
+
   /**
    * Set the PIDF coefficients for the closed loop PID onboard the motor controller. Tuning the PID
    * <p>
@@ -737,6 +748,22 @@ public class SwerveModule<DriveMotorType extends MotorController, AngleMotorType
   public SwerveModule setPIDF(double p, double i, double d, double f, double integralZone,
                               SwerveModuleMotorType swerveModuleMotorType)
   {
+    if (swerveModuleMotorType == SwerveModuleMotorType.TURNING)
+    {
+      kPturn = p;
+      kIturn = i;
+      kDturn = d;
+      kFturn = f;
+      kIZturn = integralZone;
+    } else
+    {
+      kPdrive = p;
+      kIdrive = i;
+      kDdrive = d;
+      kFdrive = f;
+      kIZdrive = integralZone;
+    }
+
     if (isREVTurningMotor() || isREVDriveMotor())
     {
       assert (swerveModuleMotorType == SwerveModuleMotorType.TURNING ? m_turningMotor
@@ -812,6 +839,8 @@ public class SwerveModule<DriveMotorType extends MotorController, AngleMotorType
    */
   private void setAngle(double angle, double feedforward)
   {
+    targetAngle = angle;
+
     angle += 180; // Since the angle is given in the form of -180 to 180, we add 180 to make it 0 to 360.
     assert angle <= 360;
     // currentAngle is always updated in getState which is called during setState which calls this function.
@@ -849,6 +878,7 @@ public class SwerveModule<DriveMotorType extends MotorController, AngleMotorType
     }
   }
 
+
   /**
    * Set the drive motor velocity in MPS.
    *
@@ -856,6 +886,7 @@ public class SwerveModule<DriveMotorType extends MotorController, AngleMotorType
    */
   public void setVelocity(double velocity)
   {
+    targetVelocity = velocity;
     if (isCTREDriveMotor())
     {
       setCTREDrive(velocity);
@@ -1054,7 +1085,7 @@ public class SwerveModule<DriveMotorType extends MotorController, AngleMotorType
     double distanceMeters = isREVDriveMotor() ? ((CANSparkMax) m_driveMotor).getEncoder().getPosition()
                                               : ((BaseTalon) m_driveMotor).getSelectedSensorPosition();
 
-    return new SwerveModulePosition(distanceMeters, Rotation2d.fromDegrees(lastAngle));
+    return new SwerveModulePosition(distanceMeters, Rotation2d.fromDegrees(targetAngle));
     ///^ Assume our current angle is what it is supposed to be.
   }
 
@@ -1079,7 +1110,6 @@ public class SwerveModule<DriveMotorType extends MotorController, AngleMotorType
     setAngle(angle, state.angularVelocityRadPerSecond * moduleRadkV);
     setVelocity(state.speedMetersPerSecond);
 
-    lastAngle = angle;
   }
 
   /**
@@ -1133,7 +1163,100 @@ public class SwerveModule<DriveMotorType extends MotorController, AngleMotorType
   }
 
   /**
-   * Motor type for the swerve drive moduule
+   * Subscribe from data within smart dashboard to make changes to the swerve module.
+   */
+  public void subscribe()
+  {
+    String name = "Swerve Module/" + SwerveModule.SwerveModuleLocationToString(swerveLocation);
+
+    // PID
+    double velocity = SmartDashboard.getNumber(name + "/drive/pid/setpoint", targetVelocity);
+    kPdrive = SmartDashboard.getNumber(name + "/drive/pid/kP", kPdrive);
+    kIdrive = SmartDashboard.getNumber(name + "/drive/pid/kI", kIdrive);
+    kDdrive = SmartDashboard.getNumber(name + "/drive/pid/kD", kDdrive);
+    kFdrive = SmartDashboard.getNumber(name + "/drive/pid/kF", kFdrive);
+    kIZdrive = SmartDashboard.getNumber(name + "/drive/pid/kIZ", kIZdrive);
+    setPIDF(kPdrive, kIdrive, kDdrive, kFdrive, kIZdrive, SwerveModuleMotorType.DRIVE);
+    if (velocity != targetVelocity)
+    {
+      setVelocity(velocity);
+    }
+
+    double angle = SmartDashboard.getNumber(name + "/steer/pid/setpoint", targetAngle);
+    kPturn = SmartDashboard.getNumber(name + "/steer/pid/kP", kPturn);
+    kIturn = SmartDashboard.getNumber(name + "/steer/pid/kI", kIturn);
+    kDturn = SmartDashboard.getNumber(name + "/steer/pid/kD", kDturn);
+    kFturn = SmartDashboard.getNumber(name + "/steer/pid/kF", kFturn);
+    kIZturn = SmartDashboard.getNumber(name + "/steer/pid/kIZ", kIZturn);
+    setPIDF(kPturn, kIturn, kDturn, kFturn, kIZturn, SwerveModuleMotorType.TURNING);
+    if (angle != targetAngle)
+    {
+      setAngle(angle);
+    }
+
+    double deadband = SmartDashboard.getNumber(name + "/steer/pid/deadband", angleDeadband);
+    if (deadband != angleDeadband)
+    {
+      setAngleDeadband(deadband);
+    }
+
+    // Offset
+    double offset = SmartDashboard.getNumber(name + "/steer/encoder/offset", angleOffset);
+    if (angleOffset != offset)
+    {
+      setAngleOffset(offset);
+      synchronizeSteeringEncoder();
+    }
+  }
+
+  /**
+   * Publish data to the smart dashboard relating to this swerve moduule.
+   *
+   * @param level Verbosity level, affects the CAN utilization.
+   */
+  public void publish(Verbosity level)
+  {
+    String name = "Swerve Module/" + SwerveModule.SwerveModuleLocationToString(swerveLocation);
+    switch (level)
+    {
+      case HIGH:
+        SmartDashboard.putBoolean(name + "/steer/encoder/field",
+                                  absoluteEncoder.getMagnetFieldStrength() == MagnetFieldStrength.Good_GreenLED ||
+                                  absoluteEncoder.getMagnetFieldStrength() == MagnetFieldStrength.Adequate_OrangeLED);
+      case NORMAL:
+        double integratedPosition = isREVTurningMotor() ? ((CANSparkMax) m_turningMotor).getEncoder().getPosition() :
+                                    absoluteEncoder.getAbsolutePosition();
+        double integratedVelocity = isREVDriveMotor() ? ((CANSparkMax) m_driveMotor).getEncoder().getVelocity() : 0;
+        // TODO: Implement for CTRE
+        // Steering Encoder Values
+        SmartDashboard.putNumber(name + "/steer/encoder/integrated", integratedPosition);
+        SmartDashboard.putNumber(name + "/steer/encoder/absolute", absoluteEncoder.getAbsolutePosition());
+
+        // Driving Encoder Values
+        SmartDashboard.putNumber(name + "/drive/encoder/velocity", integratedVelocity);
+      case LOW:
+        // Angle Constants
+        SmartDashboard.putNumber(name + "/steer/encoder/offset", angleOffset);
+        // PID
+        SmartDashboard.putNumber(name + "/drive/pid/target", targetVelocity);
+        SmartDashboard.putNumber(name + "/drive/pid/kP", kPdrive);
+        SmartDashboard.putNumber(name + "/drive/pid/kI", kIdrive);
+        SmartDashboard.putNumber(name + "/drive/pid/kD", kDdrive);
+        SmartDashboard.putNumber(name + "/drive/pid/kF", kFdrive);
+        SmartDashboard.putNumber(name + "/drive/pid/kIZ", kIZdrive);
+
+        SmartDashboard.putNumber(name + "/steer/pid/target", targetAngle);
+        SmartDashboard.putNumber(name + "/steer/pid/deadband", angleDeadband);
+        SmartDashboard.putNumber(name + "/steer/pid/kP", kPturn);
+        SmartDashboard.putNumber(name + "/steer/pid/kI", kIturn);
+        SmartDashboard.putNumber(name + "/steer/pid/kD", kDturn);
+        SmartDashboard.putNumber(name + "/steer/pid/kF", kFturn);
+        SmartDashboard.putNumber(name + "/steer/pid/kIZ", kIZturn);
+    }
+  }
+
+  /**
+   * Motor type for the swerve drive module
    */
   public enum SwerveModuleMotorType
   {
@@ -1189,5 +1312,24 @@ public class SwerveModule<DriveMotorType extends MotorController, AngleMotorType
      * Swerve Module for the back right of the robot chassis.
      */
     BackRight
+  }
+
+  /**
+   * Verbosity levels for data publishing,
+   */
+  public enum Verbosity
+  {
+    /**
+     * The bare minimum and not utilize the CAN bus when reporting data. Only posts data from attributes.
+     */
+    LOW,
+    /**
+     * Utilize the CAN bus minimally.
+     */
+    NORMAL,
+    /**
+     * Extensively use the CAN bus to fetch data and report back.
+     */
+    HIGH
   }
 }

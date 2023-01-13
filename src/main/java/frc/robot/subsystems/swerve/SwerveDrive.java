@@ -14,9 +14,11 @@ import edu.wpi.first.util.sendable.SendableRegistry;
 import edu.wpi.first.wpilibj.drive.RobotDriveBase;
 import edu.wpi.first.wpilibj.motorcontrol.MotorController;
 import edu.wpi.first.wpilibj.smartdashboard.Field2d;
+import edu.wpi.first.wpilibj.smartdashboard.SmartDashboard;
 import frc.robot.math.kinematics.SwerveDriveKinematics;
 import frc.robot.math.kinematics.SwerveModuleStatev2;
 import frc.robot.subsystems.swerve.SwerveModule.SwerveModuleMotorType;
+import frc.robot.subsystems.swerve.SwerveModule.Verbosity;
 import java.io.Closeable;
 
 /**
@@ -127,6 +129,8 @@ public class SwerveDrive<DriveMotorType extends MotorController, SteeringMotorTy
     m_turningLimiter = new SlewRateLimiter(maxAngularAccelerationRadiansPerSecond);
 
     // Inspired by https://github.com/Team364/BaseFalconSwerve/blob/main/src/main/java/frc/robot/subsystems/Swerve.java
+    SmartDashboard.putData(m_field);
+    SmartDashboard.putData(m_pigeonIMU);
   }
 
   /**
@@ -317,6 +321,30 @@ public class SwerveDrive<DriveMotorType extends MotorController, SteeringMotorTy
   }
 
   /**
+   * Update swerve module parameters based on data in the dashboard.
+   */
+  public void subscribe()
+  {
+    m_frontRight.subscribe();
+    m_frontLeft.subscribe();
+    m_backLeft.subscribe();
+    m_backRight.subscribe();
+  }
+
+  /**
+   * Publish data from the Swerve Modules to the dashboard.
+   *
+   * @param level Verbosity level in terms of CAN utilization.
+   */
+  public void publish(Verbosity level)
+  {
+    m_frontRight.publish(level);
+    m_frontLeft.publish(level);
+    m_backRight.publish(level);
+    m_backLeft.publish(level);
+  }
+
+  /**
    * Set the PIDF coefficients for the closed loop PID onboard the motor controller. Tuning the PID
    * <p>
    * <b>P</b> = .5 and increase it by .1 until oscillations occur, then decrease by .05 then .005 until oscillations
@@ -402,13 +430,13 @@ public class SwerveDrive<DriveMotorType extends MotorController, SteeringMotorTy
   @Override
   public void initSendable(SendableBuilder builder)
   {
-    builder.setSmartDashboardType("SwerveDrive");
-    SendableRegistry.addChild(this, m_frontLeft);
-    SendableRegistry.addChild(this, m_frontRight);
-    SendableRegistry.addChild(this, m_backLeft);
-    SendableRegistry.addChild(this, m_backRight);
-    SendableRegistry.addChild(this, m_field);
-    SendableRegistry.addChild(this, m_pigeonIMU);
+//    builder.setSmartDashboardType("SwerveDrive");
+//    SendableRegistry.addChild(this, m_frontLeft);
+//    SendableRegistry.addChild(this, m_frontRight);
+//    SendableRegistry.addChild(this, m_backLeft);
+//    SendableRegistry.addChild(this, m_backRight);
+//    SendableRegistry.addChild(this, m_field);
+//    SendableRegistry.addChild(this, m_pigeonIMU);
   }
 
   /**

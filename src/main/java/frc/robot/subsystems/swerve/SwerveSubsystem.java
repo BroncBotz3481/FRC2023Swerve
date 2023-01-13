@@ -11,6 +11,7 @@ import edu.wpi.first.wpilibj2.command.SubsystemBase;
 import frc.robot.Constants.DriveConstants;
 import frc.robot.Constants.ModuleConstants;
 import frc.robot.subsystems.swerve.SwerveModule.SwerveModuleMotorType;
+import frc.robot.subsystems.swerve.SwerveModule.Verbosity;
 
 public class SwerveSubsystem extends SubsystemBase
 {
@@ -116,6 +117,7 @@ public class SwerveSubsystem extends SubsystemBase
     if (syncTimer.advanceIfElapsed(1))
     {
       m_drive.synchronizeEncoders();
+      m_drive.publish(Verbosity.HIGH);
     }
   }
 }
