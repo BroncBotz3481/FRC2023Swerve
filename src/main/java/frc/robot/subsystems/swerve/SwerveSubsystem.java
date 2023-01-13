@@ -14,18 +14,17 @@ public class SwerveSubsystem extends SubsystemBase
 {
 
   private      Timer                                 syncTimer = new Timer();
-  public final SwerveDrive<CANSparkMax, CANSparkMax> m_drive;
+  public  SwerveDrive<CANSparkMax, CANSparkMax> m_drive;
   //Creates Pigeon2 Gyroscope
 
   public SwerveSubsystem()
   {
     syncTimer.start();
     SwerveModule<CANSparkMax, CANSparkMax, CANCoder> m_frontRight, m_frontLeft, m_backRight, m_backLeft;
-
-    m_frontLeft = new SwerveModule<>(
-        new CANSparkMax(DriveConstants.kFrontLeftDriveMotorPort, MotorType.kBrushless),
-        new CANSparkMax(DriveConstants.kFrontLeftTurningMotorPort, MotorType.kBrushless),
-        new CANCoder(DriveConstants.kFrontLeftAbsoluteEncoderPort), SwerveModule.SwerveModuleLocation.FrontLeft,
+    CANSparkMax fld = new CANSparkMax(DriveConstants.kFrontLeftDriveMotorPort, MotorType.kBrushless);
+    CANSparkMax flt = new CANSparkMax(DriveConstants.kFrontLeftTurningMotorPort, MotorType.kBrushless);
+    CANCoder flc = new CANCoder(DriveConstants.kFrontLeftAbsoluteEncoderPort);
+    m_frontLeft = new SwerveModule<>(fld,flt,flc , SwerveModule.SwerveModuleLocation.FrontLeft,
         ModuleConstants.kDriveMotorGearRatio, ModuleConstants.kTurningMotorGearRatio,
         DriveConstants.kFrontLeftDriveAbsoluteEncoderOffset,
         Units.inchesToMeters(4), DriveConstants.kWheelBase,
@@ -72,9 +71,10 @@ public class SwerveSubsystem extends SubsystemBase
                                 DriveConstants.kTeleDriveMaxAccelerationUnitsPerSecond,
                                 DriveConstants.kTeleDriveMaxAngularAccelerationUnitsPerSecond,
                                 false);
-
+    
     m_drive.zeroGyro();
-    m_drive.setDeadband(0.02);
+    m_drive.setDeadband(0.5);
+  
   }
 
   /**
@@ -100,7 +100,7 @@ public class SwerveSubsystem extends SubsystemBase
   {
     if (syncTimer.advanceIfElapsed(1))
     {
-      m_drive.synchronizeEncoders();
+      // m_drive.synchronizeEncoders();
     }
   }
 }

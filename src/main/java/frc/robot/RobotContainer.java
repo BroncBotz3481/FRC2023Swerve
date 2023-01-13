@@ -35,7 +35,7 @@ public class RobotContainer
                                () -> driverJoytick.getRawAxis(OIConstants.kDriverXAxis),
                                () -> driverJoytick.getRawAxis(OIConstants.kDriverRotAxis),
                                () -> !driverJoytick.getRawButton(OIConstants.kDriverFieldOrientedButtonIdx)));
-    // Configure the button bindings
+    /// Configure the button bindings
 //    controller0 = new XboxController(0);
 //    controller1 = new XboxController(1);
     configureButtonBindings();

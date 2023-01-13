@@ -29,7 +29,7 @@ import edu.wpi.first.util.sendable.SendableBuilder;
 import edu.wpi.first.util.sendable.SendableRegistry;
 import edu.wpi.first.wpilibj.motorcontrol.MotorController;
 import edu.wpi.first.wpilibj.motorcontrol.PWMSparkMax;
-import frc.robot.math.kinematics.SwerveModuleState;
+import frc.robot.math.kinematics.SwerveModuleStatev2;
 import java.io.Closeable;
 
 
@@ -182,7 +182,7 @@ public class SwerveModule<DriveMotorType extends MotorController, AngleMotorType
     {
       setupREVMotor(((CANSparkMax) mainMotor), SwerveModuleMotorType.DRIVE, driveGearRatio);
       // Might need to sleep for 200ms to 1s before this.
-      burnFlash(SwerveModuleMotorType.DRIVE);
+      // burnFlash(SwerveModuleMotorType.DRIVE);
     } else
     {
       setupCTREMotor(((BaseTalon) mainMotor), SwerveModuleMotorType.DRIVE, driveGearRatio);
@@ -193,7 +193,7 @@ public class SwerveModule<DriveMotorType extends MotorController, AngleMotorType
       // MK4 turning motor gear ratio is 12.8:1
       setupREVMotor(((CANSparkMax) angleMotor), SwerveModuleMotorType.TURNING, steerGearRatio);
       // Might need to sleep for 200ms to 1s before this.
-      burnFlash(SwerveModuleMotorType.TURNING);
+      // burnFlash(SwerveModuleMotorType.TURNING);
     } else if (encoder instanceof CANCoder)
     {
       setupCANCoderRemoteSensor(((BaseTalon) angleMotor), encoder);
@@ -203,8 +203,8 @@ public class SwerveModule<DriveMotorType extends MotorController, AngleMotorType
     encoder.configAbsoluteSensorRange(configuredSensorRange);
     // Convert CANCoder to read data as unsigned 0 to 360 for synchronization purposes.
 
-    burnFlash(SwerveModuleMotorType.TURNING);
-    burnFlash(SwerveModuleMotorType.DRIVE);
+    // burnFlash(SwerveModuleMotorType.TURNING);
+    // burnFlash(SwerveModuleMotorType.DRIVE);
   }
 
   /**
@@ -315,7 +315,7 @@ public class SwerveModule<DriveMotorType extends MotorController, AngleMotorType
       assert (type == SwerveModuleMotorType.DRIVE ? m_driveMotor : m_turningMotor) instanceof CANSparkMax;
       ((CANSparkMax) (type == SwerveModuleMotorType.DRIVE ? m_driveMotor : m_turningMotor))
           .enableVoltageCompensation(nominalVoltage);
-      burnFlash(type);
+      // burnFlash(type);
     }
     if (isCTREDriveMotor() || isCTRETurningMotor())
     {
@@ -342,7 +342,7 @@ public class SwerveModule<DriveMotorType extends MotorController, AngleMotorType
       assert (type == SwerveModuleMotorType.TURNING ? m_turningMotor : m_driveMotor) instanceof CANSparkMax;
       ((CANSparkMax) (type == SwerveModuleMotorType.TURNING ? m_turningMotor : m_driveMotor))
           .setSmartCurrentLimit(currentLimit);
-      burnFlash(type);
+      // burnFlash(type);
     }
 
     if (isCTREDriveMotor() || isCTRETurningMotor())
@@ -371,11 +371,12 @@ public class SwerveModule<DriveMotorType extends MotorController, AngleMotorType
   {
     RelativeEncoder encoder = motor.getEncoder();
 
-    motor.setPeriodicFramePeriod(PeriodicFrame.kStatus0, 100); // Applied Output, Faults, Sticky Faults, Is Follower
+    motor.restoreFactoryDefaults();
+    /*motor.setPeriodicFramePeriod(PeriodicFrame.kStatus0, 100); // Applied Output, Faults, Sticky Faults, Is Follower
     motor.setPeriodicFramePeriod(PeriodicFrame.kStatus1,
                                  20); // Motor Velocity, Motor Temperature, Motor Voltage, Motor Current
     motor.setPeriodicFramePeriod(PeriodicFrame.kStatus2, 20); // Motor Position
-    // TODO: Configure Status Frame 3 and 4 if necessary
+    */// TODO: Configure Status Frame 3 and 4 if necessary
     //  https://docs.revrobotics.com/sparkmax/operating-modes/control-interfaces
 
     motor.setIdleMode(IdleMode.kBrake);
@@ -433,7 +434,7 @@ public class SwerveModule<DriveMotorType extends MotorController, AngleMotorType
       setREVConversionFactor(motor, 360 / gearRatio, SwerveModuleMotorType.TURNING);
       moduleRadkV = (12 * 60) / (maxSteeringFreeSpeedRPM * Math.toRadians(360 / gearRatio));
 
-      setPIDF(1, 0, 0.1, 0, 100, SwerveModuleMotorType.TURNING);
+      setPIDF(0.07, 0, 0.3, 0, 100, SwerveModuleMotorType.TURNING);
     }
 
   }
@@ -792,7 +793,11 @@ public class SwerveModule<DriveMotorType extends MotorController, AngleMotorType
   {
     angle += 180; // Since the angle is given in the form of -180 to 180, we add 180 to make it 0 to 360.
     assert angle <= 360;
-
+    double currentAngle = absoluteEncoder.getAbsolutePosition();
+    if((angle - 5) < currentAngle && currentAngle < (angle+5))
+    {
+      return;
+    }
     if (isREVTurningMotor())
     {
       setREVAngle(angle, feedforward);
@@ -977,7 +982,7 @@ public class SwerveModule<DriveMotorType extends MotorController, AngleMotorType
    * @return SwerveModuleState with the encoder inputs.
    * @throws RuntimeException Exception if CANCoder doesnt exist
    */
-  public SwerveModuleState getState(AbsoluteSensorRange range)
+  public SwerveModuleStatev2 getState(AbsoluteSensorRange range)
   {
     double     mps = 0;
     Rotation2d angle;
@@ -1001,7 +1006,7 @@ public class SwerveModule<DriveMotorType extends MotorController, AngleMotorType
     {
       mps = (((CANSparkMax) m_driveMotor).getEncoder().getVelocity());
     }
-    return new SwerveModuleState(mps, angle);
+    return new SwerveModuleStatev2(mps, angle, 0);
   }
 
   /**
@@ -1010,7 +1015,7 @@ public class SwerveModule<DriveMotorType extends MotorController, AngleMotorType
    * @return SwerveModuleState with the encoder inputs.
    * @throws RuntimeException Exception if CANCoder doesnt exist
    */
-  public SwerveModuleState getState()
+  public SwerveModuleStatev2 getState()
   {
     return getState(configuredSensorRange);
   }
@@ -1043,11 +1048,11 @@ public class SwerveModule<DriveMotorType extends MotorController, AngleMotorType
    *
    * @param state Module state.
    */
-  public void setState(SwerveModuleState state)
+  public void setState(SwerveModuleStatev2 state)
   {
     // inspired by https://github.com/first95/FRC2022/blob/1f57d6837e04d8c8a89f4d83d71b5d2172f41a0e/SwervyBot/src/main/java/frc/robot/SwerveModule.java#L22
-    state = (SwerveModuleState) SwerveModuleState.optimize(state,
-                                                           getState(AbsoluteSensorRange.Signed_PlusMinus180).angle);
+    state = new SwerveModuleStatev2(SwerveModuleStatev2.optimize(state,
+                                                           getState(AbsoluteSensorRange.Signed_PlusMinus180).angle));
     double angle = (Math.abs(state.speedMetersPerSecond) <= (maxDriveSpeedMPS * 0.01) ?
                     lastAngle :
                     state.angle.getDegrees()); // Prevents module rotation if speed is less than 1%

@@ -17,7 +17,7 @@ import edu.wpi.first.wpilibj.motorcontrol.MotorController;
 import edu.wpi.first.wpilibj.smartdashboard.Field2d;
 import edu.wpi.first.wpilibj.smartdashboard.SmartDashboard;
 import frc.robot.math.kinematics.SwerveDriveKinematics;
-import frc.robot.math.kinematics.SwerveModuleState;
+import frc.robot.math.kinematics.SwerveModuleStatev2;
 import frc.robot.subsystems.swerve.SwerveModule.SwerveModuleMotorType;
 import java.io.Closeable;
 
@@ -187,16 +187,16 @@ public class SwerveDrive<DriveMotorType extends MotorController, SteeringMotorTy
   public void set(double x, double y, double radianPerSecond, boolean fieldRelative)
   {
 
-    SwerveModuleState[] moduleStates = m_swerveKinematics.toSwerveModuleStates(
+    SwerveModuleStatev2[] moduleStates = m_swerveKinematics.toSwerveModuleStates(
         fieldRelative ? ChassisSpeeds.fromFieldRelativeSpeeds(x, y, radianPerSecond, getRotation())
                       : new ChassisSpeeds(x, y, radianPerSecond));
-    try
-    {
+    // try
+    // {
       setModuleStates(moduleStates);
-    } catch (Exception e)
-    {
-      System.err.println("Cannot set swerve module states!");
-    }
+    // } catch (Exception e)
+    // {
+      // System.err.println("Cannot set swerve module states!");
+    // }
 
     try
     {
@@ -215,7 +215,7 @@ public class SwerveDrive<DriveMotorType extends MotorController, SteeringMotorTy
    * @param states Module states in a specified order. [front left, front right, back left, back right]
    * @throws RuntimeException If the CANCoder is inaccessible or not configured.
    */
-  public void setModuleStates(SwerveModuleState[] states)
+  public void setModuleStates(SwerveModuleStatev2[] states)
   {
     SwerveDriveKinematics.desaturateWheelSpeeds(states, m_maxSpeedMPS);
     m_frontLeft.setState(states[0]);
@@ -229,10 +229,10 @@ public class SwerveDrive<DriveMotorType extends MotorController, SteeringMotorTy
    */
   public void setX()
   {
-    m_frontLeft.setState(new SwerveModuleState(0, Rotation2d.fromDegrees(45), 0));
-    m_frontRight.setState(new SwerveModuleState(0, Rotation2d.fromDegrees(-45), 0));
-    m_backLeft.setState(new SwerveModuleState(0, Rotation2d.fromDegrees(-45), 0));
-    m_backRight.setState(new SwerveModuleState(0, Rotation2d.fromDegrees(45), 0));
+    m_frontLeft.setState(new SwerveModuleStatev2(0, Rotation2d.fromDegrees(45), 0));
+    m_frontRight.setState(new SwerveModuleStatev2(0, Rotation2d.fromDegrees(-45), 0));
+    m_backLeft.setState(new SwerveModuleStatev2(0, Rotation2d.fromDegrees(-45), 0));
+    m_backRight.setState(new SwerveModuleStatev2(0, Rotation2d.fromDegrees(45), 0));
   }
 
   /**

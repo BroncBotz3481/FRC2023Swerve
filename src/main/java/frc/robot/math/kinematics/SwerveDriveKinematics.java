@@ -28,7 +28,7 @@ public class SwerveDriveKinematics extends edu.wpi.first.math.kinematics.SwerveD
 
   private final int                 m_numModules;
   private final Translation2d[]     m_modules;
-  private final SwerveModuleState[] m_moduleStates;
+  private final SwerveModuleStatev2[] m_moduleStates;
   private       Translation2d       m_prevCoR = new Translation2d();
 
   /**
@@ -48,8 +48,8 @@ public class SwerveDriveKinematics extends edu.wpi.first.math.kinematics.SwerveD
     }
     m_numModules = wheelsMeters.length;
     m_modules = Arrays.copyOf(wheelsMeters, m_numModules);
-    m_moduleStates = new SwerveModuleState[m_numModules];
-    Arrays.fill(m_moduleStates, new SwerveModuleState());
+    m_moduleStates = new SwerveModuleStatev2[m_numModules];
+    Arrays.fill(m_moduleStates, new SwerveModuleStatev2());
     m_inverseKinematics = new SimpleMatrix(m_numModules * 2, 3);
     bigInverseKinematics = new SimpleMatrix(m_numModules * 2, 4);
 
@@ -78,12 +78,12 @@ public class SwerveDriveKinematics extends edu.wpi.first.math.kinematics.SwerveD
    * @param attainableMaxSpeedMetersPerSecond The absolute max speed that a module can reach.
    */
   public static void desaturateWheelSpeeds(
-      SwerveModuleState[] moduleStates, double attainableMaxSpeedMetersPerSecond)
+      SwerveModuleStatev2[] moduleStates, double attainableMaxSpeedMetersPerSecond)
   {
     double realMaxSpeed = Collections.max(Arrays.asList(moduleStates)).speedMetersPerSecond;
     if (realMaxSpeed > attainableMaxSpeedMetersPerSecond)
     {
-      for (SwerveModuleState moduleState : moduleStates)
+      for (SwerveModuleStatev2 moduleState : moduleStates)
       {
         moduleState.speedMetersPerSecond =
             moduleState.speedMetersPerSecond / realMaxSpeed * attainableMaxSpeedMetersPerSecond;
@@ -109,7 +109,7 @@ public class SwerveDriveKinematics extends edu.wpi.first.math.kinematics.SwerveD
    * @param attainableMaxRotationalVelocityRadiansPerSecond The absolute max speed the robot can reach while rotating
    */
   public static void desaturateWheelSpeeds(
-      SwerveModuleState[] moduleStates,
+      SwerveModuleStatev2[] moduleStates,
       ChassisSpeeds currentChassisSpeed,
       double attainableMaxModuleSpeedMetersPerSecond,
       double attainableMaxTranslationalSpeedMetersPerSecond,
@@ -131,7 +131,7 @@ public class SwerveDriveKinematics extends edu.wpi.first.math.kinematics.SwerveD
         / attainableMaxRotationalVelocityRadiansPerSecond;
     double k     = Math.max(translationalK, rotationalK);
     double scale = Math.min(k * attainableMaxModuleSpeedMetersPerSecond / realMaxSpeed, 1);
-    for (SwerveModuleState moduleState : moduleStates)
+    for (SwerveModuleStatev2 moduleState : moduleStates)
     {
       moduleState.speedMetersPerSecond *= scale;
     }
@@ -155,10 +155,10 @@ public class SwerveDriveKinematics extends edu.wpi.first.math.kinematics.SwerveD
    *                               will rotate around that corner.
    * @return An array containing the module states. Use caution because these module states are not normalized.
    * Sometimes, a user input may cause one of the module speeds to go above the attainable max velocity. Use the
-   * {@link #desaturateWheelSpeeds(SwerveModuleState[], double) DesaturateWheelSpeeds} function to rectify this issue.
+   * {@link #desaturateWheelSpeeds(SwerveModuleStatev2[], double) DesaturateWheelSpeeds} function to rectify this issue.
    */
   @SuppressWarnings("PMD.MethodReturnsInternalArray")
-  public SwerveModuleState[] toSwerveModuleStates(
+  public SwerveModuleStatev2[] toSwerveModuleStates(
       ChassisSpeeds chassisSpeeds, Translation2d centerOfRotationMeters)
   {
     if (chassisSpeeds.vxMetersPerSecond == 0.0
@@ -265,7 +265,7 @@ public class SwerveDriveKinematics extends edu.wpi.first.math.kinematics.SwerveD
       var omegaVector = trigThetaAngle.mult(accelVector);
 
       double omega = omegaVector.get(1, 0) / speed;
-      m_moduleStates[i] = new SwerveModuleState(speed, angle, omega);
+      m_moduleStates[i] = new SwerveModuleStatev2(speed, angle, omega);
     }
 
     return m_moduleStates;
@@ -278,7 +278,7 @@ public class SwerveDriveKinematics extends edu.wpi.first.math.kinematics.SwerveD
    * @param chassisSpeeds The desired chassis speed.
    * @return An array containing the module states.
    */
-  public SwerveModuleState[] toSwerveModuleStates(ChassisSpeeds chassisSpeeds)
+  public SwerveModuleStatev2[] toSwerveModuleStates(ChassisSpeeds chassisSpeeds)
   {
     return toSwerveModuleStates(chassisSpeeds, new Translation2d());
   }
@@ -293,7 +293,7 @@ public class SwerveDriveKinematics extends edu.wpi.first.math.kinematics.SwerveD
    *                    this class.
    * @return The resulting chassis speed.
    */
-  public ChassisSpeeds toChassisSpeeds(SwerveModuleState... wheelStates)
+  public ChassisSpeeds toChassisSpeeds(SwerveModuleStatev2... wheelStates)
   {
     if (wheelStates.length != m_numModules)
     {

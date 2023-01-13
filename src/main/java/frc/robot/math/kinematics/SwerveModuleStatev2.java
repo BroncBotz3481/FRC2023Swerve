@@ -1,9 +1,9 @@
 package frc.robot.math.kinematics;
-
+import edu.wpi.first.math.kinematics.SwerveModuleState;
 import edu.wpi.first.math.geometry.Rotation2d;
 
 // Copied from team3181's REVSwerve2023 repo
-public class SwerveModuleState extends edu.wpi.first.math.kinematics.SwerveModuleState
+public class SwerveModuleStatev2 extends edu.wpi.first.math.kinematics.SwerveModuleState
 {
 
   /**
@@ -14,8 +14,17 @@ public class SwerveModuleState extends edu.wpi.first.math.kinematics.SwerveModul
   /**
    * Constructs a SwerveModuleState with zeros for speed and angle.
    */
-  public SwerveModuleState()
+  public SwerveModuleStatev2()
   {
+  }
+
+  /**
+   * Constructs a SwerveModuleState with zeros for speed and angle.
+   */
+  public SwerveModuleStatev2(SwerveModuleState self)
+  {
+    super(self.speedMetersPerSecond, self.angle);
+    this.angularVelocityRadPerSecond = 0;
   }
 
   /**
@@ -24,7 +33,7 @@ public class SwerveModuleState extends edu.wpi.first.math.kinematics.SwerveModul
    * @param speedMetersPerSecond The speed of the wheel of the module.
    * @param angle                The angle of the module.
    */
-  public SwerveModuleState(double speedMetersPerSecond, Rotation2d angle)
+  public SwerveModuleStatev2(double speedMetersPerSecond, Rotation2d angle)
   {
     super(speedMetersPerSecond, angle);
     this.angularVelocityRadPerSecond = 0;
@@ -37,7 +46,7 @@ public class SwerveModuleState extends edu.wpi.first.math.kinematics.SwerveModul
    * @param angle                       The angle of the module.
    * @param angularVelocityRadPerSecond The angular velocity of the module.
    */
-  public SwerveModuleState(double speedMetersPerSecond, Rotation2d angle, double angularVelocityRadPerSecond)
+  public SwerveModuleStatev2(double speedMetersPerSecond, Rotation2d angle, double angularVelocityRadPerSecond)
   {
     super(speedMetersPerSecond, angle);
     this.angularVelocityRadPerSecond = angularVelocityRadPerSecond;
