@@ -240,6 +240,7 @@ public class SwerveModule<DriveMotorType extends MotorController, AngleMotorType
       setupCTREMotor(((BaseTalon) angleMotor), SwerveModuleMotorType.TURNING, 1);
     }
 
+    // Convert CANCoder to read data as unsigned 0 to 360 for synchronization purposes.
     configuredSensorRange = AbsoluteSensorRange.Unsigned_0_to_360;
     if (encoder instanceof CANCoder)
     {
@@ -250,10 +251,10 @@ public class SwerveModule<DriveMotorType extends MotorController, AngleMotorType
       sensorConfig.initializationStrategy = SensorInitializationStrategy.BootToAbsolutePosition;
       sensorConfig.sensorTimeBase = SensorTimeBase.PerSecond;
       ((CANCoder) encoder).configAllSettings(sensorConfig);
-      resetEncoders();
-      synchronizeSteeringEncoder();
     }
-    // Convert CANCoder to read data as unsigned 0 to 360 for synchronization purposes.
+
+    resetEncoders();
+    synchronizeSteeringEncoder();
 
     // burnFlash(SwerveModuleMotorType.TURNING);
     // burnFlash(SwerveModuleMotorType.DRIVE);
