@@ -17,7 +17,6 @@ import com.ctre.phoenix.sensors.MagnetFieldStrength;
 import com.revrobotics.CANSparkMax;
 import com.revrobotics.CANSparkMax.ControlType;
 import com.revrobotics.CANSparkMax.IdleMode;
-import com.revrobotics.CANSparkMaxLowLevel.PeriodicFrame;
 import com.revrobotics.RelativeEncoder;
 import com.revrobotics.SparkMaxPIDController;
 import edu.wpi.first.math.controller.SimpleMotorFeedforward;
@@ -794,8 +793,9 @@ public class SwerveModule<DriveMotorType extends MotorController, AngleMotorType
     angle += 180; // Since the angle is given in the form of -180 to 180, we add 180 to make it 0 to 360.
     assert angle <= 360;
     double currentAngle = absoluteEncoder.getAbsolutePosition();
-    if((angle - 5) < currentAngle && currentAngle < (angle+5))
+    if ((angle - 5) < currentAngle && currentAngle < (angle + 5))
     {
+      stopMotor();
       return;
     }
     if (isREVTurningMotor())
@@ -1052,7 +1052,7 @@ public class SwerveModule<DriveMotorType extends MotorController, AngleMotorType
   {
     // inspired by https://github.com/first95/FRC2022/blob/1f57d6837e04d8c8a89f4d83d71b5d2172f41a0e/SwervyBot/src/main/java/frc/robot/SwerveModule.java#L22
     state = new SwerveModuleStatev2(SwerveModuleStatev2.optimize(state,
-                                                           getState(AbsoluteSensorRange.Signed_PlusMinus180).angle));
+                                                                 getState(AbsoluteSensorRange.Signed_PlusMinus180).angle));
     double angle = (Math.abs(state.speedMetersPerSecond) <= (maxDriveSpeedMPS * 0.01) ?
                     lastAngle :
                     state.angle.getDegrees()); // Prevents module rotation if speed is less than 1%
@@ -1069,8 +1069,10 @@ public class SwerveModule<DriveMotorType extends MotorController, AngleMotorType
   @Override
   public void stopMotor()
   {
-    m_driveMotor.stopMotor();
-    m_turningMotor.stopMotor();
+//    m_driveMotor.stopMotor();
+//    m_turningMotor.stopMotor();
+    m_turningMotor.set(0);
+    m_turningMotor.set(0);
   }
 
   /**

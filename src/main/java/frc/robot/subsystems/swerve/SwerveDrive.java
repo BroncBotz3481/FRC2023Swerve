@@ -192,10 +192,10 @@ public class SwerveDrive<DriveMotorType extends MotorController, SteeringMotorTy
                       : new ChassisSpeeds(x, y, radianPerSecond));
     // try
     // {
-      setModuleStates(moduleStates);
+    setModuleStates(moduleStates);
     // } catch (Exception e)
     // {
-      // System.err.println("Cannot set swerve module states!");
+    // System.err.println("Cannot set swerve module states!");
     // }
 
     try
