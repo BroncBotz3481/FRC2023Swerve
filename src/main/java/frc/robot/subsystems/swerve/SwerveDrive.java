@@ -217,6 +217,7 @@ public class SwerveDrive<DriveMotorType extends MotorController, SteeringMotorTy
    */
   public void setModuleStates(SwerveModuleStatev2[] states)
   {
+    feedWatchdog(); // Required
     SwerveDriveKinematics.desaturateWheelSpeeds(states, m_maxSpeedMPS);
     m_frontLeft.setState(states[0]);
     m_frontRight.setState(states[1]);
@@ -229,10 +230,10 @@ public class SwerveDrive<DriveMotorType extends MotorController, SteeringMotorTy
    */
   public void setX()
   {
-    m_frontLeft.setState(new SwerveModuleStatev2(0, Rotation2d.fromDegrees(45), 0));
-    m_frontRight.setState(new SwerveModuleStatev2(0, Rotation2d.fromDegrees(-45), 0));
-    m_backLeft.setState(new SwerveModuleStatev2(0, Rotation2d.fromDegrees(-45), 0));
-    m_backRight.setState(new SwerveModuleStatev2(0, Rotation2d.fromDegrees(45), 0));
+    setModuleStates(new SwerveModuleStatev2[]{new SwerveModuleStatev2(0, Rotation2d.fromDegrees(45), 0),
+                                              new SwerveModuleStatev2(0, Rotation2d.fromDegrees(-45), 0),
+                                              new SwerveModuleStatev2(0, Rotation2d.fromDegrees(-45), 0),
+                                              new SwerveModuleStatev2(0, Rotation2d.fromDegrees(45), 0)});
   }
 
   /**
