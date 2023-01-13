@@ -657,7 +657,7 @@ public class SwerveModule<DriveMotorType extends MotorController, AngleMotorType
       m_drivePIDController.setD(D, REV_slotIdx.Velocity.ordinal());
       m_drivePIDController.setFF(F, REV_slotIdx.Velocity.ordinal());
       m_drivePIDController.setIZone(integralZone, REV_slotIdx.Velocity.ordinal());
-      m_turningPIDController.setOutputRange(-1, -1, REV_slotIdx.Velocity.ordinal());
+      m_drivePIDController.setOutputRange(-1, 1, REV_slotIdx.Velocity.ordinal());
 
     } else
     {
@@ -666,7 +666,7 @@ public class SwerveModule<DriveMotorType extends MotorController, AngleMotorType
       m_turningPIDController.setD(D, REV_slotIdx.Position.ordinal());
       m_turningPIDController.setFF(F, REV_slotIdx.Position.ordinal());
       m_turningPIDController.setIZone(integralZone, REV_slotIdx.Position.ordinal());
-      m_turningPIDController.setOutputRange(-1, -1, REV_slotIdx.Position.ordinal());
+      m_turningPIDController.setOutputRange(-1, 1, REV_slotIdx.Position.ordinal());
     }
     burnFlash(swerveModuleMotorType);
   }
