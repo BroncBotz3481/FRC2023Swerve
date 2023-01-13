@@ -782,6 +782,18 @@ public class SwerveModule<DriveMotorType extends MotorController, AngleMotorType
     }
   }
 
+  private double angleDeadband = 5;
+
+  /**
+   * Set the angle deadband for the setAngle function.
+   *
+   * @param deadband Deadband angle in degrees.
+   */
+  public void setAngleDeadband(double deadband)
+  {
+    angleDeadband = deadband;
+  }
+
   /**
    * Set the angle of the swerve module.
    *
@@ -792,8 +804,8 @@ public class SwerveModule<DriveMotorType extends MotorController, AngleMotorType
   {
     angle += 180; // Since the angle is given in the form of -180 to 180, we add 180 to make it 0 to 360.
     assert angle <= 360;
-    double currentAngle = absoluteEncoder.getAbsolutePosition();
-    if ((angle - 5) < currentAngle && currentAngle < (angle + 5))
+    double currentAngle = absoluteEncoder.getAbsolutePosition(); // TODO: Find a better way to do this.
+    if ((angle - angleDeadband) < currentAngle && currentAngle < (angle + angleDeadband))
     {
       stopMotor();
       return;

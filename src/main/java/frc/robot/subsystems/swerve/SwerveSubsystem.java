@@ -22,15 +22,24 @@ public class SwerveSubsystem extends SubsystemBase
   {
     syncTimer.start();
     SwerveModule<CANSparkMax, CANSparkMax, CANCoder> m_frontRight, m_frontLeft, m_backRight, m_backLeft;
-    CANSparkMax fld = new CANSparkMax(DriveConstants.kFrontLeftDriveMotorPort, MotorType.kBrushless);
-    CANSparkMax flt = new CANSparkMax(DriveConstants.kFrontLeftTurningMotorPort, MotorType.kBrushless);
+    CANSparkMax fld = new CANSparkMax(DriveConstants.kFrontLeftDriveMotorPort,
+                                      MotorType.kBrushless);
+    CANSparkMax flt = new CANSparkMax(DriveConstants.kFrontLeftTurningMotorPort,
+                                      MotorType.kBrushless);
     CANCoder flc = new CANCoder(DriveConstants.kFrontLeftAbsoluteEncoderPort);
-    m_frontLeft = new SwerveModule<>(fld,flt,flc , SwerveModule.SwerveModuleLocation.FrontLeft,
-        ModuleConstants.kDriveMotorGearRatio, ModuleConstants.kTurningMotorGearRatio,
-        DriveConstants.kFrontLeftDriveAbsoluteEncoderOffset,
-        Units.inchesToMeters(4), DriveConstants.kWheelBase,
-        DriveConstants.kTrackWidth, DriveConstants.kFreeSpeedRpm,
-        DriveConstants.kTeleDriveMaxSpeedMetersPerSecond, DriveConstants.kTeleDriveMaxAccelerationUnitsPerSecond);
+    m_frontLeft = new SwerveModule<>(fld,
+                                     flt,
+                                     flc,
+                                     SwerveModule.SwerveModuleLocation.FrontLeft,
+                                     ModuleConstants.kDriveMotorGearRatio,
+                                     ModuleConstants.kTurningMotorGearRatio,
+                                     DriveConstants.kFrontLeftDriveAbsoluteEncoderOffset,
+                                     Units.inchesToMeters(4),
+                                     DriveConstants.kWheelBase,
+                                     DriveConstants.kTrackWidth,
+                                     DriveConstants.kFreeSpeedRpm,
+                                     DriveConstants.kTeleDriveMaxSpeedMetersPerSecond,
+                                     DriveConstants.kTeleDriveMaxAccelerationUnitsPerSecond);
 
     m_frontRight = new SwerveModule<>(
         new CANSparkMax(DriveConstants.kFrontRightDriveMotorPort, MotorType.kBrushless),
@@ -76,6 +85,7 @@ public class SwerveSubsystem extends SubsystemBase
     m_drive.zeroGyro();
     m_drive.setDeadband(0.5);
     m_drive.setPIDF(0.07, 0, 0.3, 0, 100, SwerveModuleMotorType.TURNING); // TODO: Change PIDF here.
+    m_drive.setAngleDeadband(5);
 
   }
 
