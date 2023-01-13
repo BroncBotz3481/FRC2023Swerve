@@ -439,10 +439,6 @@ public class SwerveModule<DriveMotorType extends MotorController, AngleMotorType
     angleDeadband = deadband;
   }
 
-  /////////////////////// END OF CONFIGURATION FUNCTIONS //////////////////////////
-
-  //////////////////////// REV FUNCTIONS ///////////////////////////////////////////
-
   /**
    * Configure the magnetic offset in the CANCoder.
    *
@@ -455,6 +451,22 @@ public class SwerveModule<DriveMotorType extends MotorController, AngleMotorType
     absoluteEncoder.configMagnetOffset(offset);
     return this;
   }
+
+  /////////////////////// END OF CONFIGURATION FUNCTIONS //////////////////////////
+
+  //////////////////////// REV FUNCTIONS ///////////////////////////////////////////
+
+  /**
+   * Burn the current settings to flash.
+   *
+   * @param type Swerve module motor to burn flash of.
+   */
+  public void REVburnFlash(SwerveModuleMotorType type)
+  {
+    assert (type == SwerveModuleMotorType.DRIVE ? m_driveMotor : m_turningMotor) instanceof CANSparkMax;
+    ((CANSparkMax) (type == SwerveModuleMotorType.DRIVE ? m_driveMotor : m_turningMotor)).burnFlash();
+  }
+
 
   /**
    * Setup REV motors and configure the values in the class for them. Set's the driveMotorTicksPerRotation, and
@@ -760,17 +772,6 @@ public class SwerveModule<DriveMotorType extends MotorController, AngleMotorType
   //////////////////////////// ODOMETRY AND STATE FUNCTIONS //////////////////////////////////////////////////
 
   /**
-   * Burn the current settings to flash.
-   *
-   * @param type Swerve module motor to burn flash of.
-   */
-  public void REVburnFlash(SwerveModuleMotorType type)
-  {
-    assert (type == SwerveModuleMotorType.DRIVE ? m_driveMotor : m_turningMotor) instanceof CANSparkMax;
-    ((CANSparkMax) (type == SwerveModuleMotorType.DRIVE ? m_driveMotor : m_turningMotor)).burnFlash();
-  }
-
-  /**
    * Set the angle of the swerve module.
    *
    * @param angle       Angle in degrees.
@@ -835,6 +836,31 @@ public class SwerveModule<DriveMotorType extends MotorController, AngleMotorType
   }
 
   /**
+   * Set the module speed and angle based off the module state.
+   *
+   * @param state Module state.
+   */
+  public void setState(SwerveModuleState2 state)
+  {
+    // inspired by https://github.com/first95/FRC2022/blob/1f57d6837e04d8c8a89f4d83d71b5d2172f41a0e/SwervyBot/src/main/java/frc/robot/SwerveModule.java#L22
+    state = new SwerveModuleState2(
+        SwerveModuleState2.optimize(state, getState(AbsoluteSensorRange.Signed_PlusMinus180).angle));
+    /*
+    double angle = (Math.abs(state.speedMetersPerSecond) <= (maxDriveSpeedMPS * 0.01) ?
+                    lastAngle :
+                    state.angle.getDegrees()); // Prevents module rotation if speed is less than 1%
+    */ // Commented out since we want to test rotations.
+    double angle = state.angle.getDegrees();
+
+    // turn motor code
+    // Prevent rotating module if speed is less then 1%. Prevents Jittering.
+    angle = (Math.abs(state.speedMetersPerSecond) <= (maxDriveSpeedMPS * 0.01)) ? targetAngle : angle;
+
+    setAngle(angle, state.angularVelocityRadPerSecond * moduleRadkV);
+    setVelocity(state.speedMetersPerSecond);
+  }
+
+  /**
    * Get the module state.
    *
    * @param range Sensor range to retrieve angle in, will convert if different from configured.
@@ -891,32 +917,6 @@ public class SwerveModule<DriveMotorType extends MotorController, AngleMotorType
 
     return new SwerveModulePosition(distanceMeters, Rotation2d.fromDegrees(targetAngle));
     ///^ Assume our current angle is what it is supposed to be.
-  }
-
-  /**
-   * Set the module speed and angle based off the module state.
-   *
-   * @param state Module state.
-   */
-  public void setState(SwerveModuleState2 state)
-  {
-    // inspired by https://github.com/first95/FRC2022/blob/1f57d6837e04d8c8a89f4d83d71b5d2172f41a0e/SwervyBot/src/main/java/frc/robot/SwerveModule.java#L22
-    state = new SwerveModuleState2(
-        SwerveModuleState2.optimize(state, getState(AbsoluteSensorRange.Signed_PlusMinus180).angle));
-    /*
-    double angle = (Math.abs(state.speedMetersPerSecond) <= (maxDriveSpeedMPS * 0.01) ?
-                    lastAngle :
-                    state.angle.getDegrees()); // Prevents module rotation if speed is less than 1%
-    */ // Commented out since we want to test rotations.
-    double angle = state.angle.getDegrees();
-
-    // turn motor code
-    // Prevent rotating module if speed is less then 1%. Prevents Jittering.
-    angle = (Math.abs(state.speedMetersPerSecond) <= (maxDriveSpeedMPS * 0.01)) ? targetAngle : angle;
-
-    setAngle(angle, state.angularVelocityRadPerSecond * moduleRadkV);
-    setVelocity(state.speedMetersPerSecond);
-
   }
 
   /////////////////// END OF ODOMETRY AND STATE FUNCTIONS ////////////////////////////////////////
