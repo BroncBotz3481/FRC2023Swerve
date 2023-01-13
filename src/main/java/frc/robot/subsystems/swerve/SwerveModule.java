@@ -236,7 +236,7 @@ public class SwerveModule<DriveMotorType extends MotorController, AngleMotorType
       // burnFlash(SwerveModuleMotorType.TURNING);
     } else if (isCTRETurningMotor())
     {
-      setupCANCoderRemoteSensor(((BaseTalon) angleMotor), encoder);
+      setupCTRECANCoderRemoteSensor(((BaseTalon) angleMotor), encoder);
       setupCTREMotor(((BaseTalon) angleMotor), SwerveModuleMotorType.TURNING, 1);
     }
 
@@ -539,21 +539,6 @@ public class SwerveModule<DriveMotorType extends MotorController, AngleMotorType
     }
   }
 
-  /**
-   * Set the CANCoder to be the primary PID on the motor controller and configure the PID to accept inputs in degrees.
-   * The talon will communicate independently of the roboRIO to fetch the current CANCoder position (which will result
-   * in PID adjustments when using a CANivore).
-   *
-   * @param motor   Talon Motor controller to configure.
-   * @param encoder CANCoder to use as the remote sensor.
-   */
-  private void setupCANCoderRemoteSensor(BaseTalon motor, CANCoder encoder)
-  {
-    motor.configSelectedFeedbackSensor(FeedbackDevice.RemoteSensor0);
-    motor.configRemoteFeedbackFilter(encoder, CTRE_remoteSensor.REMOTE_SENSOR_0.ordinal());
-    motor.configSelectedFeedbackCoefficient((double) 360 / 4096); // Degrees/Ticks
-    // The CANCoder has 4096 ticks per 1 revolution.
-  }
 
   /**
    * Set the PIDF coefficients for the closed loop PID onboard the SparkMax.
@@ -1449,6 +1434,22 @@ public class SwerveModule<DriveMotorType extends MotorController, AngleMotorType
       setCurrentLimit(20, swerveModuleMotorType);
       setPIDF(0.2, 0, 0.1, 0, 100, swerveModuleMotorType);
     }
+  }
+
+  /**
+   * Set the CANCoder to be the primary PID on the motor controller and configure the PID to accept inputs in degrees.
+   * The talon will communicate independently of the roboRIO to fetch the current CANCoder position (which will result
+   * in PID adjustments when using a CANivore).
+   *
+   * @param motor   Talon Motor controller to configure.
+   * @param encoder CANCoder to use as the remote sensor.
+   */
+  private void setupCTRECANCoderRemoteSensor(BaseTalon motor, CANCoder encoder)
+  {
+    motor.configSelectedFeedbackSensor(FeedbackDevice.RemoteSensor0);
+    motor.configRemoteFeedbackFilter(encoder, CTRE_remoteSensor.REMOTE_SENSOR_0.ordinal());
+    motor.configSelectedFeedbackCoefficient((double) 360 / 4096); // Degrees/Ticks
+    // The CANCoder has 4096 ticks per 1 revolution.
   }
 
   /**
