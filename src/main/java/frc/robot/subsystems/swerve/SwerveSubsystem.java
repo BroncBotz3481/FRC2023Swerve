@@ -10,8 +10,8 @@ import edu.wpi.first.wpilibj.smartdashboard.SmartDashboard;
 import edu.wpi.first.wpilibj2.command.SubsystemBase;
 import frc.robot.Constants.DriveConstants;
 import frc.robot.Constants.ModuleConstants;
-import frc.robot.subsystems.swerve.SwerveModule.SwerveModuleMotorType;
 import frc.robot.subsystems.swerve.SwerveModule.Verbosity;
+import frc.robot.subsystems.swerve.SwerveMotor.ModuleMotorType;
 
 public class SwerveSubsystem extends SubsystemBase
 {
@@ -86,7 +86,7 @@ public class SwerveSubsystem extends SubsystemBase
 
     m_drive.zeroGyro();
     m_drive.setDeadband(0.5);
-    m_drive.setPIDF(0.1, 0, 0, 0, 0, SwerveModuleMotorType.TURNING); // TODO: Change PIDF here.
+    m_drive.setPIDF(0.1, 0, 0, 0, 0, ModuleMotorType.TURNING); // TODO: Change PIDF here.
     m_drive.setAngleDeadband(5);
 
     SmartDashboard.putData(m_drive);

@@ -17,8 +17,8 @@ import edu.wpi.first.wpilibj.smartdashboard.Field2d;
 import edu.wpi.first.wpilibj.smartdashboard.SmartDashboard;
 import frc.robot.math.kinematics.SwerveDriveKinematics;
 import frc.robot.math.kinematics.SwerveModuleState2;
-import frc.robot.subsystems.swerve.SwerveModule.SwerveModuleMotorType;
 import frc.robot.subsystems.swerve.SwerveModule.Verbosity;
+import frc.robot.subsystems.swerve.SwerveMotor.ModuleMotorType;
 import java.io.Closeable;
 
 /**
@@ -375,15 +375,15 @@ public class SwerveDrive<DriveMotorType extends MotorController, SteeringMotorTy
    * @param integralZone          Integral Zone can be used to auto clear the integral accumulator if the sensor pos is
    *                              too far from the target. This prevents unstable oscillation if the kI is too large.
    *                              Value is in sensor units.
-   * @param swerveModuleMotorType Swerve drive motor type.
+   * @param moduleMotorType Swerve drive motor type.
    */
   public void setPIDF(double p, double i, double d, double f, double integralZone,
-                      SwerveModuleMotorType swerveModuleMotorType)
+                      ModuleMotorType moduleMotorType)
   {
-    m_frontRight.setPIDF(p, i, d, f, integralZone, swerveModuleMotorType);
-    m_frontLeft.setPIDF(p, i, d, f, integralZone, swerveModuleMotorType);
-    m_backRight.setPIDF(p, i, d, f, integralZone, swerveModuleMotorType);
-    m_backLeft.setPIDF(p, i, d, f, integralZone, swerveModuleMotorType);
+    m_frontRight.setPIDF(p, i, d, f, integralZone, moduleMotorType);
+    m_frontLeft.setPIDF(p, i, d, f, integralZone, moduleMotorType);
+    m_backRight.setPIDF(p, i, d, f, integralZone, moduleMotorType);
+    m_backLeft.setPIDF(p, i, d, f, integralZone, moduleMotorType);
   }
 
   /**
