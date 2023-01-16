@@ -1,7 +1,65 @@
 package frc.robot.subsystems.swerve;
 
+import com.ctre.phoenix.motorcontrol.ControlMode;
+import com.ctre.phoenix.motorcontrol.DemandType;
+import com.ctre.phoenix.motorcontrol.FeedbackDevice;
+import com.ctre.phoenix.motorcontrol.NeutralMode;
+import com.ctre.phoenix.motorcontrol.SupplyCurrentLimitConfiguration;
+import com.ctre.phoenix.motorcontrol.can.TalonFX;
+import com.ctre.phoenix.sensors.CANCoder;
+import java.util.function.Supplier;
+
 public class CTRESwerveMotor extends SwerveMotor
 {
+
+  private final CANCoder         m_angleEncoder;
+  private final ControlMode      m_controlMode;
+  private final int              m_mainPIDSlotId;
+  private final int              m_mainPidId;
+  private final Supplier<Double> m_encoderRet;
+  private       TalonFX          m_motor;
+
+  // TODO: Finish this based off of BaseFalconSwerve
+  public CTRESwerveMotor(TalonFX motor, CANCoder encoder, ModuleMotorType type, double gearRatio, double wheelDiameter,
+                         double freeSpeedRPM)
+  {
+    m_angleEncoder = encoder;
+    m_motorType = type;
+    m_motor = motor;
+
+    motor.clearStickyFaults();
+    motor.configFactoryDefault();
+
+    motor.setNeutralMode(NeutralMode.Brake);
+    motor.setSensorPhase(true);
+
+    motor.enableVoltageCompensation(true);
+
+    m_mainPidId = CTRE_pidIdx.PRIMARY_PID.ordinal();
+    if (type == ModuleMotorType.DRIVE)
+    {
+      m_mainPIDSlotId = CTRE_slotIdx.Velocity.ordinal();
+      m_controlMode = ControlMode.Velocity;
+      m_encoderRet = m_motor::getSelectedSensorVelocity;
+
+      setCurrentLimit(80);
+
+      setConversionFactor(((Math.PI * wheelDiameter) / ((4096 / gearRatio)) * 10));
+    } else
+    {
+      m_mainPIDSlotId = CTRE_slotIdx.Distance.ordinal();
+      m_controlMode = ControlMode.Position;
+      m_encoderRet = m_motor::getSelectedSensorPosition;
+
+      setCurrentLimit(20);
+
+      // Configure the CANCoder as the remote sensor.
+      motor.configSelectedFeedbackSensor(FeedbackDevice.RemoteSensor0);
+      motor.configRemoteFeedbackFilter(encoder, CTRE_remoteSensor.REMOTE_SENSOR_0.ordinal());
+      motor.configSelectedFeedbackCoefficient((double) 360 / 4096); // Degrees/Ticks
+      // The CANCoder has 4096 ticks per rotation.
+    }
+  }
 
   /**
    * Set the PIDF coefficients for the closed loop PID onboard the SparkMax.
@@ -20,7 +78,20 @@ public class CTRESwerveMotor extends SwerveMotor
   @Override
   public void setPIDF(double P, double I, double D, double F, double integralZone)
   {
+    m_motor.selectProfileSlot(m_mainPIDSlotId, m_mainPidId);
+    // More Closed-Loop Configs at
+    // https://docs.ctre-phoenix.com/en/stable/ch16_ClosedLoop.html#closed-loop-configs-per-slot-four-slots-available
+    // Example at
+    // https://github.com/CrossTheRoadElec/Phoenix-Examples-Languages/blob/master/Java%20General/VelocityClosedLoop_ArbFeedForward/src/main/java/frc/robot/Robot.java
+    m_motor.config_kP(m_mainPIDSlotId, P);
+    m_motor.config_kI(m_mainPIDSlotId, I);
+    m_motor.config_kD(m_mainPIDSlotId, D);
+    m_motor.config_kF(m_mainPIDSlotId, F);
+    m_motor.config_IntegralZone(m_mainPIDSlotId, integralZone);
+    m_motor.configAllowableClosedloopError(m_mainPIDSlotId, 0);
 
+    // If the closed loop error is within this threshold, the motor output will be neutral. Set to 0 to disable.
+    // Value is in sensor units.
   }
 
   /**
@@ -32,7 +103,7 @@ public class CTRESwerveMotor extends SwerveMotor
   @Override
   public void setConversionFactor(double conversionFactor)
   {
-
+    m_motor.configSelectedFeedbackCoefficient(conversionFactor);
   }
 
   /**
@@ -44,7 +115,7 @@ public class CTRESwerveMotor extends SwerveMotor
   @Override
   public void setTarget(double target, double feedforward)
   {
-
+    m_motor.set(m_controlMode, target, DemandType.ArbitraryFeedForward, feedforward);
   }
 
   /**
@@ -53,7 +124,7 @@ public class CTRESwerveMotor extends SwerveMotor
   @Override
   public void stop()
   {
-
+    m_motor.set(ControlMode.PercentOutput, 0);
   }
 
   /**
@@ -64,7 +135,7 @@ public class CTRESwerveMotor extends SwerveMotor
   @Override
   public void set(double speed)
   {
-
+    m_motor.set(ControlMode.PercentOutput, speed);
   }
 
   /**
@@ -75,7 +146,7 @@ public class CTRESwerveMotor extends SwerveMotor
   @Override
   public double getCurrent()
   {
-    return 0;
+    return m_encoderRet.get();
   }
 
   /**
@@ -86,7 +157,7 @@ public class CTRESwerveMotor extends SwerveMotor
   @Override
   public void setVoltageCompensation(double nominalVoltage)
   {
-
+    m_motor.configVoltageCompSaturation(nominalVoltage);
   }
 
   /**
@@ -98,7 +169,7 @@ public class CTRESwerveMotor extends SwerveMotor
   @Override
   public void setCurrentLimit(int currentLimit)
   {
-
+    m_motor.configSupplyCurrentLimit(new SupplyCurrentLimitConfiguration(true, currentLimit, currentLimit, 1));
   }
 
   /**
@@ -109,7 +180,7 @@ public class CTRESwerveMotor extends SwerveMotor
   @Override
   public void setEnocder(double value)
   {
-
+    m_motor.setSelectedSensorPosition(value, m_mainPidId, 100);
   }
 
   /**
@@ -120,7 +191,7 @@ public class CTRESwerveMotor extends SwerveMotor
   @Override
   public boolean reachable()
   {
-    return false;
+    return m_motor.getFirmwareVersion() != 0;
   }
 
   /**
@@ -138,7 +209,7 @@ public class CTRESwerveMotor extends SwerveMotor
   @Override
   public void saveConfig()
   {
-
+    // Config is on the fly for falcons.
   }
 
   /**
@@ -149,8 +220,9 @@ public class CTRESwerveMotor extends SwerveMotor
   @Override
   public void setInverted(boolean inverted)
   {
-
+    m_motor.setInverted(inverted);
   }
+
 
   /**
    * The Talon SRX Slot profile used to configure the motor to use for the PID.
@@ -158,14 +230,6 @@ public class CTRESwerveMotor extends SwerveMotor
   enum CTRE_slotIdx
   {
     Distance, Turning, Velocity, MotionProfile
-  }
-
-  /**
-   * REV Slots for PID configuration.
-   */
-  enum REV_slotIdx
-  {
-    Position, Velocity, Simulation
   }
 
   /**
@@ -185,10 +249,12 @@ public class CTRESwerveMotor extends SwerveMotor
 //   * Set the PIDF coefficients for the closed loop PID onboard the TalonSRX.
 //   *
 //   * @param profile         The {@link CTRE_slotIdx} to use.
-//   * @param P               Proportional gain for closed loop. This is multiplied by closed loop error in sensor units.
+//   * @param P               Proportional gain for closed loop. This is multiplied by closed loop error in sensor
+//   units.
 //   *                        Note the closed loop output interprets a final value of 1023 as full output. So use a gain
 //   *                        of '0.25' to get full output if err is 4096u (Mag Encoder 1 rotation)
-//   * @param I               Integral gain for closed loop. This is multiplied by closed loop error in sensor units every
+//   * @param I               Integral gain for closed loop. This is multiplied by closed loop error in sensor units
+//   every
 //   *                        PID Loop. Note the closed loop output interprets a final value of 1023 as full output. So
 //   *                        use a gain of '0.00025' to get full output if err is 4096u (Mag Encoder 1 rotation) after
 //   *                        1000 loops
@@ -196,11 +262,13 @@ public class CTRESwerveMotor extends SwerveMotor
 //   *                        PID loop). Note the closed loop output interprets a final value of 1023 as full output. So
 //   *                        use a gain of '250' to get full output if derr is 4096u per (Mag Encoder 1 rotation) per
 //   *                        1000 loops (typ 1 sec)
-//   * @param F               Feed Fwd gain for Closed loop. See documentation for calculation details. If using velocity,
+//   * @param F               Feed Fwd gain for Closed loop. See documentation for calculation details. If using
+//   velocity,
 //   *                        motion magic, or motion profile, use (1023 * duty-cycle /
 //   *                        sensor-velocity-sensor-units-per-100ms)
 //   * @param integralZone    Integral Zone can be used to auto clear the integral accumulator if the sensor pos is too
-//   *                        far from the target. This prevents unstable oscillation if the kI is too large. Value is in
+//   *                        far from the target. This prevents unstable oscillation if the kI is too large. Value
+//   is in
 //   *                        sensor units. (ticks per 100ms)
 //   * @param moduleMotorType Motor Type for swerve module.
 //   */

@@ -172,13 +172,20 @@ public class SwerveModule<DriveMotorType extends MotorController, AngleMotorType
                                                                        ModuleMotorType.DRIVE,
                                                                        driveGearRatio,
                                                                        wheelDiameterMeters,
-                                                                       0) : new CTRESwerveMotor();
+                                                                       0) : new CTRESwerveMotor((TalonFX) mainMotor,
+                                                                                                (CANCoder) encoder,
+                                                                                                ModuleMotorType.DRIVE,
+                                                                                                driveGearRatio,
+                                                                                                wheelDiameterMeters, 0);
     turningMotor = angleMotor instanceof CANSparkMax ? new REVSwerveMotor((CANSparkMax) angleMotor,
                                                                           ModuleMotorType.TURNING,
                                                                           steerGearRatio,
                                                                           wheelDiameterMeters,
                                                                           steeringMotorFreeSpeedRPM)
-                                                     : new CTRESwerveMotor();
+                                                     : new CTRESwerveMotor((TalonFX) angleMotor, (CANCoder) encoder,
+                                                                           ModuleMotorType.TURNING, steerGearRatio,
+                                                                           wheelDiameterMeters,
+                                                                           steeringMotorFreeSpeedRPM);
     swerveLocation = swervePosition;
 
     absoluteEncoder = encoder;
@@ -416,10 +423,12 @@ public class SwerveModule<DriveMotorType extends MotorController, AngleMotorType
         SwerveModuleState2.optimize(state, getState(AbsoluteSensorRange.Signed_PlusMinus180).angle));
     double angle = state.angle.getDegrees();
 
-    // turn motor code
-    // Prevent rotating module if speed is less then 1%. Prevents Jittering.
-    angle = (Math.abs(state.speedMetersPerSecond) <= (maxDriveSpeedMPS * 0.01)) ? targetAngle : angle;
-
+    if (Math.abs(angle) != 45)
+    {
+      // turn motor code
+      // Prevent rotating module if speed is less then 1%. Prevents Jittering.
+      angle = (Math.abs(state.speedMetersPerSecond) <= (maxDriveSpeedMPS * 0.01)) ? targetAngle : angle;
+    }
     setAngle(angle, state.angularVelocityRadPerSecond);
     setVelocity(state.speedMetersPerSecond);
   }
@@ -663,7 +672,6 @@ public class SwerveModule<DriveMotorType extends MotorController, AngleMotorType
    * which is required to have no effect if called more than once.
    * <p>
    * However, implementers of this interface are strongly encouraged to make their {@code close} methods idempotent.
-   *
    */
   @Override
   public void close()
