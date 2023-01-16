@@ -68,9 +68,13 @@ public class SwerveModule<DriveMotorType extends MotorController, AngleMotorType
    */
   private final double                 wheelBase;
   /**
+   * Drive feedforward for PID when driving by velocity.
+   */
+  private final SimpleMotorFeedforward driveFeedforward;
+  /**
    * Angle offset of the CANCoder at initialization.
    */
-  public        double                 angleOffset    = 0;
+  public        double                 angleOffset   = 0;
   /**
    * Maximum speed in meters per second, used to eliminate unnecessary movement of the module.
    */
@@ -78,19 +82,19 @@ public class SwerveModule<DriveMotorType extends MotorController, AngleMotorType
   /**
    * Inverted drive motor.
    */
-  private       boolean                invertedDrive  = false;
+  private       boolean                invertedDrive = false;
   /**
    * Inverted turning motor.
    */
-  private       boolean                invertedTurn   = false;
+  private       boolean                invertedTurn  = false;
   /**
    * Power to drive motor from -1 to 1.
    */
-  private       double                 drivePower     = 0;
+  private       double                 drivePower    = 0;
   /**
    * Store the last angle for optimization.
    */
-  private       double                 targetAngle    = 0;
+  private       double                 targetAngle   = 0;
   /**
    * Target velocity for the swerve module.
    */
@@ -103,10 +107,6 @@ public class SwerveModule<DriveMotorType extends MotorController, AngleMotorType
    * Acceptable range between current and desired angle.
    */
   private       double                 angleDeadband  = 5;
-  /**
-   * Drive feedforward for PID when driving by velocity.
-   */
-  private final SimpleMotorFeedforward driveFeedforward;
 
   /**
    * Swerve module constructor. Both motors <b>MUST</b> be a {@link MotorController} class. It is recommended to create
@@ -173,7 +173,7 @@ public class SwerveModule<DriveMotorType extends MotorController, AngleMotorType
                                                                        driveGearRatio,
                                                                        wheelDiameterMeters,
                                                                        0) : new CTRESwerveMotor((TalonFX) mainMotor,
-                                                                                                (CANCoder) encoder,
+                                                                                                encoder,
                                                                                                 ModuleMotorType.DRIVE,
                                                                                                 driveGearRatio,
                                                                                                 wheelDiameterMeters, 0);
@@ -182,7 +182,7 @@ public class SwerveModule<DriveMotorType extends MotorController, AngleMotorType
                                                                           steerGearRatio,
                                                                           wheelDiameterMeters,
                                                                           steeringMotorFreeSpeedRPM)
-                                                     : new CTRESwerveMotor((TalonFX) angleMotor, (CANCoder) encoder,
+                                                     : new CTRESwerveMotor((TalonFX) angleMotor, encoder,
                                                                            ModuleMotorType.TURNING, steerGearRatio,
                                                                            wheelDiameterMeters,
                                                                            steeringMotorFreeSpeedRPM);
@@ -220,6 +220,29 @@ public class SwerveModule<DriveMotorType extends MotorController, AngleMotorType
   }
 
   ///////////////////////////// CONFIGURATION FUNCTIONS SECTION ///////////////////////////////////////////////////
+
+  /**
+   * Convert {@link SwerveModuleLocation} to {@link String} representation.
+   *
+   * @param swerveLocation Swerve position to convert.
+   * @return {@link String} name of the {@link SwerveModuleLocation} enum.
+   */
+  public static String SwerveModuleLocationToString(SwerveModuleLocation swerveLocation)
+  {
+    switch (swerveLocation)
+    {
+      case FrontLeft:
+        return "FrontLeft";
+      case BackLeft:
+        return "BackLeft";
+      case FrontRight:
+        return "FrontRight";
+      case BackRight:
+        return "BackRight";
+      default:
+        return "Unknown";
+    }
+  }
 
   /**
    * Reset the REV encoders onboard the SparkMax's to 0, and set's the drive motor to position to 0 and synchronizes the
@@ -303,6 +326,10 @@ public class SwerveModule<DriveMotorType extends MotorController, AngleMotorType
     angleDeadband = deadband;
   }
 
+  /////////////////////// END OF CONFIGURATION FUNCTIONS SECTION //////////////////////////
+
+  ////////////////////////////// STATUS FUNCTIONS SECTION //////////////////////////////////////////////////////
+
   /**
    * Configure the magnetic offset in the CANCoder.
    *
@@ -314,9 +341,9 @@ public class SwerveModule<DriveMotorType extends MotorController, AngleMotorType
     absoluteEncoder.configMagnetOffset(offset);
   }
 
-  /////////////////////// END OF CONFIGURATION FUNCTIONS SECTION //////////////////////////
+  //////////////////////////// END OF STATUS FUNCTIONS SECTION ////////////////////////////////////////////////
 
-  ////////////////////////////// STATUS FUNCTIONS SECTION //////////////////////////////////////////////////////
+  //////////////////////////// ODOMETRY AND STATE FUNCTIONS SECTION ///////////////////////////////////////////
 
   /**
    * Check that the link is good on the swerve module and CAN bus is able to retrieve data.
@@ -334,10 +361,6 @@ public class SwerveModule<DriveMotorType extends MotorController, AngleMotorType
 
     return drive && turn && encoder;
   }
-
-  //////////////////////////// END OF STATUS FUNCTIONS SECTION ////////////////////////////////////////////////
-
-  //////////////////////////// ODOMETRY AND STATE FUNCTIONS SECTION ///////////////////////////////////////////
 
   /**
    * Set the angle of the swerve module.
@@ -414,6 +437,17 @@ public class SwerveModule<DriveMotorType extends MotorController, AngleMotorType
   }
 
   /**
+   * Get the module state.
+   *
+   * @return SwerveModuleState with the encoder inputs.
+   * @throws RuntimeException Exception if CANCoder doesnt exist
+   */
+  public SwerveModuleState2 getState()
+  {
+    return getState(configuredSensorRange);
+  }
+
+  /**
    * Set the module speed and angle based off the module state.
    *
    * @param state Module state.
@@ -435,16 +469,9 @@ public class SwerveModule<DriveMotorType extends MotorController, AngleMotorType
     setVelocity(state.speedMetersPerSecond);
   }
 
-  /**
-   * Get the module state.
-   *
-   * @return SwerveModuleState with the encoder inputs.
-   * @throws RuntimeException Exception if CANCoder doesnt exist
-   */
-  public SwerveModuleState2 getState()
-  {
-    return getState(configuredSensorRange);
-  }
+  /////////////////// END OF ODOMETRY AND STATE FUNCTIONS SECTION ////////////////////////////////////////
+
+  /////////////////// DIAGNOSTIC AND TUNING FUNCTIONS SECTION ////////////////////////////////////////////
 
   /**
    * Get the swerve module position based off the sensors.
@@ -456,10 +483,6 @@ public class SwerveModule<DriveMotorType extends MotorController, AngleMotorType
     return new SwerveModulePosition(driveMotor.getCurrent(), Rotation2d.fromDegrees(targetAngle));
     ///^ Assume our current angle is what it is supposed to be.
   }
-
-  /////////////////// END OF ODOMETRY AND STATE FUNCTIONS SECTION ////////////////////////////////////////
-
-  /////////////////// DIAGNOSTIC AND TUNING FUNCTIONS SECTION ////////////////////////////////////////////
 
   /**
    * Subscribe from data within smart dashboard to make changes to the swerve module.
@@ -527,6 +550,10 @@ public class SwerveModule<DriveMotorType extends MotorController, AngleMotorType
 
   }
 
+  //////////////////////////// END OF DIAGNOSTIC AND TUNING FUNCTIONS SECTION /////////////////////////
+
+  //////////////////////////// ENUMS SECTION //////////////////////////////////////////////////////////
+
   /**
    * Publish data to the smart dashboard relating to this swerve moduule.
    *
@@ -589,49 +616,6 @@ public class SwerveModule<DriveMotorType extends MotorController, AngleMotorType
     }
   }
 
-  //////////////////////////// END OF DIAGNOSTIC AND TUNING FUNCTIONS SECTION /////////////////////////
-
-  //////////////////////////// ENUMS SECTION //////////////////////////////////////////////////////////
-
-  /**
-   * Swerve Module location on the robot.
-   */
-  public enum SwerveModuleLocation
-  {
-    FrontLeft,
-    BackLeft,
-    FrontRight,
-    BackRight
-  }
-
-  /**
-   * Verbosity levels for data publishing,
-   */
-  public enum Verbosity
-  {
-    /**
-     * The bare minimum and not utilize the CAN bus when reporting data. Only posts data from attributes.
-     */
-    LOW,
-    /**
-     * Utilize the CAN bus minimally.
-     */
-    NORMAL,
-    /**
-     * Extensively use the CAN bus to fetch data and report back.
-     */
-    HIGH,
-    /**
-     * Creates every field for the module.
-     */
-    SETUP
-  }
-
-  //////////////////////////////////// END OF ENUMS SECTION //////////////////////////////////////////////
-
-  ////////////////////////////////// OVERRIDES SECTION ///////////////////////////////////////////////////
-
-
   /**
    * Initializes this {@link Sendable} object.
    *
@@ -644,6 +628,10 @@ public class SwerveModule<DriveMotorType extends MotorController, AngleMotorType
     builder.setActuator(true);
     builder.setSafeState(this::stopMotor);
   }
+
+  //////////////////////////////////// END OF ENUMS SECTION //////////////////////////////////////////////
+
+  ////////////////////////////////// OVERRIDES SECTION ///////////////////////////////////////////////////
 
   /**
    * Closes this resource, relinquishing any underlying resources. This method is invoked automatically on objects
@@ -726,33 +714,6 @@ public class SwerveModule<DriveMotorType extends MotorController, AngleMotorType
   }
 
   /**
-   * Convert {@link SwerveModuleLocation} to {@link String} representation.
-   *
-   * @param swerveLocation Swerve position to convert.
-   * @return {@link String} name of the {@link SwerveModuleLocation} enum.
-   */
-  public static String SwerveModuleLocationToString(SwerveModuleLocation swerveLocation)
-  {
-    switch (swerveLocation)
-    {
-      case FrontLeft:
-        return "FrontLeft";
-      case BackLeft:
-        return "BackLeft";
-      case FrontRight:
-        return "FrontRight";
-      case BackRight:
-        return "BackRight";
-      default:
-        return "Unknown";
-    }
-  }
-
-  //////////////////////////////////// END OF OVERRIDES SECTION ////////////////////////////////////////////
-
-  //////////////////////////////////// STATIC FUNCTIONS SECTION ////////////////////////////////////////////
-
-  /**
    * Get the swerve module position in {@link Translation2d} from the enum passed.
    *
    * @param swerveLocation Swerve module location enum.
@@ -777,10 +738,6 @@ public class SwerveModule<DriveMotorType extends MotorController, AngleMotorType
     }
   }
 
-  /////////////////////////////////// END OF STATIC FUNCTIONS SECTION //////////////////////////////////////////
-
-  /////////////////////////////////// EXTRA FUNCTIONS THAT PROBABLY WONT MATTER ////////////////////////////////
-
   /**
    * Set the voltage compensation for the swerve module motor.
    *
@@ -799,6 +756,10 @@ public class SwerveModule<DriveMotorType extends MotorController, AngleMotorType
     }
     return this;
   }
+
+  //////////////////////////////////// END OF OVERRIDES SECTION ////////////////////////////////////////////
+
+  //////////////////////////////////// STATIC FUNCTIONS SECTION ////////////////////////////////////////////
 
   /**
    * Set the current limit for the swerve drive motor, remember this may cause jumping if used in conjunction with
@@ -819,7 +780,9 @@ public class SwerveModule<DriveMotorType extends MotorController, AngleMotorType
     }
   }
 
-  ////////////// CUSTOM INVERSION FUNCTIONS SECTION //////////////////////////
+  /////////////////////////////////// END OF STATIC FUNCTIONS SECTION //////////////////////////////////////////
+
+  /////////////////////////////////// EXTRA FUNCTIONS THAT PROBABLY WONT MATTER ////////////////////////////////
 
   /**
    * Set the steering motor to be inverted.
@@ -845,6 +808,8 @@ public class SwerveModule<DriveMotorType extends MotorController, AngleMotorType
     }
   }
 
+  ////////////// CUSTOM INVERSION FUNCTIONS SECTION //////////////////////////
+
   /**
    * Common interface for returning if a motor controller is in the inverted state or not.
    *
@@ -866,6 +831,40 @@ public class SwerveModule<DriveMotorType extends MotorController, AngleMotorType
   {
     invertedDrive = isInverted;
     driveMotor.setInverted(isInverted);
+  }
+
+  /**
+   * Swerve Module location on the robot.
+   */
+  public enum SwerveModuleLocation
+  {
+    FrontLeft,
+    BackLeft,
+    FrontRight,
+    BackRight
+  }
+
+  /**
+   * Verbosity levels for data publishing,
+   */
+  public enum Verbosity
+  {
+    /**
+     * The bare minimum and not utilize the CAN bus when reporting data. Only posts data from attributes.
+     */
+    LOW,
+    /**
+     * Utilize the CAN bus minimally.
+     */
+    NORMAL,
+    /**
+     * Extensively use the CAN bus to fetch data and report back.
+     */
+    HIGH,
+    /**
+     * Creates every field for the module.
+     */
+    SETUP
   }
 
   ////////////////////////////// END OF CUSTOM INVERSION FUNCTIONS SECTION /////////////////////////////////////

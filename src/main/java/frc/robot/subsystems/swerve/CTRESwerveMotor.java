@@ -17,7 +17,7 @@ public class CTRESwerveMotor extends SwerveMotor
   private final int              m_mainPIDSlotId;
   private final int              m_mainPidId;
   private final Supplier<Double> m_encoderRet;
-  private       TalonFX          m_motor;
+  private final TalonFX          m_motor;
 
   // TODO: Finish this based off of BaseFalconSwerve
   public CTRESwerveMotor(TalonFX motor, CANCoder encoder, ModuleMotorType type, double gearRatio, double wheelDiameter,

@@ -10,7 +10,7 @@ public abstract class SwerveMotor
   /**
    * PIDF Values.
    */
-  public double kP, kI, kD, kF, kIZ;
+  public double          kP, kI, kD, kF, kIZ;
   /**
    * Target value for PID.
    */
