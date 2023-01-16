@@ -118,11 +118,13 @@ public class SwerveDrive<DriveMotorType extends MotorController, SteeringMotorTy
                                                    frontRight.swerveModuleLocation,
                                                    backLeft.swerveModuleLocation,
                                                    backRight.swerveModuleLocation);
-    m_pigeonIMU = pigeon;
-    m_swerveOdometry = new SwerveDriveOdometry(m_swerveKinematics, getRotation(), getPositions());
+
     m_maxSpeedMPS = maxSpeedMetersPerSecond;
     m_maxAngularVelocity = maxAngularVelocityRadiansPerSecond;
-    configurePigeonIMU();
+    m_pigeonIMU = pigeon;
+
+    configurePigeonIMU(); // Reset pigeon to 0 and default settings.
+    m_swerveOdometry = new SwerveDriveOdometry(m_swerveKinematics, getRotation(), getPositions());
 
     m_xLimiter = new SlewRateLimiter(maxDriveAccelerationMetersPerSecond);
     m_yLimiter = new SlewRateLimiter(maxDriveAccelerationMetersPerSecond);
