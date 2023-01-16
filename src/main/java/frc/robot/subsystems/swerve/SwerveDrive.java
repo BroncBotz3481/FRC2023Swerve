@@ -27,12 +27,8 @@ import java.io.Closeable;
  * second order kinematics prevents the drift that builds up when using first order kinematics. As per this <a
  * href="https://www.chiefdelphi.com/t/whitepaper-swerve-drive-skew-and-second-order-kinematics/416964">ChiefDelphi
  * post</a>
- *
- * @param <DriveMotorType>    Drive motor type (CANSparkMax, TalonSRX, TalonFX)
- * @param <SteeringMotorType> Steering/Azimuth Motor (CANSparkMax, TalonSRX, TalonFX)
  */
-public class SwerveDrive<DriveMotorType extends MotorController, SteeringMotorType extends MotorController>
-    extends RobotDriveBase implements Sendable, AutoCloseable
+public class SwerveDrive extends RobotDriveBase implements Sendable, AutoCloseable
 {
 
 
@@ -44,19 +40,19 @@ public class SwerveDrive<DriveMotorType extends MotorController, SteeringMotorTy
   /**
    * Front left swerve drive
    */
-  private final SwerveModule<DriveMotorType, SteeringMotorType, CANCoder> m_frontLeft;
+  private final SwerveModule<?, ?, ?>                                     m_frontLeft;
   /**
    * Back left swerve drive
    */
-  private final SwerveModule<DriveMotorType, SteeringMotorType, CANCoder> m_backLeft;
+  private final SwerveModule<?, ?, ?>                                     m_backLeft;
   /**
    * Front right swerve drive
    */
-  private final SwerveModule<DriveMotorType, SteeringMotorType, CANCoder> m_frontRight;
+  private final SwerveModule<?, ?, ?>                                     m_frontRight;
   /**
    * Back right swerve drive
    */
-  private final SwerveModule<DriveMotorType, SteeringMotorType, CANCoder> m_backRight;
+  private final SwerveModule<?, ?, ?>                                     m_backRight;
   /**
    * Swerve drive kinematics.
    */
@@ -102,10 +98,10 @@ public class SwerveDrive<DriveMotorType extends MotorController, SteeringMotorTy
    *                                               motors.
    * @param gyroInverted                           Invert the gyroscope for the robot.
    */
-  public SwerveDrive(SwerveModule<DriveMotorType, SteeringMotorType, CANCoder> frontLeft,
-                     SwerveModule<DriveMotorType, SteeringMotorType, CANCoder> backLeft,
-                     SwerveModule<DriveMotorType, SteeringMotorType, CANCoder> frontRight,
-                     SwerveModule<DriveMotorType, SteeringMotorType, CANCoder> backRight, WPI_Pigeon2 pigeon,
+  public SwerveDrive(SwerveModule<?, ?, ?> frontLeft,
+                     SwerveModule<?, ?, ?> frontRight,
+                     SwerveModule<?, ?, ?> backLeft,
+                     SwerveModule<?, ?, ?> backRight, WPI_Pigeon2 pigeon,
                      double maxSpeedMetersPerSecond, double maxAngularVelocityRadiansPerSecond,
                      double maxDriveAccelerationMetersPerSecond, double maxAngularAccelerationRadiansPerSecond,
                      boolean gyroInverted)
