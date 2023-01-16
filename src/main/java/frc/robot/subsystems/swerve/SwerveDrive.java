@@ -17,6 +17,7 @@ import edu.wpi.first.wpilibj.smartdashboard.Field2d;
 import edu.wpi.first.wpilibj.smartdashboard.SmartDashboard;
 import frc.robot.math.kinematics.SwerveDriveKinematics;
 import frc.robot.math.kinematics.SwerveModuleState2;
+import frc.robot.subsystems.swerve.SwerveModule.SwerveModuleLocation;
 import frc.robot.subsystems.swerve.SwerveModule.Verbosity;
 import frc.robot.subsystems.swerve.SwerveMotor.ModuleMotorType;
 import java.io.Closeable;
@@ -85,6 +86,7 @@ public class SwerveDrive<DriveMotorType extends MotorController, SteeringMotorTy
    */
   private boolean m_gyroInverted = false;
 
+
   /**
    * Constructor for Swerve Drive assuming modules have been created and configured with PIDF and conversions.
    *
@@ -98,7 +100,7 @@ public class SwerveDrive<DriveMotorType extends MotorController, SteeringMotorTy
    * @param maxDriveAccelerationMetersPerSecond    Maximum acceleration in meters per second for the drive motors.
    * @param maxAngularAccelerationRadiansPerSecond Maximum angular acceleration in meters per second for the steering
    *                                               motors.
-   * @param gyroInverted                           Invert the gryoscope for the robot.
+   * @param gyroInverted                           Invert the gyroscope for the robot.
    */
   public SwerveDrive(SwerveModule<DriveMotorType, SteeringMotorType, CANCoder> frontLeft,
                      SwerveModule<DriveMotorType, SteeringMotorType, CANCoder> backLeft,
@@ -133,6 +135,56 @@ public class SwerveDrive<DriveMotorType extends MotorController, SteeringMotorTy
     // Inspired by https://github.com/Team364/BaseFalconSwerve/blob/main/src/main/java/frc/robot/subsystems/Swerve.java
     SmartDashboard.putData(m_field);
     SmartDashboard.putData(m_pigeonIMU);
+  }
+
+  /**
+   * Create swerve drive modules
+   *
+   * @param driveGearRatio            Drive gear ratio in form of (rotation:1 AKA rotations/1) to get the encoder ticks
+   *                                  per rotation.
+   * @param steerGearRatio            Steering motor gear ratio (usually 12.8:1 for MK4 in form of rotations:1 or
+   *                                  rotations/1), only applied if using Neo's.
+   * @param wheelDiameterMeters       The wheel diameter of the swerve drive module in meters.
+   * @param wheelBaseMeters           The Distance between front and back wheels of the robot in meters.
+   * @param driveTrainWidthMeters     The Distance between centers of right and left wheels in meters.
+   * @param steeringMotorFreeSpeedRPM The RPM free speed of the steering motor.
+   * @param maxSpeedMPS               The maximum drive speed in meters per second.
+   * @param maxDriveAcceleration      The maximum drive acceleration in meters^2 per second.
+   * @param configs                   The swerve module configuration classes for the swerve drive given.
+   * @return Array of swerve modules in the order of front left, front right, back left, back right.
+   */
+  public static SwerveModule<?, ?, ?>[] createModules(
+      double driveGearRatio, double steerGearRatio, double wheelDiameterMeters, double wheelBaseMeters,
+      double driveTrainWidthMeters, double steeringMotorFreeSpeedRPM, double maxSpeedMPS,
+      double maxDriveAcceleration, SwerveModuleConfig<?, ?, ?>[] configs)
+  {
+    SwerveModule<?, ?, ?>[] modules = new SwerveModule[configs.length];
+    for (SwerveModuleConfig<?, ?, ?> config : configs)
+    {
+      int loc;
+      switch (config.loc)
+      {
+        case FrontLeft:
+          loc = 0;
+          break;
+        case BackLeft:
+          loc = 2;
+          break;
+        case FrontRight:
+          loc = 1;
+          break;
+        case BackRight:
+          loc = 3;
+          break;
+        default:
+          loc = 0;
+      }
+
+      modules[loc] = config.createModule(driveGearRatio, steerGearRatio, wheelDiameterMeters, wheelBaseMeters,
+                                         driveTrainWidthMeters, steeringMotorFreeSpeedRPM, maxSpeedMPS,
+                                         maxDriveAcceleration);
+    }
+    return modules;
   }
 
   /**
@@ -476,5 +528,76 @@ public class SwerveDrive<DriveMotorType extends MotorController, SteeringMotorTy
   public void close() throws Exception
   {
     SendableRegistry.remove(this);
+  }
+
+  /**
+   * Helper class for easier swerve module creation
+   *
+   * @param <DriveMotorType>    The motor type for the drive motor on the swerve moduule.
+   * @param <SteeringMotorType> The motor type for the steering motor on the module.
+   * @param <AbsoluteEncoder>   The absolute encoder type.
+   */
+  static class SwerveModuleConfig<DriveMotorType extends MotorController, SteeringMotorType extends MotorController,
+      AbsoluteEncoder extends CANCoder>
+  {
+
+    public DriveMotorType       drive;
+    public SteeringMotorType    steering;
+    public AbsoluteEncoder      encoder;
+    public double               angleOffset;
+    public SwerveModuleLocation loc;
+
+    /**
+     * Swerve Module configuration class to define the motor CAN IDs and absolute encoder offset of a swerve module.
+     *
+     * @param driveMotor      Drive motor for the swerve module.
+     * @param steerMotor      Steer motor for the swerve module.
+     * @param encoderSteering CANCoder for the steering motor on the swerve module.
+     * @param offset          Absolute encoder offset.
+     * @param location        Swerve Moduule location on the chassis.
+     */
+    public SwerveModuleConfig(DriveMotorType driveMotor, SteeringMotorType steerMotor, AbsoluteEncoder encoderSteering,
+                              double offset,
+                              SwerveModuleLocation location)
+    {
+      drive = driveMotor;
+      steering = steerMotor;
+      angleOffset = offset;
+      encoder = encoderSteering;
+      loc = location;
+    }
+
+    /**
+     * Create the swerve module from the configuration.
+     *
+     * @param driveGearRatio            Drive gear ratio in form of (rotation:1 AKA rotations/1) to get the encoder
+     *                                  ticks per rotation.
+     * @param steerGearRatio            Steering motor gear ratio (usually 12.8:1 for MK4 in form of rotations:1 or
+     *                                  rotations/1), only applied if using Neo's.
+     * @param wheelDiameterMeters       The wheel diameter of the swerve drive module in meters.
+     * @param wheelBaseMeters           The Distance between front and back wheels of the robot in meters.
+     * @param driveTrainWidthMeters     The Distance between centers of right and left wheels in meters.
+     * @param steeringMotorFreeSpeedRPM The RPM free speed of the steering motor.
+     * @param maxSpeedMPS               The maximum drive speed in meters per second.
+     * @param maxDriveAcceleration      The maximum drive acceleration in meters^2 per second.
+     * @return The Swerve Module.
+     */
+    public SwerveModule<DriveMotorType, SteeringMotorType, AbsoluteEncoder> createModule(double driveGearRatio,
+                                                                                         double steerGearRatio,
+                                                                                         double wheelDiameterMeters,
+                                                                                         double wheelBaseMeters,
+                                                                                         double driveTrainWidthMeters,
+                                                                                         double steeringMotorFreeSpeedRPM,
+                                                                                         double maxSpeedMPS,
+                                                                                         double maxDriveAcceleration)
+    {
+      return new SwerveModule<>(drive, steering, encoder, loc,
+                                driveGearRatio, steerGearRatio,
+                                angleOffset, wheelDiameterMeters,
+                                wheelBaseMeters,
+                                driveTrainWidthMeters,
+                                steeringMotorFreeSpeedRPM,
+                                maxSpeedMPS, maxDriveAcceleration);
+    }
   }
 }
