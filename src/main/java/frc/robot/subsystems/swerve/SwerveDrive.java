@@ -138,56 +138,6 @@ public class SwerveDrive<DriveMotorType extends MotorController, SteeringMotorTy
   }
 
   /**
-   * Create swerve drive modules
-   *
-   * @param driveGearRatio            Drive gear ratio in form of (rotation:1 AKA rotations/1) to get the encoder ticks
-   *                                  per rotation.
-   * @param steerGearRatio            Steering motor gear ratio (usually 12.8:1 for MK4 in form of rotations:1 or
-   *                                  rotations/1), only applied if using Neo's.
-   * @param wheelDiameterMeters       The wheel diameter of the swerve drive module in meters.
-   * @param wheelBaseMeters           The Distance between front and back wheels of the robot in meters.
-   * @param driveTrainWidthMeters     The Distance between centers of right and left wheels in meters.
-   * @param steeringMotorFreeSpeedRPM The RPM free speed of the steering motor.
-   * @param maxSpeedMPS               The maximum drive speed in meters per second.
-   * @param maxDriveAcceleration      The maximum drive acceleration in meters^2 per second.
-   * @param configs                   The swerve module configuration classes for the swerve drive given.
-   * @return Array of swerve modules in the order of front left, front right, back left, back right.
-   */
-  public static SwerveModule<?, ?, ?>[] createModules(
-      double driveGearRatio, double steerGearRatio, double wheelDiameterMeters, double wheelBaseMeters,
-      double driveTrainWidthMeters, double steeringMotorFreeSpeedRPM, double maxSpeedMPS,
-      double maxDriveAcceleration, SwerveModuleConfig<?, ?, ?>[] configs)
-  {
-    SwerveModule<?, ?, ?>[] modules = new SwerveModule[configs.length];
-    for (SwerveModuleConfig<?, ?, ?> config : configs)
-    {
-      int loc;
-      switch (config.loc)
-      {
-        case FrontLeft:
-          loc = 0;
-          break;
-        case BackLeft:
-          loc = 2;
-          break;
-        case FrontRight:
-          loc = 1;
-          break;
-        case BackRight:
-          loc = 3;
-          break;
-        default:
-          loc = 0;
-      }
-
-      modules[loc] = config.createModule(driveGearRatio, steerGearRatio, wheelDiameterMeters, wheelBaseMeters,
-                                         driveTrainWidthMeters, steeringMotorFreeSpeedRPM, maxSpeedMPS,
-                                         maxDriveAcceleration);
-    }
-    return modules;
-  }
-
-  /**
    * Configure the PigeonIMU with factory default settings and a zeroed gyroscope.
    */
   public void configurePigeonIMU()
@@ -600,4 +550,56 @@ public class SwerveDrive<DriveMotorType extends MotorController, SteeringMotorTy
                                 maxSpeedMPS, maxDriveAcceleration);
     }
   }
+
+
+  /**
+   * Create swerve drive modules
+   *
+   * @param driveGearRatio            Drive gear ratio in form of (rotation:1 AKA rotations/1) to get the encoder ticks
+   *                                  per rotation.
+   * @param steerGearRatio            Steering motor gear ratio (usually 12.8:1 for MK4 in form of rotations:1 or
+   *                                  rotations/1), only applied if using Neo's.
+   * @param wheelDiameterMeters       The wheel diameter of the swerve drive module in meters.
+   * @param wheelBaseMeters           The Distance between front and back wheels of the robot in meters.
+   * @param driveTrainWidthMeters     The Distance between centers of right and left wheels in meters.
+   * @param steeringMotorFreeSpeedRPM The RPM free speed of the steering motor.
+   * @param maxSpeedMPS               The maximum drive speed in meters per second.
+   * @param maxDriveAcceleration      The maximum drive acceleration in meters^2 per second.
+   * @param configs                   The swerve module configuration classes for the swerve drive given.
+   * @return Array of swerve modules in the order of front left, front right, back left, back right.
+   */
+  public static SwerveModule<?, ?, ?>[] createModules(
+      double driveGearRatio, double steerGearRatio, double wheelDiameterMeters, double wheelBaseMeters,
+      double driveTrainWidthMeters, double steeringMotorFreeSpeedRPM, double maxSpeedMPS,
+      double maxDriveAcceleration, SwerveModuleConfig<?, ?, ?>[] configs)
+  {
+    SwerveModule<?, ?, ?>[] modules = new SwerveModule[configs.length];
+    for (int i = 0; i < configs.length; i++)
+    {
+      int loc;
+      switch (configs[i].loc)
+      {
+        case FrontLeft:
+          loc = 0;
+          break;
+        case BackLeft:
+          loc = 2;
+          break;
+        case FrontRight:
+          loc = 1;
+          break;
+        case BackRight:
+          loc = 3;
+          break;
+        default:
+          loc = i;
+      }
+
+      modules[loc] = configs[i].createModule(driveGearRatio, steerGearRatio, wheelDiameterMeters, wheelBaseMeters,
+                                             driveTrainWidthMeters, steeringMotorFreeSpeedRPM, maxSpeedMPS,
+                                             maxDriveAcceleration);
+    }
+    return modules;
+  }
+
 }
