@@ -215,6 +215,8 @@ public class SwerveModule<DriveMotorType extends MotorController, AngleMotorType
     turningMotor.saveConfig();
 
     publish(Verbosity.SETUP);
+
+    targetAngle = getState().angle.getDegrees();
   }
 
   ///////////////////////////// CONFIGURATION FUNCTIONS SECTION ///////////////////////////////////////////////////

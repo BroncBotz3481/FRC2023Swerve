@@ -22,8 +22,8 @@ public class REVSwerveMotor extends SwerveMotor
   /**
    * kV feed forward for PID
    */
-  private final double m_moduleRadkV;
-  private final int    m_secondaryPidSlot;
+  private final double                m_moduleRadkV;
+  private final int                   m_secondaryPidSlot;
 
   /**
    * Constructor for REV Swerve Motor, expecting CANSparkMax. Clears sticky faults and restores factory defaults.
@@ -232,13 +232,17 @@ public class REVSwerveMotor extends SwerveMotor
    * @param CANStatus0 Applied Output, Faults, Sticky Faults, Is Follower
    * @param CANStatus1 Motor Velocity, Motor Temperature, Motor Voltage, Motor Current
    * @param CANStatus2 Motor Position
+   * @param CANStatus3 Analog Sensor Voltage, Analog Sensor Velocity, Analog Sensor Position
+   * @param CANStatus4 Alternate Encoder Velocity, Alternate Encoder Position
    */
-  public void setCANStatusFrames(int CANStatus0, int CANStatus1, int CANStatus2)
+  public void setCANStatusFrames(int CANStatus0, int CANStatus1, int CANStatus2, int CANStatus3, int CANStatus4)
   {
     m_motor.setPeriodicFramePeriod(PeriodicFrame.kStatus0, CANStatus0);
     m_motor.setPeriodicFramePeriod(PeriodicFrame.kStatus1, CANStatus1);
     m_motor.setPeriodicFramePeriod(PeriodicFrame.kStatus2, CANStatus2);
-    // TODO: Configure Status Frame 3 and 4 if necessary
+    m_motor.setPeriodicFramePeriod(PeriodicFrame.kStatus3, CANStatus3);
+    m_motor.setPeriodicFramePeriod(PeriodicFrame.kStatus4, CANStatus4);
+    // TODO: Configure Status Frame 5 and 6 if necessary
     //  https://docs.revrobotics.com/sparkmax/operating-modes/control-interfaces
   }
 
@@ -260,12 +264,13 @@ public class REVSwerveMotor extends SwerveMotor
   @Override
   public void optimizeCANFrames()
   {
+    // Taken from https://github.com/frc3512/SwerveBot-2022/blob/9d31afd05df6c630d5acb4ec2cf5d734c9093bf8/src/main/java/frc/lib/util/CANSparkMaxUtil.java#L67
     if (m_motorType == ModuleMotorType.DRIVE)
     {
-      setCANStatusFrames(100, 20, 20);
+      setCANStatusFrames(10, 20, 500, 500, 500);
     } else
     {
-      setCANStatusFrames(10, 20, 50);
+      setCANStatusFrames(10, 500, 20, 500, 500);
     }
   }
 

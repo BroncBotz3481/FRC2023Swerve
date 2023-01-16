@@ -86,7 +86,8 @@ public class SwerveSubsystem extends SubsystemBase
 
     m_drive.zeroGyro();
     m_drive.setDeadband(0.5);
-    m_drive.setPIDF(0.1, 0, 0, 0, 0, ModuleMotorType.TURNING); // TODO: Change PIDF here.
+    m_drive.setPIDF(0.01, 0, 0, 0, 0, ModuleMotorType.TURNING); // TODO: Change PIDF here.
+    m_drive.setPIDF(0.1, 0, 0, 0, 0, ModuleMotorType.DRIVE); // TODO: Change PIDF here.
     m_drive.setAngleDeadband(5);
 
     SmartDashboard.putData(m_drive);
