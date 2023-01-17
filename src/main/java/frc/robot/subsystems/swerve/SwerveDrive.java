@@ -2,11 +2,12 @@ package frc.robot.subsystems.swerve;
 
 import com.ctre.phoenix.sensors.CANCoder;
 import com.ctre.phoenix.sensors.WPI_Pigeon2;
+import edu.wpi.first.math.VecBuilder;
+import edu.wpi.first.math.estimator.SwerveDrivePoseEstimator;
 import edu.wpi.first.math.filter.SlewRateLimiter;
 import edu.wpi.first.math.geometry.Pose2d;
 import edu.wpi.first.math.geometry.Rotation2d;
 import edu.wpi.first.math.kinematics.ChassisSpeeds;
-import edu.wpi.first.math.kinematics.SwerveDriveOdometry;
 import edu.wpi.first.math.kinematics.SwerveModulePosition;
 import edu.wpi.first.util.sendable.Sendable;
 import edu.wpi.first.util.sendable.SendableBuilder;
@@ -58,13 +59,13 @@ public class SwerveDrive extends RobotDriveBase implements Sendable, AutoCloseab
    */
   private final SwerveDriveKinematics m_swerveKinematics;
   /**
-   * Constantly updated swerve drive odometry.
+   * Swerve drive pose estimator for attempting to figure out our current position.
    */
-  private final SwerveDriveOdometry   m_swerveOdometry;
+  private final SwerveDrivePoseEstimator m_swervePoseEstimator;
   /**
    * Pigeon 2.0 centered on the robot.
    */
-  private final WPI_Pigeon2           m_pigeonIMU;
+  private final WPI_Pigeon2 m_pigeonIMU;
   /**
    * Field2d displayed on shuffleboard with current position.
    */
@@ -122,7 +123,13 @@ public class SwerveDrive extends RobotDriveBase implements Sendable, AutoCloseab
     m_pigeonIMU = pigeon;
 
     configurePigeonIMU(); // Reset pigeon to 0 and default settings.
-    m_swerveOdometry = new SwerveDriveOdometry(m_swerveKinematics, getRotation(), getPositions());
+    m_swervePoseEstimator = new SwerveDrivePoseEstimator(
+        m_swerveKinematics,
+        getRotation(),
+        getPositions(),
+        new Pose2d(),
+        VecBuilder.fill(0.1, 0.1, 0.1), // x,y,heading in radians; state std dev, higher=less weight
+        VecBuilder.fill(0.9, 1.0, 0.9)); // x,y,heading in radians; Vision measurement std dev, higher=less weight
 
     m_xLimiter = new SlewRateLimiter(maxDriveAccelerationMetersPerSecond);
     m_yLimiter = new SlewRateLimiter(maxDriveAccelerationMetersPerSecond);
@@ -197,11 +204,10 @@ public class SwerveDrive extends RobotDriveBase implements Sendable, AutoCloseab
    *
    * @return Swerve drive odometry.
    */
-  public SwerveDriveOdometry update()
+  public SwerveDrivePoseEstimator update()
   {
-    m_swerveOdometry.update(getRotation(),
-                            getPositions());
-    return m_swerveOdometry;
+    m_swervePoseEstimator.update(getRotation(), getPositions());
+    return m_swervePoseEstimator;
   }
 
   /**
@@ -252,7 +258,7 @@ public class SwerveDrive extends RobotDriveBase implements Sendable, AutoCloseab
     try
     {
       this.update();
-      m_field.setRobotPose(m_swerveOdometry.getPoseMeters());
+      m_field.setRobotPose(m_swervePoseEstimator.getEstimatedPosition());
     } catch (Exception e)
     {
       System.err.println("Cannot update SwerveDrive Odometry!");
@@ -315,7 +321,7 @@ public class SwerveDrive extends RobotDriveBase implements Sendable, AutoCloseab
    */
   public Pose2d getPose()
   {
-    return m_swerveOdometry.getPoseMeters();
+    return m_swervePoseEstimator.getEstimatedPosition();
   }
 
   /**
@@ -336,7 +342,7 @@ public class SwerveDrive extends RobotDriveBase implements Sendable, AutoCloseab
    */
   public void resetOdometry(Pose2d pose)
   {
-    m_swerveOdometry.resetPosition(getRotation(), getPositions(), pose);
+    m_swervePoseEstimator.resetPosition(getRotation(), getPositions(), pose);
   }
 
   /**
