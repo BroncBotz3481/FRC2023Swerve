@@ -68,7 +68,7 @@ public class REVSwerveMotor extends SwerveMotor
 
       setCurrentLimit(80);
 
-      setPIDF(0.01, 0, 0, 0, 1);
+      setPIDF(0.1, 0, 0, 0, 1);
 
       // setREVConversionFactor(motor, (Math.PI * wheelDiameter) / (60 * gearRatio), ModuleMotorType.DRIVE);
       setConversionFactor(((Math.PI * wheelDiameter) / gearRatio) / 60);
@@ -84,7 +84,7 @@ public class REVSwerveMotor extends SwerveMotor
 
       setCurrentLimit(40);
 
-      setPIDF(0.1, 0, 0, 0, 0);
+      setPIDF(0.01, 0, 0, 0, 0);
 
       // setREVConversionFactor(motor, 360 / (42 * gearRatio), ModuleMotorType.TURNING);
       setConversionFactor(360 / gearRatio);
