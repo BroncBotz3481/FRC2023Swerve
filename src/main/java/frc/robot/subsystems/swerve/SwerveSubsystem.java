@@ -84,7 +84,7 @@ public class SwerveSubsystem extends SubsystemBase
                               DriveConstants.kTeleDriveMaxAngularAccelerationUnitsPerSecond,
                               false);
 
-//    SwerveModuleConfig<CANSparkMax, CANSparkMax, CANCoder> configs[] = new SwerveModuleConfig[]{
+//    SwerveModuleConfig<?, ?, ?>[] configs = new SwerveModuleConfig[]{
 //        new SwerveModuleConfig<>(new CANSparkMax(DriveConstants.kFrontLeftDriveMotorPort, MotorType.kBrushless),
 //                                 new CANSparkMax(DriveConstants.kFrontLeftTurningMotorPort, MotorType.kBrushless),
 //                                 new CANCoder(DriveConstants.kFrontLeftAbsoluteEncoderPort),

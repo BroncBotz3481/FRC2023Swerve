@@ -74,7 +74,7 @@ public class SwerveModule<DriveMotorType extends MotorController, AngleMotorType
   /**
    * Angle offset of the CANCoder at initialization.
    */
-  public        double                 angleOffset   = 0;
+  public        double                 angleOffset    = 0;
   /**
    * Maximum speed in meters per second, used to eliminate unnecessary movement of the module.
    */
@@ -82,19 +82,19 @@ public class SwerveModule<DriveMotorType extends MotorController, AngleMotorType
   /**
    * Inverted drive motor.
    */
-  private       boolean                invertedDrive = false;
+  private       boolean                invertedDrive  = false;
   /**
    * Inverted turning motor.
    */
-  private       boolean                invertedTurn  = false;
+  private       boolean                invertedTurn   = false;
   /**
    * Power to drive motor from -1 to 1.
    */
-  private       double                 drivePower    = 0;
+  private       double                 drivePower     = 0;
   /**
    * Store the last angle for optimization.
    */
-  private       double                 targetAngle   = 0;
+  private       double                 targetAngle    = 0;
   /**
    * Target velocity for the swerve module.
    */
@@ -372,8 +372,8 @@ public class SwerveModule<DriveMotorType extends MotorController, AngleMotorType
   {
     targetAngle = angle;
 
-    angle += 180; // Since the angle is given in the form of -180 to 180, we add 180 to make it 0 to 360.
-    assert angle <= 360;
+//    angle += 180; // Since the angle is given in the form of -180 to 180, we add 180 to make it 0 to 360.
+//    assert angle <= 360;
 
     // currentAngle is always updated in getState which is called during setState which calls this function.
     if ((angle - angleDeadband) <= currentAngle && currentAngle <= (angle + angleDeadband))

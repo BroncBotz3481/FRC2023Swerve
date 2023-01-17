@@ -55,9 +55,9 @@ public class SwerveDriveKinematics extends edu.wpi.first.math.kinematics.SwerveD
 
     for (int i = 0; i < m_numModules; i++)
     {
-      m_inverseKinematics.setRow(i * 2 + 0, 0, /* Start Data */ 1, 0, -m_modules[i].getY());
+      m_inverseKinematics.setRow(i * 2, 0, /* Start Data */ 1, 0, -m_modules[i].getY());
       m_inverseKinematics.setRow(i * 2 + 1, 0, /* Start Data */ 0, 1, +m_modules[i].getX());
-      bigInverseKinematics.setRow(i * 2 + 0, 0, /* Start Data */ 1, 0, -m_modules[i].getX(), -m_modules[i].getY());
+      bigInverseKinematics.setRow(i * 2, 0, /* Start Data */ 1, 0, -m_modules[i].getX(), -m_modules[i].getY());
       bigInverseKinematics.setRow(i * 2 + 1, 0, /* Start Data */ 0, 1, -m_modules[i].getY(), +m_modules[i].getX());
     }
     m_forwardKinematics = m_inverseKinematics.pseudoInverse();
@@ -178,7 +178,7 @@ public class SwerveDriveKinematics extends edu.wpi.first.math.kinematics.SwerveD
       for (int i = 0; i < m_numModules; i++)
       {
         m_inverseKinematics.setRow(
-            i * 2 + 0,
+            i * 2,
             0, /* Start Data */
             1,
             0,
@@ -190,7 +190,7 @@ public class SwerveDriveKinematics extends edu.wpi.first.math.kinematics.SwerveD
             1,
             +m_modules[i].getX() - centerOfRotationMeters.getX());
         bigInverseKinematics.setRow(
-            i * 2 + 0,
+            i * 2,
             0, /* Start Data */
             1,
             0,

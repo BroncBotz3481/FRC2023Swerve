@@ -40,39 +40,39 @@ public class SwerveDrive extends RobotDriveBase implements Sendable, AutoCloseab
   /**
    * Front left swerve drive
    */
-  private final SwerveModule<?, ?, ?>                                     m_frontLeft;
+  private final SwerveModule<?, ?, ?> m_frontLeft;
   /**
    * Back left swerve drive
    */
-  private final SwerveModule<?, ?, ?>                                     m_backLeft;
+  private final SwerveModule<?, ?, ?> m_backLeft;
   /**
    * Front right swerve drive
    */
-  private final SwerveModule<?, ?, ?>                                     m_frontRight;
+  private final SwerveModule<?, ?, ?> m_frontRight;
   /**
    * Back right swerve drive
    */
-  private final SwerveModule<?, ?, ?>                                     m_backRight;
+  private final SwerveModule<?, ?, ?> m_backRight;
   /**
    * Swerve drive kinematics.
    */
-  private final SwerveDriveKinematics                                     m_swerveKinematics;
+  private final SwerveDriveKinematics m_swerveKinematics;
   /**
    * Constantly updated swerve drive odometry.
    */
-  private final SwerveDriveOdometry                                       m_swerveOdometry;
+  private final SwerveDriveOdometry   m_swerveOdometry;
   /**
    * Pigeon 2.0 centered on the robot.
    */
-  private final WPI_Pigeon2                                               m_pigeonIMU;
+  private final WPI_Pigeon2           m_pigeonIMU;
   /**
    * Field2d displayed on shuffleboard with current position.
    */
-  private final Field2d                                                   m_field = new Field2d();
+  private final Field2d               m_field = new Field2d();
   /**
    * The slew rate limiters to make control smooth.
    */
-  private final SlewRateLimiter                                           m_xLimiter, m_yLimiter, m_turningLimiter;
+  private final SlewRateLimiter       m_xLimiter, m_yLimiter, m_turningLimiter;
   /**
    * Maximum speed in meters per second.
    */
@@ -131,6 +131,56 @@ public class SwerveDrive extends RobotDriveBase implements Sendable, AutoCloseab
     // Inspired by https://github.com/Team364/BaseFalconSwerve/blob/main/src/main/java/frc/robot/subsystems/Swerve.java
     SmartDashboard.putData(m_field);
     SmartDashboard.putData(m_pigeonIMU);
+  }
+
+  /**
+   * Create swerve drive modules
+   *
+   * @param driveGearRatio            Drive gear ratio in form of (rotation:1 AKA rotations/1) to get the encoder ticks
+   *                                  per rotation.
+   * @param steerGearRatio            Steering motor gear ratio (usually 12.8:1 for MK4 in form of rotations:1 or
+   *                                  rotations/1), only applied if using Neo's.
+   * @param wheelDiameterMeters       The wheel diameter of the swerve drive module in meters.
+   * @param wheelBaseMeters           The Distance between front and back wheels of the robot in meters.
+   * @param driveTrainWidthMeters     The Distance between centers of right and left wheels in meters.
+   * @param steeringMotorFreeSpeedRPM The RPM free speed of the steering motor.
+   * @param maxSpeedMPS               The maximum drive speed in meters per second.
+   * @param maxDriveAcceleration      The maximum drive acceleration in meters^2 per second.
+   * @param configs                   The swerve module configuration classes for the swerve drive given.
+   * @return Array of swerve modules in the order of front left, front right, back left, back right.
+   */
+  public static SwerveModule<?, ?, ?>[] createModules(
+      double driveGearRatio, double steerGearRatio, double wheelDiameterMeters, double wheelBaseMeters,
+      double driveTrainWidthMeters, double steeringMotorFreeSpeedRPM, double maxSpeedMPS,
+      double maxDriveAcceleration, SwerveModuleConfig<?, ?, ?>[] configs)
+  {
+    SwerveModule<?, ?, ?>[] modules = new SwerveModule[configs.length];
+    for (int i = 0; i < configs.length; i++)
+    {
+      int loc;
+      switch (configs[i].loc)
+      {
+        case FrontLeft:
+          loc = 0;
+          break;
+        case BackLeft:
+          loc = 2;
+          break;
+        case FrontRight:
+          loc = 1;
+          break;
+        case BackRight:
+          loc = 3;
+          break;
+        default:
+          loc = i;
+      }
+
+      modules[loc] = configs[i].createModule(driveGearRatio, steerGearRatio, wheelDiameterMeters, wheelBaseMeters,
+                                             driveTrainWidthMeters, steeringMotorFreeSpeedRPM, maxSpeedMPS,
+                                             maxDriveAcceleration);
+    }
+    return modules;
   }
 
   /**
@@ -420,7 +470,6 @@ public class SwerveDrive extends RobotDriveBase implements Sendable, AutoCloseab
     return "Swerve Drive Base";
   }
 
-
   /**
    * Initializes this {@link Sendable} object.
    *
@@ -545,57 +594,6 @@ public class SwerveDrive extends RobotDriveBase implements Sendable, AutoCloseab
                                 steeringMotorFreeSpeedRPM,
                                 maxSpeedMPS, maxDriveAcceleration);
     }
-  }
-
-
-  /**
-   * Create swerve drive modules
-   *
-   * @param driveGearRatio            Drive gear ratio in form of (rotation:1 AKA rotations/1) to get the encoder ticks
-   *                                  per rotation.
-   * @param steerGearRatio            Steering motor gear ratio (usually 12.8:1 for MK4 in form of rotations:1 or
-   *                                  rotations/1), only applied if using Neo's.
-   * @param wheelDiameterMeters       The wheel diameter of the swerve drive module in meters.
-   * @param wheelBaseMeters           The Distance between front and back wheels of the robot in meters.
-   * @param driveTrainWidthMeters     The Distance between centers of right and left wheels in meters.
-   * @param steeringMotorFreeSpeedRPM The RPM free speed of the steering motor.
-   * @param maxSpeedMPS               The maximum drive speed in meters per second.
-   * @param maxDriveAcceleration      The maximum drive acceleration in meters^2 per second.
-   * @param configs                   The swerve module configuration classes for the swerve drive given.
-   * @return Array of swerve modules in the order of front left, front right, back left, back right.
-   */
-  public static SwerveModule<?, ?, ?>[] createModules(
-      double driveGearRatio, double steerGearRatio, double wheelDiameterMeters, double wheelBaseMeters,
-      double driveTrainWidthMeters, double steeringMotorFreeSpeedRPM, double maxSpeedMPS,
-      double maxDriveAcceleration, SwerveModuleConfig<?, ?, ?>[] configs)
-  {
-    SwerveModule<?, ?, ?>[] modules = new SwerveModule[configs.length];
-    for (int i = 0; i < configs.length; i++)
-    {
-      int loc;
-      switch (configs[i].loc)
-      {
-        case FrontLeft:
-          loc = 0;
-          break;
-        case BackLeft:
-          loc = 2;
-          break;
-        case FrontRight:
-          loc = 1;
-          break;
-        case BackRight:
-          loc = 3;
-          break;
-        default:
-          loc = i;
-      }
-
-      modules[loc] = configs[i].createModule(driveGearRatio, steerGearRatio, wheelDiameterMeters, wheelBaseMeters,
-                                             driveTrainWidthMeters, steeringMotorFreeSpeedRPM, maxSpeedMPS,
-                                             maxDriveAcceleration);
-    }
-    return modules;
   }
 
 }
