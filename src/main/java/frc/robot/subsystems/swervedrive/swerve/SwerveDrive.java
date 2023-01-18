@@ -226,7 +226,7 @@ public class SwerveDrive extends RobotDriveBase implements Sendable, AutoCloseab
     turn = Math.abs(turn) > m_deadband ? turn : 0.0;
 
     // If nothing is asked of us we do nothing.
-    if (Math.abs(forward + strafe + turn) <= m_deadband)
+    if ((Math.abs(forward) + Math.abs(strafe) + Math.abs(turn)) <= m_deadband)
     {
       stopMotor();
       return;
