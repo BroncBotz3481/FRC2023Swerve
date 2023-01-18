@@ -92,6 +92,8 @@ public class REVSwerveMotor extends SwerveMotor
     setVoltageCompensation(12);
     setCurrentLimit(30);
 
+    setEnocder(0);
+
     optimizeCANFrames();
 
     m_motor.setCANTimeout(0); // Spin off configurations in a different thread.
