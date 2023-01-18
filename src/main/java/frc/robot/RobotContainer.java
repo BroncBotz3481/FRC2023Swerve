@@ -6,8 +6,8 @@ package frc.robot;
 
 import edu.wpi.first.wpilibj.XboxController;
 import edu.wpi.first.wpilibj2.command.Command;
-import frc.robot.commands.swerve.SwerveDriveCommand;
-import frc.robot.subsystems.swerve.SwerveSubsystem;
+import frc.robot.commands.swervedrive.SwerveDriveCommand;
+import frc.robot.subsystems.swervedrive.SwerveSubsystem;
 
 /**
  * This class is where the bulk of the robot should be declared. Since Command-based is a "declarative" paradigm, very

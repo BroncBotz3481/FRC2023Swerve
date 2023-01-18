@@ -1,4 +1,4 @@
-package frc.robot.subsystems.swerve;
+package frc.robot.subsystems.swervedrive.swerve;
 
 import com.ctre.phoenix.sensors.CANCoder;
 import com.ctre.phoenix.sensors.WPI_Pigeon2;
@@ -16,11 +16,11 @@ import edu.wpi.first.wpilibj.drive.RobotDriveBase;
 import edu.wpi.first.wpilibj.motorcontrol.MotorController;
 import edu.wpi.first.wpilibj.smartdashboard.Field2d;
 import edu.wpi.first.wpilibj.smartdashboard.SmartDashboard;
-import frc.robot.math.kinematics.SwerveDriveKinematics;
-import frc.robot.math.kinematics.SwerveModuleState2;
-import frc.robot.subsystems.swerve.SwerveModule.SwerveModuleLocation;
-import frc.robot.subsystems.swerve.SwerveModule.Verbosity;
-import frc.robot.subsystems.swerve.SwerveMotor.ModuleMotorType;
+import frc.robot.subsystems.swervedrive.swerve.SwerveModule.SwerveModuleLocation;
+import frc.robot.subsystems.swervedrive.swerve.SwerveModule.Verbosity;
+import frc.robot.subsystems.swervedrive.swerve.SwerveMotor.ModuleMotorType;
+import frc.robot.subsystems.swervedrive.swerve.kinematics.SwerveDriveKinematics2;
+import frc.robot.subsystems.swervedrive.swerve.kinematics.SwerveModuleState2;
 import java.io.Closeable;
 
 /**
@@ -57,7 +57,7 @@ public class SwerveDrive extends RobotDriveBase implements Sendable, AutoCloseab
   /**
    * Swerve drive kinematics.
    */
-  private final SwerveDriveKinematics m_swerveKinematics;
+  private final SwerveDriveKinematics2 m_swerveKinematics;
   /**
    * Swerve drive pose estimator for attempting to figure out our current position.
    */
@@ -113,10 +113,10 @@ public class SwerveDrive extends RobotDriveBase implements Sendable, AutoCloseab
     m_backLeft = backLeft;
     m_frontRight = frontRight;
     m_gyroInverted = gyroInverted;
-    m_swerveKinematics = new SwerveDriveKinematics(frontLeft.swerveModuleLocation,
-                                                   frontRight.swerveModuleLocation,
-                                                   backLeft.swerveModuleLocation,
-                                                   backRight.swerveModuleLocation);
+    m_swerveKinematics = new SwerveDriveKinematics2(frontLeft.swerveModuleLocation,
+                                                    frontRight.swerveModuleLocation,
+                                                    backLeft.swerveModuleLocation,
+                                                    backRight.swerveModuleLocation);
 
     m_maxSpeedMPS = maxSpeedMetersPerSecond;
     m_maxAngularVelocity = maxAngularVelocityRadiansPerSecond;
@@ -275,7 +275,7 @@ public class SwerveDrive extends RobotDriveBase implements Sendable, AutoCloseab
   public void setModuleStates(SwerveModuleState2[] states)
   {
     feedWatchdog(); // Required
-    SwerveDriveKinematics.desaturateWheelSpeeds(states, m_maxSpeedMPS);
+    SwerveDriveKinematics2.desaturateWheelSpeeds(states, m_maxSpeedMPS);
     m_frontLeft.setState(states[0]);
     m_frontRight.setState(states[1]);
     m_backLeft.setState(states[2]);
@@ -538,7 +538,7 @@ public class SwerveDrive extends RobotDriveBase implements Sendable, AutoCloseab
    * @param <SteeringMotorType> The motor type for the steering motor on the module.
    * @param <AbsoluteEncoder>   The absolute encoder type.
    */
-  static class SwerveModuleConfig<DriveMotorType extends MotorController, SteeringMotorType extends MotorController,
+  public static class SwerveModuleConfig<DriveMotorType extends MotorController, SteeringMotorType extends MotorController,
       AbsoluteEncoder extends CANCoder>
   {
 

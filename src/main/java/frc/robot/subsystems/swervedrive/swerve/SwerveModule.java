@@ -1,4 +1,4 @@
-package frc.robot.subsystems.swerve;
+package frc.robot.subsystems.swervedrive.swerve;
 
 import static java.util.Objects.requireNonNull;
 
@@ -19,8 +19,10 @@ import edu.wpi.first.util.sendable.SendableBuilder;
 import edu.wpi.first.util.sendable.SendableRegistry;
 import edu.wpi.first.wpilibj.motorcontrol.MotorController;
 import edu.wpi.first.wpilibj.smartdashboard.SmartDashboard;
-import frc.robot.math.kinematics.SwerveModuleState2;
-import frc.robot.subsystems.swerve.SwerveMotor.ModuleMotorType;
+import frc.robot.subsystems.swervedrive.swerve.SwerveMotor.ModuleMotorType;
+import frc.robot.subsystems.swervedrive.swerve.kinematics.SwerveModuleState2;
+import frc.robot.subsystems.swervedrive.swerve.motors.CTRESwerveMotor;
+import frc.robot.subsystems.swervedrive.swerve.motors.REVSwerveMotor;
 import java.io.Closeable;
 
 /**

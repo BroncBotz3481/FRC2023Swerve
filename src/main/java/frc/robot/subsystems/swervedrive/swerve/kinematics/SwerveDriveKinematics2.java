@@ -1,4 +1,4 @@
-package frc.robot.math.kinematics;
+package frc.robot.subsystems.swervedrive.swerve.kinematics;
 
 import edu.wpi.first.math.MathSharedStore;
 import edu.wpi.first.math.MathUsageId;
@@ -17,9 +17,9 @@ import org.ejml.simple.SimpleMatrix;
  * speed.
  * <p></p>
  * <p>
- * Makes use of {@link SwerveDriveKinematics} to add the angular velocity that is required of the module as an output.
+ * Makes use of {@link SwerveDriveKinematics2} to add the angular velocity that is required of the module as an output.
  */
-public class SwerveDriveKinematics extends edu.wpi.first.math.kinematics.SwerveDriveKinematics
+public class SwerveDriveKinematics2 extends edu.wpi.first.math.kinematics.SwerveDriveKinematics
 {
 
   private final SimpleMatrix m_inverseKinematics;
@@ -39,7 +39,7 @@ public class SwerveDriveKinematics extends edu.wpi.first.math.kinematics.SwerveD
    *
    * @param wheelsMeters The locations of the wheels relative to the physical center of the robot.
    */
-  public SwerveDriveKinematics(Translation2d... wheelsMeters)
+  public SwerveDriveKinematics2(Translation2d... wheelsMeters)
   {
     super(wheelsMeters);
     if (wheelsMeters.length < 2)

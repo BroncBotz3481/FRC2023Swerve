@@ -1,4 +1,4 @@
-package frc.robot.subsystems.swerve;
+package frc.robot.subsystems.swervedrive;
 
 import com.ctre.phoenix.sensors.CANCoder;
 import com.ctre.phoenix.sensors.WPI_Pigeon2;
@@ -10,10 +10,11 @@ import edu.wpi.first.wpilibj.smartdashboard.SmartDashboard;
 import edu.wpi.first.wpilibj2.command.SubsystemBase;
 import frc.robot.Constants.DriveConstants;
 import frc.robot.Constants.ModuleConstants;
-import frc.robot.subsystems.swerve.SwerveDrive.SwerveModuleConfig;
-import frc.robot.subsystems.swerve.SwerveModule.SwerveModuleLocation;
-import frc.robot.subsystems.swerve.SwerveModule.Verbosity;
-import frc.robot.subsystems.swerve.SwerveMotor.ModuleMotorType;
+import frc.robot.subsystems.swervedrive.swerve.SwerveDrive;
+import frc.robot.subsystems.swervedrive.swerve.SwerveDrive.SwerveModuleConfig;
+import frc.robot.subsystems.swervedrive.swerve.SwerveModule;
+import frc.robot.subsystems.swervedrive.swerve.SwerveModule.SwerveModuleLocation;
+import frc.robot.subsystems.swervedrive.swerve.SwerveModule.Verbosity;
 
 public class SwerveSubsystem extends SubsystemBase
 {

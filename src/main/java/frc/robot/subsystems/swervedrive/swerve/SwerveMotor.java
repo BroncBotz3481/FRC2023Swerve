@@ -1,4 +1,4 @@
-package frc.robot.subsystems.swerve;
+package frc.robot.subsystems.swervedrive.swerve;
 
 public abstract class SwerveMotor
 {
