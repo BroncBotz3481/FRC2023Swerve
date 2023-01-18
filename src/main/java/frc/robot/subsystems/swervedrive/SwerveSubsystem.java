@@ -120,15 +120,15 @@ public class SwerveSubsystem extends SubsystemBase
                                                              configs);
 
    m_drive = new SwerveDrive(modules[0],
-                               modules[1],
-                               modules[2],
-                               modules[3],
-                               new WPI_Pigeon2(DriveConstants.PigeonCANID),
-                               DriveConstants.kTeleDriveMaxSpeedMetersPerSecond,
-                               DriveConstants.kTeleDriveMaxAngularSpeedRadiansPerSecond,
-                               DriveConstants.kTeleDriveMaxAccelerationUnitsPerSecond,
-                               DriveConstants.kTeleDriveMaxAngularAccelerationUnitsPerSecond,
-                               false);
+                             modules[1],
+                             modules[2],
+                             modules[3],
+                             new WPI_Pigeon2(DriveConstants.PigeonCANID, "canivore"),
+                             DriveConstants.kTeleDriveMaxSpeedMetersPerSecond,
+                             DriveConstants.kTeleDriveMaxAngularSpeedRadiansPerSecond,
+                             DriveConstants.kTeleDriveMaxAccelerationUnitsPerSecond,
+                             DriveConstants.kTeleDriveMaxAngularAccelerationUnitsPerSecond,
+                             false);
 
     m_drive.zeroGyro();
     m_drive.setDeadband(0.5);
