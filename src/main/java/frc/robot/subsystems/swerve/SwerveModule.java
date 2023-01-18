@@ -210,6 +210,9 @@ public class SwerveModule<DriveMotorType extends MotorController, AngleMotorType
 
     resetEncoders();
     synchronizeSteeringEncoder();
+    
+    turningMotor.setVoltageCompensation(12);
+    driveMotor.setVoltageCompensation(12);
 
     driveMotor.saveConfig();
     turningMotor.saveConfig();
@@ -378,8 +381,9 @@ public class SwerveModule<DriveMotorType extends MotorController, AngleMotorType
     // currentAngle is always updated in getState which is called during setState which calls this function.
     if ((angle - angleDeadband) <= currentAngle && currentAngle <= (angle + angleDeadband))
     {
-//      m_turningMotor.setVoltage(0);
-//      return;
+     turningMotor.set(0);
+     return;
+      // angle = currentAngle;
     }
 
     turningMotor.setTarget(angle, feedforward);

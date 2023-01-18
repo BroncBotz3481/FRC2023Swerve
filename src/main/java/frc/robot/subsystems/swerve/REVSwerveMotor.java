@@ -66,7 +66,7 @@ public class REVSwerveMotor extends SwerveMotor
       m_mainPidSlot = REV_slotIdx.Velocity.ordinal();
       m_secondaryPidSlot = REV_slotIdx.Position.ordinal();
 
-      setCurrentLimit(80);
+      setCurrentLimit(40);
 
       setPIDF(0.1, 0, 0, 0, 1);
 
@@ -82,7 +82,7 @@ public class REVSwerveMotor extends SwerveMotor
       m_mainPidSlot = REV_slotIdx.Position.ordinal();
       m_secondaryPidSlot = REV_slotIdx.Velocity.ordinal();
 
-      setCurrentLimit(40);
+      setCurrentLimit(20);
 
       setPIDF(0.01, 0, 0, 0, 0);
 
@@ -93,6 +93,7 @@ public class REVSwerveMotor extends SwerveMotor
       m_pid.setPositionPIDWrappingMinInput(0);
       m_pid.setPositionPIDWrappingMaxInput(360);
     }
+
   }
 
   /**
