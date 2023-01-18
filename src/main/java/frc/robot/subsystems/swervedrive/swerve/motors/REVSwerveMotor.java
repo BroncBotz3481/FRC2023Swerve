@@ -57,6 +57,8 @@ public class REVSwerveMotor extends SwerveMotor
 
     optimizeCANFrames();
 
+    setVoltageCompensation(12);
+
     if (type == ModuleMotorType.DRIVE)
     {
       m_moduleRadkV = 1;
@@ -85,7 +87,7 @@ public class REVSwerveMotor extends SwerveMotor
 
       setCurrentLimit(20);
 
-      setPIDF(0.01, 0, 0, 0, 0);
+      setPIDF(0.01, 0, 0, 0, 1);
 
       // setREVConversionFactor(motor, 360 / (42 * gearRatio), ModuleMotorType.TURNING);
       setConversionFactor(360 / gearRatio);

@@ -213,9 +213,6 @@ public class SwerveModule<DriveMotorType extends MotorController, AngleMotorType
     resetEncoders();
     synchronizeSteeringEncoder();
 
-    turningMotor.setVoltageCompensation(12);
-    driveMotor.setVoltageCompensation(12);
-
     driveMotor.saveConfig();
     turningMotor.saveConfig();
 
