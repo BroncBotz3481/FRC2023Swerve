@@ -138,6 +138,16 @@ public class SwerveDrive extends RobotDriveBase implements Sendable, AutoCloseab
     // Inspired by https://github.com/Team364/BaseFalconSwerve/blob/main/src/main/java/frc/robot/subsystems/Swerve.java
     SmartDashboard.putData(m_field);
     SmartDashboard.putData(m_pigeonIMU);
+
+    zeroModules(); // Set all modules to 0.
+  }
+
+  /**
+   * Sets the speed to 0 and angle to 0 for all the swerve drive modules.
+   */
+  public void zeroModules()
+  {
+    set(0, 0, 0, false);
   }
 
   /**
@@ -226,11 +236,11 @@ public class SwerveDrive extends RobotDriveBase implements Sendable, AutoCloseab
     turn = Math.abs(turn) > m_deadband ? turn : 0.0;
 
     // If nothing is asked of us we do nothing.
-//    if ((Math.abs(forward) + Math.abs(strafe) + Math.abs(turn)) <= m_deadband)
-//    {
-//      stopMotor();
-//      return;
-//    }
+    if ((Math.abs(forward) + Math.abs(strafe) + Math.abs(turn)) <= m_deadband)
+    {
+      stopMotor();
+      return;
+    }
 
     // 3. Make the driving smoother
     forward = m_xLimiter.calculate(forward) * m_maxSpeedMPS;
