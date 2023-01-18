@@ -210,7 +210,7 @@ public class SwerveModule<DriveMotorType extends MotorController, AngleMotorType
 
     resetEncoders();
     synchronizeSteeringEncoder();
-    
+
     turningMotor.setVoltageCompensation(12);
     driveMotor.setVoltageCompensation(12);
 
@@ -463,12 +463,12 @@ public class SwerveModule<DriveMotorType extends MotorController, AngleMotorType
         SwerveModuleState2.optimize(state, getState(AbsoluteSensorRange.Signed_PlusMinus180).angle));
     double angle = state.angle.getDegrees();
 
-    if (Math.abs(angle) != 45)
-    {
+    // if (Math.abs(angle) != 45)
+    // {
       // turn motor code
       // Prevent rotating module if speed is less then 1%. Prevents Jittering.
-      angle = (Math.abs(state.speedMetersPerSecond) <= (maxDriveSpeedMPS * 0.01)) ? targetAngle : angle;
-    }
+    angle = (Math.abs(state.speedMetersPerSecond) <= (maxDriveSpeedMPS * 0.01)) ? targetAngle : angle;
+    // }
     setAngle(angle, state.angularVelocityRadPerSecond);
     setVelocity(state.speedMetersPerSecond);
   }
