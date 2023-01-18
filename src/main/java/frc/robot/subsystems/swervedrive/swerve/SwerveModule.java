@@ -687,8 +687,6 @@ public class SwerveModule<DriveMotorType extends MotorController, AngleMotorType
   @Override
   public void stopMotor()
   {
-//    m_driveMotor.stopMotor();
-//    m_turningMotor.stopMotor();
     turningMotor.stop();
     driveMotor.stop();
   }

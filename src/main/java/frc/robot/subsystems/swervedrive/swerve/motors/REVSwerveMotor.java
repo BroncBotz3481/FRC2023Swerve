@@ -171,7 +171,7 @@ public class REVSwerveMotor extends SwerveMotor
   @Override
   public void stop()
   {
-    m_motor.setVoltage(0);
+    m_motor.set(0);
   }
 
   /**
