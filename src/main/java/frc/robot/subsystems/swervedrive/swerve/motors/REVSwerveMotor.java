@@ -55,10 +55,6 @@ public class REVSwerveMotor extends SwerveMotor
     motor.restoreFactoryDefaults();
     motor.setIdleMode(IdleMode.kBrake);
 
-    optimizeCANFrames();
-
-    setVoltageCompensation(12);
-
     if (type == ModuleMotorType.DRIVE)
     {
       m_moduleRadkV = 1;
@@ -68,8 +64,6 @@ public class REVSwerveMotor extends SwerveMotor
       m_pidControlType = ControlType.kVelocity;
       m_mainPidSlot = REV_slotIdx.Velocity.ordinal();
       m_secondaryPidSlot = REV_slotIdx.Position.ordinal();
-
-      setCurrentLimit(40);
 
       setPIDF(0.1, 0, 0, 0, 1);
 
@@ -85,8 +79,6 @@ public class REVSwerveMotor extends SwerveMotor
       m_mainPidSlot = REV_slotIdx.Position.ordinal();
       m_secondaryPidSlot = REV_slotIdx.Velocity.ordinal();
 
-      setCurrentLimit(20);
-
       setPIDF(0.07, 0, 0.03, 0, 100); // Normally 0.01, 0, 0, 0, 1 but team reported this worked.
 
       // setREVConversionFactor(motor, 360 / (42 * gearRatio), ModuleMotorType.TURNING);
@@ -96,6 +88,11 @@ public class REVSwerveMotor extends SwerveMotor
       m_pid.setPositionPIDWrappingMinInput(0);
       m_pid.setPositionPIDWrappingMaxInput(360);
     }
+
+    setVoltageCompensation(12);
+    setCurrentLimit(30);
+
+    optimizeCANFrames();
 
     m_motor.setCANTimeout(0); // Spin off configurations in a different thread.
   }
