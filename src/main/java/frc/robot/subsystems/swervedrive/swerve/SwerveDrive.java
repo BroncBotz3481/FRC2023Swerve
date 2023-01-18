@@ -41,23 +41,23 @@ public class SwerveDrive extends RobotDriveBase implements Sendable, AutoCloseab
   /**
    * Front left swerve drive
    */
-  private final SwerveModule<?, ?, ?> m_frontLeft;
+  private final SwerveModule<?, ?, ?>    m_frontLeft;
   /**
    * Back left swerve drive
    */
-  private final SwerveModule<?, ?, ?> m_backLeft;
+  private final SwerveModule<?, ?, ?>    m_backLeft;
   /**
    * Front right swerve drive
    */
-  private final SwerveModule<?, ?, ?> m_frontRight;
+  private final SwerveModule<?, ?, ?>    m_frontRight;
   /**
    * Back right swerve drive
    */
-  private final SwerveModule<?, ?, ?> m_backRight;
+  private final SwerveModule<?, ?, ?>    m_backRight;
   /**
    * Swerve drive kinematics.
    */
-  private final SwerveDriveKinematics2 m_swerveKinematics;
+  private final SwerveDriveKinematics2   m_swerveKinematics;
   /**
    * Swerve drive pose estimator for attempting to figure out our current position.
    */
@@ -65,15 +65,15 @@ public class SwerveDrive extends RobotDriveBase implements Sendable, AutoCloseab
   /**
    * Pigeon 2.0 centered on the robot.
    */
-  private final WPI_Pigeon2 m_pigeonIMU;
+  private final WPI_Pigeon2              m_pigeonIMU;
   /**
    * Field2d displayed on shuffleboard with current position.
    */
-  private final Field2d               m_field = new Field2d();
+  private final Field2d                  m_field = new Field2d();
   /**
    * The slew rate limiters to make control smooth.
    */
-  private final SlewRateLimiter       m_xLimiter, m_yLimiter, m_turningLimiter;
+  private final SlewRateLimiter          m_xLimiter, m_yLimiter, m_turningLimiter;
   /**
    * Maximum speed in meters per second.
    */
@@ -213,40 +213,40 @@ public class SwerveDrive extends RobotDriveBase implements Sendable, AutoCloseab
   /**
    * Drive swerve based off controller input.
    *
-   * @param x             The speed (-1 to 1) in which the X axis should go.
-   * @param y             The speed (-1 to 1) in which the Y axis should go.
+   * @param forward       The speed (-1 to 1) in which the Y axis should go.
+   * @param strafe        The speed (-1 to 1) in which the X axis should go.
    * @param turn          The speed (-1 to 1) in which the robot should turn.
    * @param fieldRelative Whether or not to use field relative controls.
    */
-  public void drive(double x, double y, double turn, boolean fieldRelative)
+  public void drive(double forward, double strafe, double turn, boolean fieldRelative)
   {
     // 2. Apply deadband/Dead-Zone
-    x = Math.abs(x) > m_deadband ? x : 0.0;
-    y = Math.abs(y) > m_deadband ? y : 0.0;
+    forward = Math.abs(forward) > m_deadband ? forward : 0.0;
+    strafe = Math.abs(strafe) > m_deadband ? strafe : 0.0;
     turn = Math.abs(turn) > m_deadband ? turn : 0.0;
 
     // 3. Make the driving smoother
-    x = m_xLimiter.calculate(x) * m_maxSpeedMPS;
-    y = m_yLimiter.calculate(y) * m_maxSpeedMPS;
+    forward = m_xLimiter.calculate(forward) * m_maxSpeedMPS;
+    strafe = m_yLimiter.calculate(strafe) * m_maxSpeedMPS;
     turn = m_turningLimiter.calculate(turn) * m_maxAngularVelocity;
 
-    set(x, y, turn, fieldRelative);
+    set(forward, strafe, turn, fieldRelative);
   }
 
   /**
    * Swerve drive function
    *
-   * @param x               x meters per second
-   * @param y               y meters per second
+   * @param forward         forward meters per second, strafe facing left from alliance wall
+   * @param strafe          strafe meters per second, forward away from alliance wall
    * @param radianPerSecond radians per second
    * @param fieldRelative   field relative
    */
-  public void set(double x, double y, double radianPerSecond, boolean fieldRelative)
+  public void set(double forward, double strafe, double radianPerSecond, boolean fieldRelative)
   {
 
     SwerveModuleState2[] moduleStates = m_swerveKinematics.toSwerveModuleStates(
-        fieldRelative ? ChassisSpeeds.fromFieldRelativeSpeeds(x, y, radianPerSecond, getRotation())
-                      : new ChassisSpeeds(x, y, radianPerSecond));
+        fieldRelative ? ChassisSpeeds.fromFieldRelativeSpeeds(forward, strafe, radianPerSecond, getRotation())
+                      : new ChassisSpeeds(forward, strafe, radianPerSecond));
     // try
     // {
     setModuleStates(moduleStates);
@@ -538,7 +538,8 @@ public class SwerveDrive extends RobotDriveBase implements Sendable, AutoCloseab
    * @param <SteeringMotorType> The motor type for the steering motor on the module.
    * @param <AbsoluteEncoder>   The absolute encoder type.
    */
-  public static class SwerveModuleConfig<DriveMotorType extends MotorController, SteeringMotorType extends MotorController,
+  public static class SwerveModuleConfig<DriveMotorType extends MotorController,
+      SteeringMotorType extends MotorController,
       AbsoluteEncoder extends CANCoder>
   {
 

@@ -87,48 +87,48 @@ public class SwerveSubsystem extends SubsystemBase
     //                           DriveConstants.kTeleDriveMaxAngularAccelerationUnitsPerSecond,
     //                           false);
 
-   SwerveModuleConfig<?, ?, ?>[] configs = new SwerveModuleConfig[]{
-       new SwerveModuleConfig<>(new CANSparkMax(DriveConstants.kFrontLeftDriveMotorPort, MotorType.kBrushless),
-                                new CANSparkMax(DriveConstants.kFrontLeftTurningMotorPort, MotorType.kBrushless),
-                                new CANCoder(DriveConstants.kFrontLeftAbsoluteEncoderPort),
-                                DriveConstants.kFrontLeftDriveAbsoluteEncoderOffset, SwerveModuleLocation.FrontLeft),
+    SwerveModuleConfig<?, ?, ?>[] configs = new SwerveModuleConfig[]{
+        new SwerveModuleConfig<>(new CANSparkMax(DriveConstants.kFrontLeftDriveMotorPort, MotorType.kBrushless),
+                                 new CANSparkMax(DriveConstants.kFrontLeftTurningMotorPort, MotorType.kBrushless),
+                                 new CANCoder(DriveConstants.kFrontLeftAbsoluteEncoderPort),
+                                 DriveConstants.kFrontLeftDriveAbsoluteEncoderOffset, SwerveModuleLocation.FrontLeft),
 
-       new SwerveModuleConfig<>(new CANSparkMax(DriveConstants.kFrontRightDriveMotorPort, MotorType.kBrushless),
-                                new CANSparkMax(DriveConstants.kFrontRightTurningMotorPort, MotorType.kBrushless),
-                                new CANCoder(DriveConstants.kFrontRightAbsoluteEncoderPort),
-                                DriveConstants.kFrontRightDriveAbsoluteEncoderOffset, SwerveModuleLocation
-                                .FrontRight),
+        new SwerveModuleConfig<>(new CANSparkMax(DriveConstants.kFrontRightDriveMotorPort, MotorType.kBrushless),
+                                 new CANSparkMax(DriveConstants.kFrontRightTurningMotorPort, MotorType.kBrushless),
+                                 new CANCoder(DriveConstants.kFrontRightAbsoluteEncoderPort),
+                                 DriveConstants.kFrontRightDriveAbsoluteEncoderOffset, SwerveModuleLocation
+                                     .FrontRight),
 
-       new SwerveModuleConfig<>(new CANSparkMax(DriveConstants.kBackLeftDriveMotorPort, MotorType.kBrushless),
-                                new CANSparkMax(DriveConstants.kBackLeftTurningMotorPort, MotorType.kBrushless),
-                                new CANCoder(DriveConstants.kBackLeftAbsoluteEncoderPort),
-                                DriveConstants.kBackLeftDriveAbsoluteEncoderOffset, SwerveModuleLocation.BackLeft),
+        new SwerveModuleConfig<>(new CANSparkMax(DriveConstants.kBackLeftDriveMotorPort, MotorType.kBrushless),
+                                 new CANSparkMax(DriveConstants.kBackLeftTurningMotorPort, MotorType.kBrushless),
+                                 new CANCoder(DriveConstants.kBackLeftAbsoluteEncoderPort),
+                                 DriveConstants.kBackLeftDriveAbsoluteEncoderOffset, SwerveModuleLocation.BackLeft),
 
-       new SwerveModuleConfig<>(new CANSparkMax(DriveConstants.kBackRightDriveMotorPort, MotorType.kBrushless),
-                                new CANSparkMax(DriveConstants.kBackRightTurningMotorPort, MotorType.kBrushless),
-                                new CANCoder(DriveConstants.kBackRightAbsoluteEncoderPort),
-                                DriveConstants.kBackRightDriveAbsoluteEncoderOffset, SwerveModuleLocation.BackRight)
-   };
+        new SwerveModuleConfig<>(new CANSparkMax(DriveConstants.kBackRightDriveMotorPort, MotorType.kBrushless),
+                                 new CANSparkMax(DriveConstants.kBackRightTurningMotorPort, MotorType.kBrushless),
+                                 new CANCoder(DriveConstants.kBackRightAbsoluteEncoderPort),
+                                 DriveConstants.kBackRightDriveAbsoluteEncoderOffset, SwerveModuleLocation.BackRight)
+    };
 
-   SwerveModule<?,?,?>[] modules = SwerveDrive.createModules(ModuleConstants.kDriveMotorGearRatio,
-                                                             ModuleConstants.kTurningMotorGearRatio,
-                                                             Units.inchesToMeters(4), DriveConstants.kWheelBase,
-                                                             DriveConstants.kTrackWidth,
-                                                             DriveConstants.kFreeSpeedRpm,
-                                                             DriveConstants.kPhysicalMaxSpeedMetersPerSecond,
-                                                             DriveConstants.kTeleDriveMaxAccelerationUnitsPerSecond,
-                                                             configs);
+    SwerveModule<?, ?, ?>[] modules = SwerveDrive.createModules(ModuleConstants.kDriveMotorGearRatio,
+                                                                ModuleConstants.kTurningMotorGearRatio,
+                                                                Units.inchesToMeters(4), DriveConstants.kWheelBase,
+                                                                DriveConstants.kTrackWidth,
+                                                                DriveConstants.kFreeSpeedRpm,
+                                                                DriveConstants.kPhysicalMaxSpeedMetersPerSecond,
+                                                                DriveConstants.kTeleDriveMaxAccelerationUnitsPerSecond,
+                                                                configs);
 
-   m_drive = new SwerveDrive(modules[0],
-                             modules[1],
-                             modules[2],
-                             modules[3],
-                             new WPI_Pigeon2(DriveConstants.PigeonCANID, "canivore"),
-                             DriveConstants.kTeleDriveMaxSpeedMetersPerSecond,
-                             DriveConstants.kTeleDriveMaxAngularSpeedRadiansPerSecond,
-                             DriveConstants.kTeleDriveMaxAccelerationUnitsPerSecond,
-                             DriveConstants.kTeleDriveMaxAngularAccelerationUnitsPerSecond,
-                             false);
+    m_drive = new SwerveDrive(modules[0],
+                              modules[1],
+                              modules[2],
+                              modules[3],
+                              new WPI_Pigeon2(DriveConstants.PigeonCANID, "canivore"),
+                              DriveConstants.kTeleDriveMaxSpeedMetersPerSecond,
+                              DriveConstants.kTeleDriveMaxAngularSpeedRadiansPerSecond,
+                              DriveConstants.kTeleDriveMaxAccelerationUnitsPerSecond,
+                              DriveConstants.kTeleDriveMaxAngularAccelerationUnitsPerSecond,
+                              false);
 
     m_drive.zeroGyro();
     m_drive.setDeadband(0.5);
@@ -143,14 +143,14 @@ public class SwerveSubsystem extends SubsystemBase
   /**
    * Drive function
    *
-   * @param x                X value
-   * @param y                Y value
-   * @param r                R value
+   * @param forward          -1 to 1 speed to go forward.
+   * @param strafe           -1 to 1 speed to strafe.
+   * @param r                -1 to 1 turning rate.
    * @param fieldOrientation Field oriented drive.
    */
-  public void drive(double x, double y, double r, boolean fieldOrientation)
+  public void drive(double forward, double strafe, double r, boolean fieldOrientation)
   {
-    m_drive.drive(x, y, r, fieldOrientation);
+    m_drive.drive(forward, strafe, r, fieldOrientation);
   }
 
   public void stop()
