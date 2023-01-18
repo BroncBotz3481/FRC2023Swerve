@@ -97,6 +97,7 @@ public class REVSwerveMotor extends SwerveMotor
       m_pid.setPositionPIDWrappingMaxInput(360);
     }
 
+    m_motor.setCANTimeout(0); // Spin off configurations in a different thread.
   }
 
   /**
