@@ -387,6 +387,7 @@ public class SwerveDrive extends RobotDriveBase implements Sendable, AutoCloseab
   @Override
   public void stopMotor()
   {
+    feedWatchdog();
     m_frontLeft.stopMotor();
     m_frontRight.stopMotor();
     m_backLeft.stopMotor();
