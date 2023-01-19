@@ -102,10 +102,6 @@ public class SwerveModule<DriveMotorType extends MotorController, AngleMotorType
    */
   private       double                 targetVelocity = 0;
   /**
-   * The current angle reported by the absolute encoder.
-   */
-  private       double                 currentAngle;
-  /**
    * Acceptable range between current and desired angle.
    */
   private       double                 angleDeadband  = 5;
@@ -372,16 +368,12 @@ public class SwerveModule<DriveMotorType extends MotorController, AngleMotorType
    */
   private void setAngle(double angle, double feedforward)
   {
-    targetAngle = angle;
-
-//    angle += 180; // Since the angle is given in the form of -180 to 180, we add 180 to make it 0 to 360.
-//    assert angle <= 360;
 
     // currentAngle is always updated in getState which is called during setState which calls this function.
-    if ((angle - angleDeadband) <= currentAngle && currentAngle <= (angle + angleDeadband))
+    if ((angle - angleDeadband) <= targetAngle && targetAngle <= (angle + angleDeadband))
     {
-     turningMotor.set(0);
-     return;
+      turningMotor.set(0);
+      return;
       // angle = currentAngle;
     }
 
@@ -425,13 +417,7 @@ public class SwerveModule<DriveMotorType extends MotorController, AngleMotorType
     Rotation2d angle;
     if (absoluteEncoder instanceof CANCoder)
     {
-      currentAngle = absoluteEncoder.getAbsolutePosition();
-      if (range != configuredSensorRange)
-      {
-        currentAngle += (configuredSensorRange == AbsoluteSensorRange.Unsigned_0_to_360 &&
-                         range == AbsoluteSensorRange.Signed_PlusMinus180) ? -180 : 180;
-      }
-      angle = Rotation2d.fromDegrees(currentAngle);
+      angle = Rotation2d.fromDegrees(absoluteEncoder.getAbsolutePosition());
     } else
     {
       throw new RuntimeException("No CANCoder attached.");
@@ -470,6 +456,7 @@ public class SwerveModule<DriveMotorType extends MotorController, AngleMotorType
     // }
     setAngle(angle, state.angularVelocityRadPerSecond);
     setVelocity(state.speedMetersPerSecond);
+    targetAngle = angle;
   }
 
   /////////////////// END OF ODOMETRY AND STATE FUNCTIONS SECTION ////////////////////////////////////////
@@ -483,8 +470,7 @@ public class SwerveModule<DriveMotorType extends MotorController, AngleMotorType
    */
   public SwerveModulePosition getPosition()
   {
-    return new SwerveModulePosition(driveMotor.getCurrent(), Rotation2d.fromDegrees(targetAngle));
-    ///^ Assume our current angle is what it is supposed to be.
+    return new SwerveModulePosition(driveMotor.getCurrent(), Rotation2d.fromDegrees(absoluteEncoder.getPosition()));
   }
 
   /**
