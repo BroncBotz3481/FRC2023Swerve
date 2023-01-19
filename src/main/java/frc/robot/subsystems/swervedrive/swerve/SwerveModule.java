@@ -101,10 +101,6 @@ public class SwerveModule<DriveMotorType extends MotorController, AngleMotorType
    * Target velocity for the swerve module.
    */
   private       double                 targetVelocity = 0;
-  /**
-   * Acceptable range between current and desired angle.
-   */
-  private       double                 angleDeadband  = 5;
 
   /**
    * Swerve module constructor. Both motors <b>MUST</b> be a {@link MotorController} class. It is recommended to create
@@ -314,16 +310,6 @@ public class SwerveModule<DriveMotorType extends MotorController, AngleMotorType
     }
   }
 
-  /**
-   * Set the angle deadband for the setAngle function.
-   *
-   * @param deadband Deadband angle in degrees.
-   */
-  public void setAngleDeadband(double deadband)
-  {
-    angleDeadband = deadband;
-  }
-
   /////////////////////// END OF CONFIGURATION FUNCTIONS SECTION //////////////////////////
 
   ////////////////////////////// STATUS FUNCTIONS SECTION //////////////////////////////////////////////////////
@@ -509,13 +495,6 @@ public class SwerveModule<DriveMotorType extends MotorController, AngleMotorType
       setAngle(angle);
     }
 
-    // Deadband
-    double deadband = SmartDashboard.getNumber(name + "/steer/pid/deadband", angleDeadband);
-    if (deadband != angleDeadband)
-    {
-      setAngleDeadband(deadband);
-    }
-
     // Offset
     double offset = SmartDashboard.getNumber(name + "/steer/encoder/offset", angleOffset);
     if (angleOffset != offset)
@@ -567,7 +546,6 @@ public class SwerveModule<DriveMotorType extends MotorController, AngleMotorType
         SmartDashboard.putNumber(name + "/steer/pid/kD", turningMotor.kD);
         SmartDashboard.putNumber(name + "/steer/pid/kF", turningMotor.kF);
         SmartDashboard.putNumber(name + "/steer/pid/kIZ", turningMotor.kIZ);
-        SmartDashboard.putNumber(name + "/steer/pid/deadband", angleDeadband);
 
         // Inverted Motors.
         SmartDashboard.putBoolean(name + "/steer/inverted", invertedTurn);

@@ -460,19 +460,6 @@ public class SwerveDrive extends RobotDriveBase implements Sendable, AutoCloseab
   }
 
   /**
-   * Set the angle deadband for swerve modules.
-   *
-   * @param deadband Deadband angle in degrees.
-   */
-  public void setAngleDeadband(double deadband)
-  {
-    m_backRight.setAngleDeadband(deadband);
-    m_backLeft.setAngleDeadband(deadband);
-    m_frontLeft.setAngleDeadband(deadband);
-    m_frontRight.setAngleDeadband(deadband);
-  }
-
-  /**
    * Synchronize internal steering encoders with the absolute encoder.
    */
   public void synchronizeEncoders()
