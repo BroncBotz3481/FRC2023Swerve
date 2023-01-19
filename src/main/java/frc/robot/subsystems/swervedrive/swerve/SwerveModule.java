@@ -366,16 +366,16 @@ public class SwerveModule<DriveMotorType extends MotorController, AngleMotorType
    * @param angle       Angle in degrees.
    * @param feedforward The feedforward for the PID.
    */
-  private void setAngle(double angle, double feedforward)
+  public void setAngle(double angle, double feedforward)
   {
 
     // currentAngle is always updated in getState which is called during setState which calls this function.
-    if ((angle - angleDeadband) <= targetAngle && targetAngle <= (angle + angleDeadband))
-    {
-      turningMotor.set(0);
-      return;
-      // angle = currentAngle;
-    }
+//    if ((angle - angleDeadband) <= targetAngle && targetAngle <= (angle + angleDeadband))
+//    {
+//      turningMotor.set(0);
+//      return;
+//      // angle = currentAngle;
+//    }
 
     turningMotor.setTarget(angle, feedforward);
   }
@@ -450,8 +450,8 @@ public class SwerveModule<DriveMotorType extends MotorController, AngleMotorType
 
     // if (Math.abs(angle) != 45)
     // {
-      // turn motor code
-      // Prevent rotating module if speed is less then 1%. Prevents Jittering.
+    // turn motor code
+    // Prevent rotating module if speed is less then 1%. Prevents Jittering.
     angle = (Math.abs(state.speedMetersPerSecond) <= (maxDriveSpeedMPS * 0.01)) ? targetAngle : angle;
     // }
     setAngle(angle, state.angularVelocityRadPerSecond);
