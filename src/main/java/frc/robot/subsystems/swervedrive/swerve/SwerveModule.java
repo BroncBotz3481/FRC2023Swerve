@@ -77,7 +77,7 @@ public class SwerveModule<DriveMotorType extends MotorController, AngleMotorType
   /**
    * Angle offset of the CANCoder at initialization.
    */
-  public        double                 angleOffset    = 0;
+  public        double                 angleOffset              = 0;
   /**
    * Maximum speed in meters per second, used to eliminate unnecessary movement of the module.
    */
@@ -85,24 +85,31 @@ public class SwerveModule<DriveMotorType extends MotorController, AngleMotorType
   /**
    * Inverted drive motor.
    */
-  private       boolean                invertedDrive  = false;
+  private       boolean                invertedDrive            = false;
   /**
    * Inverted turning motor.
    */
-  private       boolean                invertedTurn   = false;
+  private       boolean                invertedTurn             = false;
   /**
    * Power to drive motor from -1 to 1.
    */
-  private       double                 drivePower     = 0;
+  private       double                 drivePower               = 0;
   /**
    * Store the last angle for optimization.
    */
-  private       double                 targetAngle    = 0;
+  private       double                 targetAngle              = 0;
+  /**
+   * Angular velocity in radians per second.
+   */
+  private       double                 targetAngularVelocityRPS = 0;
   /**
    * Target velocity for the swerve module.
    */
-  private       double                 targetVelocity = 0;
-  private       double                 steeringKV     = 0;
+  private       double                 targetVelocity           = 0;
+  /**
+   * kV for steering feedforward.
+   */
+  private       double                 steeringKV               = 0;
 
   /**
    * Swerve module constructor. Both motors <b>MUST</b> be a {@link MotorController} class. It is recommended to create
@@ -404,7 +411,7 @@ public class SwerveModule<DriveMotorType extends MotorController, AngleMotorType
     if (absoluteEncoder instanceof CANCoder)
     {
       angle = Rotation2d.fromDegrees(Robot.isReal() ? absoluteEncoder.getAbsolutePosition() : targetAngle);
-      angularVelocityRPS = Math.toRadians(absoluteEncoder.getVelocity());
+      angularVelocityRPS = Robot.isReal() ? Math.toRadians(absoluteEncoder.getVelocity()) : targetAngularVelocityRPS;
       //^ Convert degrees per second to radians per second.
     } else
     {
@@ -434,6 +441,7 @@ public class SwerveModule<DriveMotorType extends MotorController, AngleMotorType
     setAngle(angle, state.angularVelocityRadPerSecond * steeringKV);
     setVelocity(state.speedMetersPerSecond);
     targetAngle = angle;
+    targetAngularVelocityRPS = state.angularVelocityRadPerSecond;
   }
 
   /////////////////// END OF ODOMETRY AND STATE FUNCTIONS SECTION ////////////////////////////////////////

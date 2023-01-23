@@ -16,6 +16,7 @@ import edu.wpi.first.wpilibj.drive.RobotDriveBase;
 import edu.wpi.first.wpilibj.motorcontrol.MotorController;
 import edu.wpi.first.wpilibj.smartdashboard.Field2d;
 import edu.wpi.first.wpilibj.smartdashboard.SmartDashboard;
+import frc.robot.Robot;
 import frc.robot.subsystems.swervedrive.swerve.SwerveModule.SwerveModuleLocation;
 import frc.robot.subsystems.swervedrive.swerve.SwerveModule.Verbosity;
 import frc.robot.subsystems.swervedrive.swerve.SwerveMotor.ModuleMotorType;
@@ -81,7 +82,9 @@ public class SwerveDrive extends RobotDriveBase implements Sendable, AutoCloseab
   /**
    * Invert the gyro reading.
    */
-  private boolean m_gyroInverted = false;
+  private boolean                m_gyroInverted = false;
+  private double                 angle;
+  private SwerveModulePosition[] prevPos;
 
 
   /**
@@ -121,6 +124,11 @@ public class SwerveDrive extends RobotDriveBase implements Sendable, AutoCloseab
     m_maxSpeedMPS = maxSpeedMetersPerSecond;
     m_maxAngularVelocity = maxAngularVelocityRadiansPerSecond;
     m_pigeonIMU = pigeon;
+    if (!Robot.isReal())
+    {
+      prevPos = new SwerveModulePosition[]{new SwerveModulePosition(), new SwerveModulePosition(),
+                                           new SwerveModulePosition(), new SwerveModulePosition()};
+    }
 
     configurePigeonIMU(); // Reset pigeon to 0 and default settings.
     m_swervePoseEstimator = new SwerveDrivePoseEstimator(
@@ -140,6 +148,11 @@ public class SwerveDrive extends RobotDriveBase implements Sendable, AutoCloseab
     SmartDashboard.putData(m_pigeonIMU);
 
     zeroModules(); // Set all modules to 0.
+
+    if (!Robot.isReal())
+    {
+      prevPos = getPositions();
+    }
   }
 
   /**
@@ -327,8 +340,22 @@ public class SwerveDrive extends RobotDriveBase implements Sendable, AutoCloseab
    */
   public Rotation2d getRotation()
   {
-    return m_gyroInverted ? Rotation2d.fromDegrees(360 - m_pigeonIMU.getYaw()) : Rotation2d.fromDegrees(
-        m_pigeonIMU.getYaw());
+    if (Robot.isReal())
+    {
+      return m_gyroInverted ? Rotation2d.fromDegrees(360 - m_pigeonIMU.getYaw()) : Rotation2d.fromDegrees(
+          m_pigeonIMU.getYaw());
+    } else
+    {
+      SwerveModulePosition[] pos = getPositions();
+      for (int i = 0; i < prevPos.length; i++)
+      {
+        pos[i] = new SwerveModulePosition(prevPos[i].distanceMeters - pos[i].distanceMeters,
+                                          prevPos[i].angle.minus(pos[i].angle));
+      }
+      prevPos = getPositions();
+      angle += m_swerveKinematics.toTwist2d(pos).dtheta;
+      return new Rotation2d(angle);
+    }
   }
 
   /**
