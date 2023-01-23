@@ -373,9 +373,6 @@ public class SwerveModule<DriveMotorType extends MotorController, AngleMotorType
    */
   private void setAngle(double angle)
   {
-    angle += 180; // Since the angle is given in the form of -180 to 180, we add 180 to make it 0 to 360.
-    assert angle <= 360;
-
     turningMotor.setTarget(angle, 0);
   }
 
@@ -398,16 +395,19 @@ public class SwerveModule<DriveMotorType extends MotorController, AngleMotorType
    */
   public SwerveModuleState2 getState()
   {
-    double     mps = driveMotor.get();
+    double     mps                = driveMotor.get();
+    double     angularVelocityRPS = 0;
     Rotation2d angle;
     if (absoluteEncoder instanceof CANCoder)
     {
       angle = Rotation2d.fromDegrees(absoluteEncoder.getAbsolutePosition());
+      angularVelocityRPS = Rotation2d.fromDegrees(absoluteEncoder.getVelocity()).getRadians();
+      //^ Convert degrees per second to radians per second.
     } else
     {
       throw new RuntimeException("No CANCoder attached.");
     }
-    return new SwerveModuleState2(mps, angle, 0);
+    return new SwerveModuleState2(mps, angle, angularVelocityRPS);
   }
 
   /**

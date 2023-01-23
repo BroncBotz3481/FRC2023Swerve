@@ -353,6 +353,17 @@ public class SwerveDrive extends RobotDriveBase implements Sendable, AutoCloseab
   }
 
   /**
+   * Get current swerve module states in order.
+   *
+   * @return Swerve module states array.
+   */
+  public SwerveModuleState2[] getStates()
+  {
+    return new SwerveModuleState2[]{m_frontLeft.getState(), m_frontRight.getState(),
+                                    m_backLeft.getState(), m_backRight.getState()};
+  }
+
+  /**
    * Reset the odometry given the position and using current rotation from the PigeonIMU 2.
    *
    * @param pose Current position on the field.

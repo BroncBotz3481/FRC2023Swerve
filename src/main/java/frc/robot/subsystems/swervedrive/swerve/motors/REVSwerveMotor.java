@@ -157,7 +157,9 @@ public class REVSwerveMotor extends SwerveMotor
     } else
     {
       m_encoder.setVelocityConversionFactor(conversionFactor);
-      m_encoder.setPositionConversionFactor(conversionFactor * 60); // RPS -> RPM under sim
+      m_encoder.setPositionConversionFactor(conversionFactor * 60 * (Robot.isReal() ? 1 : 42 * 60)); // RPS -> RPM sim
+      // SparkMaxSimProfile assumes the velocity is in RPM and multiplies it by 60, in our use case velocity is in RPS
+      // The Sim profile also neglects to take into account that there are 42 ticks per rotation.
     }
   }
 
