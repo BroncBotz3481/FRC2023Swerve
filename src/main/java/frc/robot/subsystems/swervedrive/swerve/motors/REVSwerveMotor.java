@@ -4,9 +4,11 @@ import com.revrobotics.CANSparkMax;
 import com.revrobotics.CANSparkMax.ControlType;
 import com.revrobotics.CANSparkMax.IdleMode;
 import com.revrobotics.CANSparkMaxLowLevel.PeriodicFrame;
+import com.revrobotics.REVPhysicsSim;
 import com.revrobotics.RelativeEncoder;
 import com.revrobotics.SparkMaxPIDController;
 import com.revrobotics.SparkMaxPIDController.ArbFFUnits;
+import frc.robot.Robot;
 import frc.robot.subsystems.swervedrive.swerve.SwerveMotor;
 import java.util.function.Supplier;
 
@@ -70,7 +72,7 @@ public class REVSwerveMotor extends SwerveMotor
       setPIDF(0.01, 0, 0.005, 0, 1);
 
       // setREVConversionFactor(motor, (Math.PI * wheelDiameter) / (60 * gearRatio), ModuleMotorType.DRIVE);
-      setConversionFactor(((Math.PI * wheelDiameter) / gearRatio) / 60);
+      setConversionFactor(((Math.PI * wheelDiameter) / (1 / gearRatio)) / 60);
     } else
     {
       m_moduleRadkV = (12 * 60) / (freeSpeedRPM * Math.toRadians(360 / gearRatio));
@@ -100,6 +102,10 @@ public class REVSwerveMotor extends SwerveMotor
     optimizeCANFrames();
 
     m_motor.setCANTimeout(0); // Spin off configurations in a different thread.
+    if (!Robot.isReal())
+    {
+      REVPhysicsSim.getInstance().addSparkMax(m_motor, 2.6f, 5676);
+    }
   }
 
   /**
@@ -151,7 +157,7 @@ public class REVSwerveMotor extends SwerveMotor
     } else
     {
       m_encoder.setVelocityConversionFactor(conversionFactor);
-      m_encoder.setPositionConversionFactor(conversionFactor * 60);
+      m_encoder.setPositionConversionFactor(conversionFactor * 60 * 60); // RPS -> RPM
     }
   }
 
