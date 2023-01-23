@@ -65,7 +65,8 @@ public class REVSwerveMotor extends SwerveMotor
       m_mainPidSlot = REV_slotIdx.Velocity.ordinal();
       m_secondaryPidSlot = REV_slotIdx.Position.ordinal();
 
-      setPIDF(0.1, 0, 0, 0, 1);
+//      setPIDF(0.1, 0, 0, 0, 1);
+      setPIDF(0.01, 0, 0.005, 0, 1);
 
       // setREVConversionFactor(motor, (Math.PI * wheelDiameter) / (60 * gearRatio), ModuleMotorType.DRIVE);
       setConversionFactor(((Math.PI * wheelDiameter) / gearRatio) / 60);
@@ -79,7 +80,8 @@ public class REVSwerveMotor extends SwerveMotor
       m_mainPidSlot = REV_slotIdx.Position.ordinal();
       m_secondaryPidSlot = REV_slotIdx.Velocity.ordinal();
 
-      setPIDF(0.07, 0, 0.03, 0, 100); // Normally 0.01, 0, 0, 0, 1 but team reported this worked.
+//      setPIDF(0.07, 0, 0.03, 0, 100); // Normally 0.01, 0, 0, 0, 1 but team reported this worked.
+      setPIDF(0.01, 0, 0.005, 0, 100); // Normally 0.01, 0, 0, 0, 1 but team reported this worked.
 
       // setREVConversionFactor(motor, 360 / (42 * gearRatio), ModuleMotorType.TURNING);
       setConversionFactor(360 / gearRatio);
