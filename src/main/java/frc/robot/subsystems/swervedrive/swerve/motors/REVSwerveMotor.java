@@ -44,6 +44,8 @@ public class REVSwerveMotor extends SwerveMotor
     // https://github.com/first95/FRC2022/blob/1f57d6837e04d8c8a89f4d83d71b5d2172f41a0e/SwervyBot/src/main/java/frc/robot/SwerveModule.java#L68
     // https://github.com/first95/FRC2022/blob/1f57d6837e04d8c8a89f4d83d71b5d2172f41a0e/SwervyBot/src/main/java/frc/robot/Constants.java#L89
     // https://github.com/AusTINCANsProgrammingTeam/2022Swerve/blob/main/2022Swerve/src/main/java/frc/robot/Constants.java
+    motor.restoreFactoryDefaults();
+
     m_motor = motor;
     m_motorType = type;
     m_encoder = motor.getEncoder();
@@ -52,7 +54,6 @@ public class REVSwerveMotor extends SwerveMotor
     m_pid.setFeedbackDevice(m_encoder);
 
     motor.clearFaults();
-    motor.restoreFactoryDefaults();
     motor.setIdleMode(IdleMode.kBrake);
 
     if (type == ModuleMotorType.DRIVE)
