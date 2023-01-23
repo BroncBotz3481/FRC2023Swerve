@@ -193,9 +193,20 @@ public class REVSwerveMotor extends SwerveMotor
    * @return Current value of the encoder.
    */
   @Override
-  public double getCurrent()
+  public double get()
   {
     return m_encoderRet.get();
+  }
+
+  /**
+   * Get the current value of the encoder.
+   *
+   * @return Current value of the encoder.
+   */
+  @Override
+  public double getPosition()
+  {
+    return m_encoder.getPosition();
   }
 
   /**

@@ -63,9 +63,16 @@ public abstract class SwerveMotor
   /**
    * Get the current value of the encoder corresponding to the PID.
    *
+   * @return Current value of the encoder either in velocity or position..
+   */
+  public abstract double get();
+
+  /**
+   * Get the current value of the encoder.
+   *
    * @return Current value of the encoder.
    */
-  public abstract double getCurrent();
+  public abstract double getPosition();
 
   /**
    * Set the voltage compensation for the swerve module motor.

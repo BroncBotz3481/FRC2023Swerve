@@ -393,13 +393,12 @@ public class SwerveModule<DriveMotorType extends MotorController, AngleMotorType
   /**
    * Get the module state.
    *
-   * @param range Sensor range to retrieve angle in, will convert if different from configured.
    * @return SwerveModuleState with the encoder inputs.
    * @throws RuntimeException Exception if CANCoder doesnt exist
    */
-  public SwerveModuleState2 getState(AbsoluteSensorRange range)
+  public SwerveModuleState2 getState()
   {
-    double     mps = driveMotor.getCurrent();
+    double     mps = driveMotor.get();
     Rotation2d angle;
     if (absoluteEncoder instanceof CANCoder)
     {
@@ -412,17 +411,6 @@ public class SwerveModule<DriveMotorType extends MotorController, AngleMotorType
   }
 
   /**
-   * Get the module state.
-   *
-   * @return SwerveModuleState with the encoder inputs.
-   * @throws RuntimeException Exception if CANCoder doesnt exist
-   */
-  public SwerveModuleState2 getState()
-  {
-    return getState(configuredSensorRange);
-  }
-
-  /**
    * Set the module speed and angle based off the module state.
    *
    * @param state Module state.
@@ -431,7 +419,7 @@ public class SwerveModule<DriveMotorType extends MotorController, AngleMotorType
   {
     // inspired by https://github.com/first95/FRC2022/blob/1f57d6837e04d8c8a89f4d83d71b5d2172f41a0e/SwervyBot/src/main/java/frc/robot/SwerveModule.java#L22
     state = new SwerveModuleState2(
-        SwerveModuleState2.optimize(state, getState(AbsoluteSensorRange.Signed_PlusMinus180).angle));
+        SwerveModuleState2.optimize(state, getState().angle));
     double angle = state.angle.getDegrees();
 
     // if (Math.abs(angle) != 45)
@@ -456,7 +444,7 @@ public class SwerveModule<DriveMotorType extends MotorController, AngleMotorType
    */
   public SwerveModulePosition getPosition()
   {
-    return new SwerveModulePosition(driveMotor.getCurrent(), Rotation2d.fromDegrees(absoluteEncoder.getPosition()));
+    return new SwerveModulePosition(driveMotor.getPosition(), Rotation2d.fromDegrees(targetAngle));
   }
 
   /**
@@ -567,11 +555,11 @@ public class SwerveModule<DriveMotorType extends MotorController, AngleMotorType
       case NORMAL:
         // TODO: Implement for CTRE
         // Steering Encoder Values
-        SmartDashboard.putNumber(name + "/steer/encoder/integrated", turningMotor.getCurrent());
+        SmartDashboard.putNumber(name + "/steer/encoder/integrated", turningMotor.get());
         SmartDashboard.putNumber(name + "/steer/encoder/absolute", absoluteEncoder.getAbsolutePosition());
 
         // Driving Encoder Values
-        SmartDashboard.putNumber(name + "/drive/encoder/velocity", driveMotor.getCurrent());
+        SmartDashboard.putNumber(name + "/drive/encoder/velocity", driveMotor.get());
 
         // CAN Bus is accessible
         SmartDashboard.putBoolean(name + "/status", activeCAN());
