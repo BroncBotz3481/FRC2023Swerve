@@ -72,7 +72,7 @@ public class REVSwerveMotor extends SwerveMotor
       setPIDF(0.01, 0, 0.005, 0, 1);
 
       // setREVConversionFactor(motor, (Math.PI * wheelDiameter) / (60 * gearRatio), ModuleMotorType.DRIVE);
-      setConversionFactor(((Math.PI * wheelDiameter) / (1 / gearRatio)) / 60);
+      setConversionFactor(((Math.PI * wheelDiameter) / gearRatio) / 60);
     } else
     {
       m_moduleRadkV = (12 * 60) / (freeSpeedRPM * Math.toRadians(360 / gearRatio));
@@ -157,7 +157,7 @@ public class REVSwerveMotor extends SwerveMotor
     } else
     {
       m_encoder.setVelocityConversionFactor(conversionFactor);
-      m_encoder.setPositionConversionFactor(conversionFactor * 60 * 60); // RPS -> RPM
+      m_encoder.setPositionConversionFactor(conversionFactor * 60); // RPS -> RPM under sim
     }
   }
 
