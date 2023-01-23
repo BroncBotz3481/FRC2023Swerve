@@ -71,7 +71,13 @@ public class SwerveModuleState2 extends edu.wpi.first.math.kinematics.SwerveModu
     if (Math.abs(delta) > 90)
     {
       targetSpeed = -targetSpeed;
-      targetAngle = delta > 90 ? (targetAngle -= 180) : (targetAngle += 180);
+      if (delta > 90)
+      {
+        targetAngle -= 180;
+      } else
+      {
+        targetAngle += 180;
+      }
     }
     return new SwerveModuleState2(targetSpeed, Rotation2d.fromDegrees(-targetAngle));
   }

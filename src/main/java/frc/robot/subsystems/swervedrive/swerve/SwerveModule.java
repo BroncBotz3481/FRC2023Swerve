@@ -19,6 +19,7 @@ import edu.wpi.first.util.sendable.SendableBuilder;
 import edu.wpi.first.util.sendable.SendableRegistry;
 import edu.wpi.first.wpilibj.motorcontrol.MotorController;
 import edu.wpi.first.wpilibj.smartdashboard.SmartDashboard;
+import frc.robot.Robot;
 import frc.robot.subsystems.swervedrive.swerve.SwerveMotor.ModuleMotorType;
 import frc.robot.subsystems.swervedrive.swerve.kinematics.SwerveModuleState2;
 import frc.robot.subsystems.swervedrive.swerve.motors.CTRESwerveMotor;
@@ -101,6 +102,7 @@ public class SwerveModule<DriveMotorType extends MotorController, AngleMotorType
    * Target velocity for the swerve module.
    */
   private       double                 targetVelocity = 0;
+  private       double                 steeringKV     = 0;
 
   /**
    * Swerve module constructor. Both motors <b>MUST</b> be a {@link MotorController} class. It is recommended to create
@@ -158,6 +160,7 @@ public class SwerveModule<DriveMotorType extends MotorController, AngleMotorType
     //        by max accel)
     maxDriveSpeedMPS = maxSpeedMPS;
     driveFeedforward = new SimpleMotorFeedforward(0, 12 / maxDriveSpeedMPS, 12 / maxDriveAcceleration);
+    steeringKV = (12 * 60) / (steeringMotorFreeSpeedRPM * Math.toRadians(360 / steerGearRatio));
 
     assert mainMotor instanceof CANSparkMax || mainMotor instanceof TalonFX;
     assert angleMotor instanceof CANSparkMax || angleMotor instanceof TalonFX;
@@ -400,8 +403,8 @@ public class SwerveModule<DriveMotorType extends MotorController, AngleMotorType
     Rotation2d angle;
     if (absoluteEncoder instanceof CANCoder)
     {
-      angle = Rotation2d.fromDegrees(absoluteEncoder.getAbsolutePosition());
-      angularVelocityRPS = Rotation2d.fromDegrees(absoluteEncoder.getVelocity()).getRadians();
+      angle = Rotation2d.fromDegrees(Robot.isReal() ? absoluteEncoder.getAbsolutePosition() : targetAngle);
+      angularVelocityRPS = Math.toRadians(absoluteEncoder.getVelocity());
       //^ Convert degrees per second to radians per second.
     } else
     {
@@ -428,7 +431,7 @@ public class SwerveModule<DriveMotorType extends MotorController, AngleMotorType
     // Prevent rotating module if speed is less then 1%. Prevents Jittering.
     angle = (Math.abs(state.speedMetersPerSecond) <= (maxDriveSpeedMPS * 0.01)) ? targetAngle : angle;
     // }
-    setAngle(angle, state.angularVelocityRadPerSecond);
+    setAngle(angle, state.angularVelocityRadPerSecond * steeringKV);
     setVelocity(state.speedMetersPerSecond);
     targetAngle = angle;
   }
