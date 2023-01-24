@@ -117,6 +117,7 @@ public class SwerveSubsystem extends SubsystemBase
                                                                 DriveConstants.kFreeSpeedRpm,
                                                                 DriveConstants.kPhysicalMaxSpeedMetersPerSecond,
                                                                 DriveConstants.kTeleDriveMaxAccelerationUnitsPerSecond,
+                                                                true, true,
                                                                 configs);
 
     m_drive = new SwerveDrive(modules[0],

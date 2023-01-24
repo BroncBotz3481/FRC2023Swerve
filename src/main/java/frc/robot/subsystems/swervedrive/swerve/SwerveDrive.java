@@ -176,13 +176,16 @@ public class SwerveDrive extends RobotDriveBase implements Sendable, AutoCloseab
    * @param steeringMotorFreeSpeedRPM The RPM free speed of the steering motor.
    * @param maxSpeedMPS               The maximum drive speed in meters per second.
    * @param maxDriveAcceleration      The maximum drive acceleration in meters^2 per second.
+   * @param steeringMotorInverted     The steering motor is inverted.
+   * @param drivingMotorInverted      The driving motor is inverted.
    * @param configs                   The swerve module configuration classes for the swerve drive given.
    * @return Array of swerve modules in the order of front left, front right, back left, back right.
    */
   public static SwerveModule<?, ?, ?>[] createModules(
       double driveGearRatio, double steerGearRatio, double wheelDiameterMeters, double wheelBaseMeters,
       double driveTrainWidthMeters, double steeringMotorFreeSpeedRPM, double maxSpeedMPS,
-      double maxDriveAcceleration, SwerveModuleConfig<?, ?, ?>[] configs)
+      double maxDriveAcceleration, boolean steeringMotorInverted, boolean drivingMotorInverted,
+      SwerveModuleConfig<?, ?, ?>[] configs)
   {
     SwerveModule<?, ?, ?>[] modules = new SwerveModule[configs.length];
     for (int i = 0; i < configs.length; i++)
@@ -208,7 +211,7 @@ public class SwerveDrive extends RobotDriveBase implements Sendable, AutoCloseab
 
       modules[loc] = configs[i].createModule(driveGearRatio, steerGearRatio, wheelDiameterMeters, wheelBaseMeters,
                                              driveTrainWidthMeters, steeringMotorFreeSpeedRPM, maxSpeedMPS,
-                                             maxDriveAcceleration);
+                                             maxDriveAcceleration, steeringMotorInverted, drivingMotorInverted);
     }
     return modules;
   }
@@ -277,6 +280,8 @@ public class SwerveDrive extends RobotDriveBase implements Sendable, AutoCloseab
     SwerveModuleState2[] moduleStates = m_swerveKinematics.toSwerveModuleStates(
         fieldRelative ? ChassisSpeeds.fromFieldRelativeSpeeds(forward, strafe, radianPerSecond, getRotation())
                       : new ChassisSpeeds(forward, strafe, radianPerSecond));
+//        new Translation2d((m_frontLeft.swerveModuleLocation.getX() + m_frontRight.swerveModuleLocation.getX()) / 2,
+//                          (m_frontLeft.swerveModuleLocation.getY() + m_backLeft.swerveModuleLocation.getY()) / 2));
     // try
     // {
     setModuleStates(moduleStates);
@@ -625,6 +630,8 @@ public class SwerveDrive extends RobotDriveBase implements Sendable, AutoCloseab
      * @param steeringMotorFreeSpeedRPM The RPM free speed of the steering motor.
      * @param maxSpeedMPS               The maximum drive speed in meters per second.
      * @param maxDriveAcceleration      The maximum drive acceleration in meters^2 per second.
+     * @param steeringInverted          The steering motor is inverted.
+     * @param drivingInverted           The driving motor is inverted.
      * @return The Swerve Module.
      */
     public SwerveModule<DriveMotorType, SteeringMotorType, AbsoluteEncoder> createModule(double driveGearRatio,
@@ -634,7 +641,9 @@ public class SwerveDrive extends RobotDriveBase implements Sendable, AutoCloseab
                                                                                          double driveTrainWidthMeters,
                                                                                          double steeringMotorFreeSpeedRPM,
                                                                                          double maxSpeedMPS,
-                                                                                         double maxDriveAcceleration)
+                                                                                         double maxDriveAcceleration,
+                                                                                         boolean steeringInverted,
+                                                                                         boolean drivingInverted)
     {
       return new SwerveModule<>(drive, steering, encoder, loc,
                                 driveGearRatio, steerGearRatio,
@@ -642,7 +651,7 @@ public class SwerveDrive extends RobotDriveBase implements Sendable, AutoCloseab
                                 wheelBaseMeters,
                                 driveTrainWidthMeters,
                                 steeringMotorFreeSpeedRPM,
-                                maxSpeedMPS, maxDriveAcceleration);
+                                maxSpeedMPS, maxDriveAcceleration, steeringInverted, drivingInverted);
     }
   }
 
