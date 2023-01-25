@@ -42,19 +42,19 @@ public class SwerveDrive extends RobotDriveBase implements Sendable, AutoCloseab
   /**
    * Front left swerve drive
    */
-  private final SwerveModule<?, ?, ?>    m_frontLeft;
+  public final  SwerveModule<?, ?, ?>    m_frontLeft;
   /**
    * Back left swerve drive
    */
-  private final SwerveModule<?, ?, ?>    m_backLeft;
+  public final  SwerveModule<?, ?, ?>    m_backLeft;
   /**
    * Front right swerve drive
    */
-  private final SwerveModule<?, ?, ?>    m_frontRight;
+  public final  SwerveModule<?, ?, ?>    m_frontRight;
   /**
    * Back right swerve drive
    */
-  private final SwerveModule<?, ?, ?>    m_backRight;
+  public final  SwerveModule<?, ?, ?>    m_backRight;
   /**
    * Swerve drive kinematics.
    */

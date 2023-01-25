@@ -45,11 +45,11 @@ public class SwerveModule<DriveMotorType extends MotorController, AngleMotorType
   /**
    * Motor Controllers for drive motor of the swerve module.
    */
-  private final SwerveMotor            driveMotor;
+  public final  SwerveMotor            driveMotor;
   /***
    * Motor Controller for the turning motor of the swerve drive module.
    */
-  private final SwerveMotor            turningMotor;
+  public final  SwerveMotor            turningMotor;
   /**
    * Enum representing the swerve module's location on the robot, assuming square.
    */
