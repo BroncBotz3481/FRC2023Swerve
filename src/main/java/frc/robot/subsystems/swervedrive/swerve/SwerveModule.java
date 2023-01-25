@@ -181,24 +181,22 @@ public class SwerveModule<DriveMotorType extends MotorController, AngleMotorType
                                                                                             ModuleMotorType.DRIVE,
                                                                                             driveGearRatio,
                                                                                             wheelDiameterMeters,
-                                                                                            0, 0)
+                                                                                            0)
                                                   : new CTRESwerveMotor((TalonFX) mainMotor,
                                                                         encoder,
                                                                         ModuleMotorType.DRIVE,
                                                                         driveGearRatio,
-                                                                        wheelDiameterMeters, 0, 0);
+                                                                        wheelDiameterMeters, 0);
     turningMotor = angleMotor instanceof CANSparkMax ? new REVSwerveMotor<AbsoluteEncoderType>((CANSparkMax) angleMotor,
                                                                                                encoder,
                                                                                                ModuleMotorType.TURNING,
                                                                                                steerGearRatio,
                                                                                                wheelDiameterMeters,
-                                                                                               steeringMotorFreeSpeedRPM,
-                                                                                               steeringOffsetDegrees)
+                                                                                               steeringMotorFreeSpeedRPM)
                                                      : new CTRESwerveMotor((TalonFX) angleMotor, encoder,
                                                                            ModuleMotorType.TURNING, steerGearRatio,
                                                                            wheelDiameterMeters,
-                                                                           steeringMotorFreeSpeedRPM,
-                                                                           steeringOffsetDegrees);
+                                                                           steeringMotorFreeSpeedRPM);
     swerveLocation = swervePosition;
 
     absoluteEncoder = encoder;
