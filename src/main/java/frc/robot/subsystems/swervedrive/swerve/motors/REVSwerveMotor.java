@@ -44,8 +44,7 @@ public class REVSwerveMotor<AbsoluteEncoderType> extends SwerveMotor
    *                        periodic synchronization.
    */
   public REVSwerveMotor(CANSparkMax motor, AbsoluteEncoderType absoluteEncoder, ModuleMotorType type, double gearRatio,
-                        double wheelDiameter,
-                        double freeSpeedRPM)
+                        double wheelDiameter, double freeSpeedRPM, double absoluteOffset)
   {
     m_integratedAbsEncoder = absoluteEncoder instanceof AbsoluteEncoder && type == ModuleMotorType.TURNING;
 
@@ -89,8 +88,15 @@ public class REVSwerveMotor<AbsoluteEncoderType> extends SwerveMotor
     {
       m_moduleRadkV = (12 * 60) / (freeSpeedRPM * Math.toRadians(360 / gearRatio));
 
-      m_encoderPosRet = m_encoderRet = (m_integratedAbsEncoder ? ((AbsoluteEncoder) m_encoder)::getPosition
-                                                               : ((RelativeEncoder) m_encoder)::getPosition);
+      if (m_integratedAbsEncoder)
+      {
+        m_encoderPosRet = m_encoderRet = ((AbsoluteEncoder) m_encoder)::getPosition;
+        ((AbsoluteEncoder) m_encoder).setZeroOffset(absoluteOffset);
+      } else
+      {
+        m_encoderPosRet = m_encoderRet = ((RelativeEncoder) m_encoder)::getPosition;
+      }
+
       m_feedforwardUnits = ArbFFUnits.kVoltage;
       m_pidControlType = ControlType.kPosition;
       m_mainPidSlot = REV_slotIdx.Position.ordinal();
