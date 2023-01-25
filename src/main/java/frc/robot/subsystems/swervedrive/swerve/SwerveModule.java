@@ -277,7 +277,7 @@ public class SwerveModule<DriveMotorType extends MotorController, AngleMotorType
         System.err.println("CANCoder magnetic field strength is unacceptable, will not synchronize encoders.");
         return;
       }
-      turningMotor.setEnocder(absoluteEncoder.getAbsolutePosition()-angleOffset);
+      turningMotor.setEnocder(absoluteEncoder.getAbsolutePosition() - angleOffset);
     }
   }
 
@@ -378,7 +378,7 @@ public class SwerveModule<DriveMotorType extends MotorController, AngleMotorType
 //      // angle = currentAngle;
 //    }
     // System.out.println(angle);
-    turningMotor.setTarget(angle, feedforward);
+    turningMotor.setTarget(Math.round(angle) % 360, feedforward);
   }
 
   /**
@@ -415,7 +415,8 @@ public class SwerveModule<DriveMotorType extends MotorController, AngleMotorType
     Rotation2d angle;
     if (absoluteEncoder instanceof CANCoder)
     {
-      angle = Rotation2d.fromDegrees((Robot.isReal() ? absoluteEncoder.getAbsolutePosition() : targetAngle) - angleOffset);
+      angle = Rotation2d.fromDegrees(
+          Math.round(Robot.isReal() ? absoluteEncoder.getAbsolutePosition() - angleOffset : targetAngle));
       angularVelocityRPS = Robot.isReal() ? Math.toRadians(absoluteEncoder.getVelocity()) : targetAngularVelocityRPS;
       //^ Convert degrees per second to radians per second.
     } else
@@ -437,7 +438,8 @@ public class SwerveModule<DriveMotorType extends MotorController, AngleMotorType
     state = new SwerveModuleState2(
         SwerveModuleState2.optimize(state, getState().angle));
     double angle = state.angle.getDegrees();
-    double velocity = (Math.abs(state.speedMetersPerSecond) <= (maxDriveSpeedMPS * 0.01)) ? 0 : state.speedMetersPerSecond;
+    double velocity = (Math.abs(state.speedMetersPerSecond) <= (maxDriveSpeedMPS * 0.01)) ? 0
+                                                                                          : state.speedMetersPerSecond;
     // if (Math.abs(angle) != 45)
     // {
     // turn motor code

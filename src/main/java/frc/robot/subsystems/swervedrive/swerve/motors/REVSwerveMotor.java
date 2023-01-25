@@ -73,7 +73,7 @@ public class REVSwerveMotor extends SwerveMotor
 
       // setREVConversionFactor(motor, (Math.PI * wheelDiameter) / (60 * gearRatio), ModuleMotorType.DRIVE);
       setConversionFactor(((Math.PI * wheelDiameter) / gearRatio) / 60);
-      
+
       m_pid.setOutputRange(-.6, .6, m_mainPidSlot);
       m_pid.setOutputRange(-.6, .6, m_secondaryPidSlot);
     } else
@@ -101,9 +101,6 @@ public class REVSwerveMotor extends SwerveMotor
 
     setVoltageCompensation(10);
     setCurrentLimit(30);
-    
-
-
 
     setEnocder(0);
 

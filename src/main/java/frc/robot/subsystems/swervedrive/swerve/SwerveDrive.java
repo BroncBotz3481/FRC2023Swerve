@@ -156,23 +156,6 @@ public class SwerveDrive extends RobotDriveBase implements Sendable, AutoCloseab
   }
 
   /**
-   * Sets the speed to 0 and angle to 0 for all the swerve drive modules.
-   */
-  public void zeroModules()
-  {
-    // feedWatchdog();
-    // m_frontLeft.setAngle(0, 0);
-    // m_backLeft.setAngle(0, 0);
-    // m_frontRight.setAngle(0, 0);
-    // m_backRight.setAngle(0, 0);
-    m_frontRight.set(0);
-    m_backLeft.set(0);
-    m_frontLeft.set(0);
-    m_backRight.set(0);
-    set(0, 0, 0, false);
-  }
-
-  /**
    * Create swerve drive modules
    *
    * @param driveGearRatio            Drive gear ratio in form of (rotation:1 AKA rotations/1) to get the encoder ticks
@@ -223,6 +206,23 @@ public class SwerveDrive extends RobotDriveBase implements Sendable, AutoCloseab
                                              maxDriveAcceleration, steeringMotorInverted, drivingMotorInverted);
     }
     return modules;
+  }
+
+  /**
+   * Sets the speed to 0 and angle to 0 for all the swerve drive modules.
+   */
+  public void zeroModules()
+  {
+    // feedWatchdog();
+    // m_frontLeft.setAngle(0, 0);
+    // m_backLeft.setAngle(0, 0);
+    // m_frontRight.setAngle(0, 0);
+    // m_backRight.setAngle(0, 0);
+    m_frontRight.set(0);
+    m_backLeft.set(0);
+    m_frontLeft.set(0);
+    m_backRight.set(0);
+    set(0, 0, 0, false);
   }
 
   /**
@@ -285,8 +285,9 @@ public class SwerveDrive extends RobotDriveBase implements Sendable, AutoCloseab
    */
   public void set(double forward, double strafe, double radianPerSecond, boolean fieldRelative)
   {
-    ChassisSpeeds node = fieldRelative ? ChassisSpeeds.fromFieldRelativeSpeeds(forward, strafe, radianPerSecond, getRotation())
-    : new ChassisSpeeds(forward, strafe, radianPerSecond);
+    ChassisSpeeds node = fieldRelative ? ChassisSpeeds.fromFieldRelativeSpeeds(forward, strafe, radianPerSecond,
+                                                                               getRotation())
+                                       : new ChassisSpeeds(forward, strafe, radianPerSecond);
     // System.out.println(node.omegaRadiansPerSecond);
     SwerveModuleState2[] moduleStates = m_swerveKinematics.toSwerveModuleStates(node);
 //        new Translation2d((m_frontLeft.swerveModuleLocation.getX() + m_frontRight.swerveModuleLocation.getX()) / 2,
