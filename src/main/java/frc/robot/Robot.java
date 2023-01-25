@@ -22,11 +22,19 @@ public class Robot extends TimedRobot
   private        Command        m_autonomousCommand;
   private        RobotContainer m_robotContainer;
 
+  /**
+   * Robot constructor
+   */
   public Robot()
   {
     instance = this;
   }
 
+  /**
+   * Robot getInstance(), should have been implemented in TimedRobot but isnt.
+   *
+   * @return Robot instance.
+   */
   public static Robot getInstance()
   {
     return instance;
