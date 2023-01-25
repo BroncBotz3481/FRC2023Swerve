@@ -132,7 +132,7 @@ public class SwerveSubsystem extends SubsystemBase
                               false);
 
     m_drive.zeroGyro();
-    m_drive.setDeadband(0.02);
+    m_drive.setDeadband(0.08);
     // m_drive.setPIDF(0.01, 0, 0, 0, 0, ModuleMotorType.TURNING); // TODO: Change PIDF here.
     // m_drive.setPIDF(0.1, 0, 0, 0, 0, ModuleMotorType.DRIVE); // TODO: Change PIDF here.
 
@@ -161,10 +161,11 @@ public class SwerveSubsystem extends SubsystemBase
   @Override
   public void periodic()
   {
+      m_drive.synchronizeEncoders();
+
     if (syncTimer.advanceIfElapsed(1))
     {
       System.out.println("Running");
-      m_drive.synchronizeEncoders();
       m_drive.publish(Verbosity.HIGH);
     }
     if (SmartDashboard.getBoolean("Update Swerve Drive", false))
