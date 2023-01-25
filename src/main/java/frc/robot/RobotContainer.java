@@ -4,12 +4,10 @@
 
 package frc.robot;
 
-import edu.wpi.first.wpilibj.Joystick;
+import edu.wpi.first.wpilibj.XboxController;
 import edu.wpi.first.wpilibj2.command.Command;
-import edu.wpi.first.wpilibj2.command.button.JoystickButton;
-import frc.robot.Constants.OIConstants;
-import frc.robot.commands.swerve.SwerveDriveCommand;
-import frc.robot.subsystems.swerve.SwerveSubsystem;
+import frc.robot.commands.swervedrive.SwerveDriveCommand;
+import frc.robot.subsystems.swervedrive.SwerveSubsystem;
 
 /**
  * This class is where the bulk of the robot should be declared. Since Command-based is a "declarative" paradigm, very
@@ -20,8 +18,8 @@ public class RobotContainer
 {
 
   // The robot's subsystems and commands are defined here...
-  public final  SwerveSubsystem swerveSubsystem = new SwerveSubsystem();
-  private final Joystick        driverJoytick   = new Joystick(Constants.OIConstants.kDriverControllerPort);
+  public final  SwerveSubsystem swerveSubsystem  = new SwerveSubsystem();
+  private final XboxController  driverController = new XboxController(Constants.OIConstants.kDriverControllerPort);
 
   /**
    * The container for the robot. Contains subsystems, OI devices, and commands.
@@ -31,11 +29,11 @@ public class RobotContainer
     // Entire program modelled off of https://github.com/SeanSun6814/FRC0ToAutonomous/tree/master/%236%20Swerve%20Drive%20Auto
     // Renamed JoystickSwerveCmd to SwerveDriveCommand
     swerveSubsystem.setDefaultCommand(
-        new SwerveDriveCommand(swerveSubsystem, () -> -driverJoytick.getRawAxis(OIConstants.kDriverYAxis),
-                               () -> driverJoytick.getRawAxis(OIConstants.kDriverXAxis),
-                               () -> driverJoytick.getRawAxis(OIConstants.kDriverRotAxis),
-                               () -> !driverJoytick.getRawButton(OIConstants.kDriverFieldOrientedButtonIdx)));
-    // Configure the button bindings
+        new SwerveDriveCommand(swerveSubsystem, driverController::getLeftX,
+                               driverController::getLeftY,
+                               driverController::getRightX,
+                               () -> driverController.getAButton()));
+    /// Configure the button bindings
 //    controller0 = new XboxController(0);
 //    controller1 = new XboxController(1);
     configureButtonBindings();
@@ -43,7 +41,7 @@ public class RobotContainer
 
   private void configureButtonBindings()
   {
-    new JoystickButton(driverJoytick, 2).whenPressed(swerveSubsystem.m_drive::zeroGyro); // NEW
+//    new JoystickButton(driverController, 2).whenPressed(swerveSubsystem.m_drive::zeroGyro); // NEW
   }
 
   public Command getAutonomousCommand()

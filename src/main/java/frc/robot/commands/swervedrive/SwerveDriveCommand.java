@@ -1,23 +1,23 @@
-package frc.robot.commands.swerve;
+package frc.robot.commands.swervedrive;
 
 import edu.wpi.first.wpilibj2.command.CommandBase;
-import frc.robot.subsystems.swerve.SwerveSubsystem;
+import frc.robot.subsystems.swervedrive.SwerveSubsystem;
 import java.util.function.Supplier;
 
 public class SwerveDriveCommand extends CommandBase
 {
 
   private final SwerveSubsystem  swerveSubsystem;
-  private final Supplier<Double> xSpdFunction, ySpdFunction, turningSpdFunction;
+  private final Supplier<Double> strafeSpdFunction, forwardSpdFunction, turningSpdFunction;
   private final Supplier<Boolean> fieldOrientedFunction;
 
-  public SwerveDriveCommand(SwerveSubsystem swerveSubsystem, Supplier<Double> xSpdFunction,
-                            Supplier<Double> ySpdFunction, Supplier<Double> turningSpdFunction,
+  public SwerveDriveCommand(SwerveSubsystem swerveSubsystem, Supplier<Double> strafeSpdFunction,
+                            Supplier<Double> forwardSpdFunction, Supplier<Double> turningSpdFunction,
                             Supplier<Boolean> fieldOrientedFunction)
   {
     this.swerveSubsystem = swerveSubsystem;
-    this.xSpdFunction = xSpdFunction;
-    this.ySpdFunction = ySpdFunction;
+    this.strafeSpdFunction = strafeSpdFunction;
+    this.forwardSpdFunction = forwardSpdFunction;
     this.turningSpdFunction = turningSpdFunction;
     this.fieldOrientedFunction = fieldOrientedFunction;
     addRequirements(swerveSubsystem);
@@ -32,11 +32,11 @@ public class SwerveDriveCommand extends CommandBase
   public void execute()
   {
     // 1. Get real-time joystick inputs
-    double xSpeed       = xSpdFunction.get();
-    double ySpeed       = ySpdFunction.get();
+    double strafe       = strafeSpdFunction.get();
+    double forward      = forwardSpdFunction.get();
     double turningSpeed = turningSpdFunction.get();
 
-    swerveSubsystem.drive(xSpeed, ySpeed, turningSpeed, fieldOrientedFunction.get());
+    swerveSubsystem.drive(forward, strafe, 0, !fieldOrientedFunction.get());
     /*
 
 
