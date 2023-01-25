@@ -163,6 +163,7 @@ public class SwerveSubsystem extends SubsystemBase
   {
     if (syncTimer.advanceIfElapsed(1))
     {
+      System.out.println("Running");
       m_drive.synchronizeEncoders();
       m_drive.publish(Verbosity.HIGH);
     }

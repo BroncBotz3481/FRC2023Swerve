@@ -432,7 +432,7 @@ public class SwerveModule<DriveMotorType extends MotorController, AngleMotorType
    */
   public void setState(SwerveModuleState2 state)
   {
-    state.angle = state.angle.minus(Rotation2d.fromDegrees(angleOffset));
+    // state.angle = state.angle.minus(Rotation2d.fromDegrees(angleOffset));
     // inspired by https://github.com/first95/FRC2022/blob/1f57d6837e04d8c8a89f4d83d71b5d2172f41a0e/SwervyBot/src/main/java/frc/robot/SwerveModule.java#L22
     state = new SwerveModuleState2(
         SwerveModuleState2.optimize(state, getState().angle));
