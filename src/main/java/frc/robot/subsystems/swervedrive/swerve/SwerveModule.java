@@ -176,20 +176,23 @@ public class SwerveModule<DriveMotorType extends MotorController, AngleMotorType
     mainMotor.setInverted(drivingInverted);
     angleMotor.setInverted(steeringInverted);
 
-    driveMotor = mainMotor instanceof CANSparkMax ? new REVSwerveMotor((CANSparkMax) mainMotor,
-                                                                       ModuleMotorType.DRIVE,
-                                                                       driveGearRatio,
-                                                                       wheelDiameterMeters,
-                                                                       0) : new CTRESwerveMotor((TalonFX) mainMotor,
-                                                                                                encoder,
-                                                                                                ModuleMotorType.DRIVE,
-                                                                                                driveGearRatio,
-                                                                                                wheelDiameterMeters, 0);
-    turningMotor = angleMotor instanceof CANSparkMax ? new REVSwerveMotor((CANSparkMax) angleMotor,
-                                                                          ModuleMotorType.TURNING,
-                                                                          steerGearRatio,
-                                                                          wheelDiameterMeters,
-                                                                          steeringMotorFreeSpeedRPM)
+    driveMotor = mainMotor instanceof CANSparkMax ? new REVSwerveMotor<AbsoluteEncoderType>((CANSparkMax) mainMotor,
+                                                                                            encoder,
+                                                                                            ModuleMotorType.DRIVE,
+                                                                                            driveGearRatio,
+                                                                                            wheelDiameterMeters,
+                                                                                            0)
+                                                  : new CTRESwerveMotor((TalonFX) mainMotor,
+                                                                        encoder,
+                                                                        ModuleMotorType.DRIVE,
+                                                                        driveGearRatio,
+                                                                        wheelDiameterMeters, 0);
+    turningMotor = angleMotor instanceof CANSparkMax ? new REVSwerveMotor<AbsoluteEncoderType>((CANSparkMax) angleMotor,
+                                                                                               encoder,
+                                                                                               ModuleMotorType.TURNING,
+                                                                                               steerGearRatio,
+                                                                                               wheelDiameterMeters,
+                                                                                               steeringMotorFreeSpeedRPM)
                                                      : new CTRESwerveMotor((TalonFX) angleMotor, encoder,
                                                                            ModuleMotorType.TURNING, steerGearRatio,
                                                                            wheelDiameterMeters,
@@ -226,6 +229,11 @@ public class SwerveModule<DriveMotorType extends MotorController, AngleMotorType
 
     // targetAngle = getState().angle.getDegrees();
     targetAngle = 0;
+
+    if (!remoteIntegratedEncoder())
+    {
+      Robot.getInstance().addPeriodic(this::synchronizeSteeringEncoder, 0.02);
+    }
   }
 
   ///////////////////////////// CONFIGURATION FUNCTIONS SECTION ///////////////////////////////////////////////////
@@ -260,9 +268,12 @@ public class SwerveModule<DriveMotorType extends MotorController, AngleMotorType
   public void resetEncoders()
   {
     driveMotor.setEnocder(0);
-    turningMotor.setEnocder(0);
 
-    synchronizeSteeringEncoder();
+    if (!remoteIntegratedEncoder())
+    {
+      turningMotor.setEnocder(0);
+      synchronizeSteeringEncoder();
+    }
   }
 
   /**
@@ -270,7 +281,7 @@ public class SwerveModule<DriveMotorType extends MotorController, AngleMotorType
    */
   public void synchronizeSteeringEncoder()
   {
-    if (absoluteEncoder instanceof CANCoder)
+    if (absoluteEncoder instanceof CANCoder && !remoteIntegratedEncoder())
     {
       if (absoluteEncoder.getMagnetFieldStrength() != MagnetFieldStrength.Good_GreenLED)
       {
@@ -360,6 +371,17 @@ public class SwerveModule<DriveMotorType extends MotorController, AngleMotorType
     }
 
     return drive && turn && encoder;
+  }
+
+  /**
+   * Checks if the absolute encoder is able to be read directly by the motor controller instead of using the
+   * synchronizeEncoder() function periodically.
+   *
+   * @return If the absolute sensor in the steering motor is directly accessed by the motor controller.
+   */
+  public boolean remoteIntegratedEncoder()
+  {
+    return turningMotor.remoteIntegratedEncoder();
   }
 
   /**

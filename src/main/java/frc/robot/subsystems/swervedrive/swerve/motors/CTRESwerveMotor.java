@@ -63,6 +63,18 @@ public class CTRESwerveMotor extends SwerveMotor
   }
 
   /**
+   * Configure the maximum power (-1 to 1) the PID can output. This helps manage voltage pull for the drive base.
+   *
+   * @param min Minimum output.
+   * @param max Maximum output.
+   */
+  @Override
+  public void setPIDOutputRange(double min, double max)
+  {
+
+  }
+
+  /**
    * Set the PIDF coefficients for the closed loop PID onboard the SparkMax.
    *
    * @param P            Proportional gain for closed loop. This is multiplied by closed loop error in sensor units.
@@ -204,6 +216,17 @@ public class CTRESwerveMotor extends SwerveMotor
   public boolean reachable()
   {
     return m_motor.getFirmwareVersion() != 0;
+  }
+
+  /**
+   * Check if the absolute encoder is used inplace of the integrated encoder.
+   *
+   * @return true, if the absolute encoder is being used as the integrated controller.
+   */
+  @Override
+  public boolean remoteIntegratedEncoder()
+  {
+    return true;
   }
 
   /**
