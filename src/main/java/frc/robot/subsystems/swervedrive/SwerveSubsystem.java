@@ -161,7 +161,7 @@ public class SwerveSubsystem extends SubsystemBase
   @Override
   public void periodic()
   {
-      m_drive.synchronizeEncoders();
+    m_drive.synchronizeEncoders();
 
     if (syncTimer.advanceIfElapsed(1))
     {
