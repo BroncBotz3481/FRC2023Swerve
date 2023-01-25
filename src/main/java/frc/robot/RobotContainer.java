@@ -32,7 +32,7 @@ public class RobotContainer
         new SwerveDriveCommand(swerveSubsystem, driverController::getLeftX,
                                driverController::getLeftY,
                                driverController::getRightX,
-                               () -> !driverController.getAButton()));
+                               () -> driverController.getAButton()));
     /// Configure the button bindings
 //    controller0 = new XboxController(0);
 //    controller1 = new XboxController(1);

@@ -224,7 +224,8 @@ public class SwerveModule<DriveMotorType extends MotorController, AngleMotorType
 
     publish(Verbosity.SETUP);
 
-    targetAngle = getState().angle.getDegrees();
+    // targetAngle = getState().angle.getDegrees();
+    targetAngle = 0;
   }
 
   ///////////////////////////// CONFIGURATION FUNCTIONS SECTION ///////////////////////////////////////////////////
@@ -276,7 +277,7 @@ public class SwerveModule<DriveMotorType extends MotorController, AngleMotorType
         System.err.println("CANCoder magnetic field strength is unacceptable, will not synchronize encoders.");
         return;
       }
-      turningMotor.setEnocder(absoluteEncoder.getAbsolutePosition());
+      turningMotor.setEnocder(absoluteEncoder.getAbsolutePosition()-angleOffset);
     }
   }
 
@@ -335,8 +336,9 @@ public class SwerveModule<DriveMotorType extends MotorController, AngleMotorType
    */
   public void setAngleOffset(double offset)
   {
+    System.out.println(offset);
     angleOffset = offset;
-    absoluteEncoder.configMagnetOffset(offset);
+    absoluteEncoder.configMagnetOffset(0);
   }
 
   //////////////////////////// END OF STATUS FUNCTIONS SECTION ////////////////////////////////////////////////
@@ -368,7 +370,6 @@ public class SwerveModule<DriveMotorType extends MotorController, AngleMotorType
    */
   public void setAngle(double angle, double feedforward)
   {
-
     // currentAngle is always updated in getState which is called during setState which calls this function.
 //    if ((angle - angleDeadband) <= targetAngle && targetAngle <= (angle + angleDeadband))
 //    {
@@ -376,7 +377,7 @@ public class SwerveModule<DriveMotorType extends MotorController, AngleMotorType
 //      return;
 //      // angle = currentAngle;
 //    }
-
+    // System.out.println(angle);
     turningMotor.setTarget(angle, feedforward);
   }
 
@@ -414,7 +415,7 @@ public class SwerveModule<DriveMotorType extends MotorController, AngleMotorType
     Rotation2d angle;
     if (absoluteEncoder instanceof CANCoder)
     {
-      angle = Rotation2d.fromDegrees(Robot.isReal() ? absoluteEncoder.getAbsolutePosition() : targetAngle);
+      angle = Rotation2d.fromDegrees((Robot.isReal() ? absoluteEncoder.getAbsolutePosition() : targetAngle) - angleOffset);
       angularVelocityRPS = Robot.isReal() ? Math.toRadians(absoluteEncoder.getVelocity()) : targetAngularVelocityRPS;
       //^ Convert degrees per second to radians per second.
     } else
@@ -431,6 +432,7 @@ public class SwerveModule<DriveMotorType extends MotorController, AngleMotorType
    */
   public void setState(SwerveModuleState2 state)
   {
+    state.angle = state.angle.minus(Rotation2d.fromDegrees(angleOffset));
     // inspired by https://github.com/first95/FRC2022/blob/1f57d6837e04d8c8a89f4d83d71b5d2172f41a0e/SwervyBot/src/main/java/frc/robot/SwerveModule.java#L22
     state = new SwerveModuleState2(
         SwerveModuleState2.optimize(state, getState().angle));

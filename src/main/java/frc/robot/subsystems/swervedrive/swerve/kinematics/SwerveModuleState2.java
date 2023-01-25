@@ -79,7 +79,7 @@ public class SwerveModuleState2 extends edu.wpi.first.math.kinematics.SwerveModu
         targetAngle += 180;
       }
     }
-    return new SwerveModuleState2(targetSpeed, Rotation2d.fromDegrees(-targetAngle));
+    return new SwerveModuleState2(targetSpeed, Rotation2d.fromDegrees(targetAngle));
   }
 
   /**
