@@ -78,6 +78,7 @@ public class REVSwerveMotor<AbsoluteEncoderType> extends SwerveMotor
       m_mainPidSlot = REV_slotIdx.Velocity.ordinal();
       m_secondaryPidSlot = REV_slotIdx.Position.ordinal();
 
+//      setPIDF(0.1, 0, 0, 0, 1);
       setPIDF(0.01, 0, 0.005, 0, 0);
       setPIDOutputRange(-powerDriving, powerDriving);
 
@@ -168,6 +169,7 @@ public class REVSwerveMotor<AbsoluteEncoderType> extends SwerveMotor
     m_pid.setD(D, m_mainPidSlot);
     m_pid.setFF(F, m_mainPidSlot);
     m_pid.setIZone(integralZone, m_mainPidSlot);
+    // m_pid.setOutputRange(-1, 1, m_mainPidSlot);
   }
 
   /**

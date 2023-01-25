@@ -400,7 +400,7 @@ public class SwerveModule<DriveMotorType extends MotorController, AngleMotorType
 //      // angle = currentAngle;
 //    }
     // System.out.println(angle);
-    turningMotor.setTarget(angle, feedforward);
+    turningMotor.setTarget(Math.round(angle) % 360, feedforward);
   }
 
   /**
@@ -438,7 +438,7 @@ public class SwerveModule<DriveMotorType extends MotorController, AngleMotorType
     if (absoluteEncoder instanceof CANCoder)
     {
       angle = Rotation2d.fromDegrees(
-          (Robot.isReal() ? absoluteEncoder.getAbsolutePosition() : targetAngle) - angleOffset);
+          Math.round(Robot.isReal() ? absoluteEncoder.getAbsolutePosition() - angleOffset : targetAngle));
       angularVelocityRPS = Robot.isReal() ? Math.toRadians(absoluteEncoder.getVelocity()) : targetAngularVelocityRPS;
       //^ Convert degrees per second to radians per second.
     } else
