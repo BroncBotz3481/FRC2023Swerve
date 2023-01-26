@@ -459,7 +459,7 @@ public class SwerveModule<DriveMotorType extends MotorController, AngleMotorType
     // inspired by https://github.com/first95/FRC2022/blob/1f57d6837e04d8c8a89f4d83d71b5d2172f41a0e/SwervyBot/src/main/java/frc/robot/SwerveModule.java#L22
     state = new SwerveModuleState2(
         SwerveModuleState2.optimize(state, getState().angle));
-    double angle = state.angle.getDegrees();
+    double angle = state.angle.getDegrees() + 180; // getDegrees returns in the range of -180 to 180 we want 0 to 360.
     double velocity = (Math.abs(state.speedMetersPerSecond) <= (maxDriveSpeedMPS * 0.01)) ? 0
                                                                                           : state.speedMetersPerSecond;
     // if (Math.abs(angle) != 45)

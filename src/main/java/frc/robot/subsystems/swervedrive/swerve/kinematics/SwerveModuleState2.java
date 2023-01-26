@@ -64,22 +64,20 @@ public class SwerveModuleState2 extends edu.wpi.first.math.kinematics.SwerveModu
   public static SwerveModuleState2 optimize(
       SwerveModuleState2 desiredState, Rotation2d currentAngle)
   {
-    double targetAngle =
-        placeInAppropriate0To360Scope(currentAngle.getDegrees(), desiredState.angle.getDegrees());
-    double targetSpeed = desiredState.speedMetersPerSecond;
-    double delta       = targetAngle - currentAngle.getDegrees();
-    if (Math.abs(delta) > 90)
+    SwerveModuleState2 state;
+    Rotation2d         delta = desiredState.angle.minus(currentAngle);
+    if (Math.abs(delta.getDegrees()) > 90.0)
     {
-      targetSpeed = -targetSpeed;
-      if (delta > 90)
-      {
-        targetAngle -= 180;
-      } else
-      {
-        targetAngle += 180;
-      }
+      state = new SwerveModuleState2(
+          -desiredState.speedMetersPerSecond,
+          desiredState.angle.rotateBy(Rotation2d.fromDegrees(180.0)));
+    } else
+    {
+      state = new SwerveModuleState2(desiredState.speedMetersPerSecond, desiredState.angle);
     }
-    return new SwerveModuleState2(targetSpeed, Rotation2d.fromDegrees(targetAngle));
+    state.angle = Rotation2d.fromDegrees(
+        placeInAppropriate0To360Scope(currentAngle.getDegrees(), state.angle.getDegrees()));
+    return state;
   }
 
   /**
