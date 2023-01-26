@@ -42,5 +42,12 @@
         }
       }
     }
+  },
+  "NetworkTables": {
+    "transitory": {
+      "Preferences": {
+        "open": true
+      }
+    }
   }
 }
