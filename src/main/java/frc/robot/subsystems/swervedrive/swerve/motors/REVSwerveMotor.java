@@ -11,10 +11,11 @@ import com.revrobotics.RelativeEncoder;
 import com.revrobotics.SparkMaxPIDController;
 import com.revrobotics.SparkMaxPIDController.ArbFFUnits;
 import frc.robot.Robot;
+import frc.robot.subsystems.swervedrive.swerve.SwerveEncoder;
 import frc.robot.subsystems.swervedrive.swerve.SwerveMotor;
 import java.util.function.Supplier;
 
-public class REVSwerveMotor<AbsoluteEncoderType> extends SwerveMotor
+public class REVSwerveMotor extends SwerveMotor
 {
 
   private final int                   m_mainPidSlot;
@@ -35,18 +36,18 @@ public class REVSwerveMotor<AbsoluteEncoderType> extends SwerveMotor
    * Constructor for REV Swerve Motor, expecting CANSparkMax. Clears sticky faults and restores factory defaults.
    *
    * @param motor           SparkMAX motor controller.
+   * @param absoluteEncoder The absolute encoder used for the module, if the motor is a turning motor and the encoder is
+   *                        compatible it will set the encoder as the remote integrated encoder and does not need
+   *                        periodic synchronization.
    * @param type            Swerve module motor type.
    * @param gearRatio       Gear ratio.
    * @param wheelDiameter   Wheel diameter in meters.
    * @param freeSpeedRPM    Free speed RPM of the motor.
-   * @param absoluteEncoder The absolute encoder used for the module, if the motor is a turning motor and the encoder is
-   *                        compatible it will set the encoder as the remote integrated encoder and does not need
-   *                        periodic synchronization.
    */
-  public REVSwerveMotor(CANSparkMax motor, AbsoluteEncoderType absoluteEncoder, ModuleMotorType type, double gearRatio,
+  public REVSwerveMotor(CANSparkMax motor, SwerveEncoder<?> absoluteEncoder, ModuleMotorType type, double gearRatio,
                         double wheelDiameter, double freeSpeedRPM)
   {
-    m_integratedAbsEncoder = absoluteEncoder instanceof AbsoluteEncoder && type == ModuleMotorType.TURNING;
+    m_integratedAbsEncoder = absoluteEncoder.m_encoder instanceof AbsoluteEncoder && type == ModuleMotorType.TURNING;
 
     // Inspired by the following sources
     // https://github.com/SwerveDriveSpecialties/swerve-lib-2022-unmaintained/blob/55f3f1ad9e6bd81e56779d022a40917aacf8d3b3/src/main/java/com/swervedrivespecialties/swervelib/rev/NeoDriveControllerFactoryBuilder.java#L38
@@ -57,7 +58,7 @@ public class REVSwerveMotor<AbsoluteEncoderType> extends SwerveMotor
 
     m_motor = motor;
     m_motorType = type;
-    m_encoder = m_integratedAbsEncoder ? (AbsoluteEncoder) absoluteEncoder : motor.getEncoder();
+    m_encoder = m_integratedAbsEncoder ? (AbsoluteEncoder) absoluteEncoder.m_encoder : motor.getEncoder();
     m_pid = motor.getPIDController();
 
     m_pid.setFeedbackDevice(m_encoder);

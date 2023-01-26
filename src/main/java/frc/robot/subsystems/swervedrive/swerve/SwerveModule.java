@@ -3,12 +3,9 @@ package frc.robot.subsystems.swervedrive.swerve;
 import static java.util.Objects.requireNonNull;
 
 import com.ctre.phoenix.motorcontrol.can.TalonFX;
-import com.ctre.phoenix.sensors.AbsoluteSensorRange;
 import com.ctre.phoenix.sensors.CANCoder;
-import com.ctre.phoenix.sensors.CANCoderConfiguration;
 import com.ctre.phoenix.sensors.MagnetFieldStrength;
-import com.ctre.phoenix.sensors.SensorInitializationStrategy;
-import com.ctre.phoenix.sensors.SensorTimeBase;
+import com.revrobotics.AbsoluteEncoder;
 import com.revrobotics.CANSparkMax;
 import edu.wpi.first.math.controller.SimpleMotorFeedforward;
 import edu.wpi.first.math.geometry.Rotation2d;
@@ -17,13 +14,13 @@ import edu.wpi.first.math.kinematics.SwerveModulePosition;
 import edu.wpi.first.util.sendable.Sendable;
 import edu.wpi.first.util.sendable.SendableBuilder;
 import edu.wpi.first.util.sendable.SendableRegistry;
+import edu.wpi.first.wpilibj.AnalogEncoder;
+import edu.wpi.first.wpilibj.DutyCycleEncoder;
 import edu.wpi.first.wpilibj.motorcontrol.MotorController;
 import edu.wpi.first.wpilibj.smartdashboard.SmartDashboard;
 import frc.robot.Robot;
 import frc.robot.subsystems.swervedrive.swerve.SwerveMotor.ModuleMotorType;
 import frc.robot.subsystems.swervedrive.swerve.kinematics.SwerveModuleState2;
-import frc.robot.subsystems.swervedrive.swerve.motors.CTRESwerveMotor;
-import frc.robot.subsystems.swervedrive.swerve.motors.REVSwerveMotor;
 import java.io.Closeable;
 
 /**
@@ -34,7 +31,7 @@ import java.io.Closeable;
  * @param <AbsoluteEncoderType> Absolute encoder for the swerve drive module.
  */
 public class SwerveModule<DriveMotorType extends MotorController, AngleMotorType extends MotorController,
-    AbsoluteEncoderType extends CANCoder>
+    AbsoluteEncoderType>
     implements MotorController, Sendable, AutoCloseable
 {
 
@@ -57,15 +54,11 @@ public class SwerveModule<DriveMotorType extends MotorController, AngleMotorType
   /**
    * Absolute encoder for the swerve module.
    */
-  private final AbsoluteEncoderType    absoluteEncoder;
+  private final SwerveEncoder<?>       absoluteEncoder;
   /**
    * The Distance between centers of right and left wheels in meters.
    */
   private final double                 driveTrainWidth;
-  /**
-   * Configured sensor range for the Absolute Encoder.
-   */
-  private final AbsoluteSensorRange    configuredSensorRange;
   /**
    * The Distance between front and back wheels of the robot in meters.
    */
@@ -74,6 +67,10 @@ public class SwerveModule<DriveMotorType extends MotorController, AngleMotorType
    * Drive feedforward for PID when driving by velocity.
    */
   private final SimpleMotorFeedforward driveFeedforward;
+  /**
+   * kV for steering feedforward.
+   */
+  private final double                 steeringKV;
   /**
    * Angle offset of the CANCoder at initialization.
    */
@@ -97,7 +94,7 @@ public class SwerveModule<DriveMotorType extends MotorController, AngleMotorType
   /**
    * Store the last angle for optimization.
    */
-  private       double                 targetAngle              = 0;
+  private       double                 targetAngle;
   /**
    * Angular velocity in radians per second.
    */
@@ -106,10 +103,6 @@ public class SwerveModule<DriveMotorType extends MotorController, AngleMotorType
    * Target velocity for the swerve module.
    */
   private       double                 targetVelocity           = 0;
-  /**
-   * kV for steering feedforward.
-   */
-  private       double                 steeringKV               = 0;
 
   /**
    * Swerve module constructor. Both motors <b>MUST</b> be a {@link MotorController} class. It is recommended to create
@@ -160,6 +153,36 @@ public class SwerveModule<DriveMotorType extends MotorController, AngleMotorType
     this.wheelBase = wheelBaseMeters;
     this.driveTrainWidth = driveTrainWidthMeters;
 
+    assert mainMotor instanceof CANSparkMax || mainMotor instanceof TalonFX;
+    assert angleMotor instanceof CANSparkMax || angleMotor instanceof TalonFX;
+    assert encoder instanceof DutyCycleEncoder || encoder instanceof AnalogEncoder || encoder instanceof CANCoder ||
+           encoder instanceof AbsoluteEncoder;
+
+    absoluteEncoder = SwerveEncoder.fromEncoder(encoder);
+    assert absoluteEncoder != null;
+
+    absoluteEncoder.factoryDefault();
+
+    driveMotor = SwerveMotor.fromMotor(mainMotor,
+                                       absoluteEncoder,
+                                       ModuleMotorType.DRIVE,
+                                       driveGearRatio,
+                                       wheelDiameterMeters,
+                                       0);
+
+    turningMotor = SwerveMotor.fromMotor(angleMotor,
+                                         absoluteEncoder,
+                                         ModuleMotorType.TURNING,
+                                         steerGearRatio,
+                                         wheelDiameterMeters,
+                                         steeringMotorFreeSpeedRPM);
+
+    swerveLocation = swervePosition;
+    swerveModuleLocation = getSwerveModulePosition(swervePosition);
+
+    assert driveMotor != null;
+    assert turningMotor != null;
+
     // Set the maximum speed for each swerve module for use when trying to optimize movements.
     // Drive feedforward gains
     //        public static final double KS = 0;
@@ -171,51 +194,16 @@ public class SwerveModule<DriveMotorType extends MotorController, AngleMotorType
     driveFeedforward = new SimpleMotorFeedforward(0, 12 / maxDriveSpeedMPS, 12 / maxDriveAcceleration);
     steeringKV = (12 * 60) / (steeringMotorFreeSpeedRPM * Math.toRadians(360 / steerGearRatio));
 
-    assert mainMotor instanceof CANSparkMax || mainMotor instanceof TalonFX;
-    assert angleMotor instanceof CANSparkMax || angleMotor instanceof TalonFX;
-    mainMotor.setInverted(drivingInverted);
-    angleMotor.setInverted(steeringInverted);
+    driveMotor.setInverted(drivingInverted);
+    turningMotor.setInverted(steeringInverted);
 
-    driveMotor = mainMotor instanceof CANSparkMax ? new REVSwerveMotor<AbsoluteEncoderType>((CANSparkMax) mainMotor,
-                                                                                            encoder,
-                                                                                            ModuleMotorType.DRIVE,
-                                                                                            driveGearRatio,
-                                                                                            wheelDiameterMeters,
-                                                                                            0)
-                                                  : new CTRESwerveMotor((TalonFX) mainMotor,
-                                                                        encoder,
-                                                                        ModuleMotorType.DRIVE,
-                                                                        driveGearRatio,
-                                                                        wheelDiameterMeters, 0);
-    turningMotor = angleMotor instanceof CANSparkMax ? new REVSwerveMotor<AbsoluteEncoderType>((CANSparkMax) angleMotor,
-                                                                                               encoder,
-                                                                                               ModuleMotorType.TURNING,
-                                                                                               steerGearRatio,
-                                                                                               wheelDiameterMeters,
-                                                                                               steeringMotorFreeSpeedRPM)
-                                                     : new CTRESwerveMotor((TalonFX) angleMotor, encoder,
-                                                                           ModuleMotorType.TURNING, steerGearRatio,
-                                                                           wheelDiameterMeters,
-                                                                           steeringMotorFreeSpeedRPM);
-    swerveLocation = swervePosition;
+    absoluteEncoder.configure();
 
-    absoluteEncoder = encoder;
-    swerveModuleLocation = getSwerveModulePosition(swervePosition);
     setAngleOffset(steeringOffsetDegrees);
     resetEncoders();
 
     // Convert CANCoder to read data as unsigned 0 to 360 for synchronization purposes.
-    configuredSensorRange = AbsoluteSensorRange.Unsigned_0_to_360;
-    if (encoder instanceof CANCoder)
-    {
-      encoder.configFactoryDefault();
-      CANCoderConfiguration sensorConfig = new CANCoderConfiguration();
-
-      sensorConfig.absoluteSensorRange = configuredSensorRange;
-      sensorConfig.initializationStrategy = SensorInitializationStrategy.BootToAbsolutePosition;
-      sensorConfig.sensorTimeBase = SensorTimeBase.PerSecond;
-      encoder.configAllSettings(sensorConfig);
-    }
+    absoluteEncoder.configure();
 
     assert activeCAN();
 
@@ -281,7 +269,7 @@ public class SwerveModule<DriveMotorType extends MotorController, AngleMotorType
    */
   public void synchronizeSteeringEncoder()
   {
-    if (absoluteEncoder instanceof CANCoder && !remoteIntegratedEncoder())
+    if (!remoteIntegratedEncoder())
     {
       if (absoluteEncoder.getMagnetFieldStrength() != MagnetFieldStrength.Good_GreenLED)
       {
@@ -349,7 +337,7 @@ public class SwerveModule<DriveMotorType extends MotorController, AngleMotorType
   {
     // System.out.println(offset);
     angleOffset = offset;
-    absoluteEncoder.configMagnetOffset(0);
+    absoluteEncoder.setOffset(0);
   }
 
   //////////////////////////// END OF STATUS FUNCTIONS SECTION ////////////////////////////////////////////////
@@ -363,12 +351,7 @@ public class SwerveModule<DriveMotorType extends MotorController, AngleMotorType
    */
   public boolean activeCAN()
   {
-    boolean drive = driveMotor.reachable(), turn = turningMotor.reachable(), encoder = true;
-
-    if (absoluteEncoder instanceof CANCoder)
-    {
-      encoder = absoluteEncoder.getFirmwareVersion() > 0;
-    }
+    boolean drive = driveMotor.reachable(), turn = turningMotor.reachable(), encoder = absoluteEncoder.reachable();
 
     return drive && turn && encoder;
   }
@@ -432,19 +415,13 @@ public class SwerveModule<DriveMotorType extends MotorController, AngleMotorType
    */
   public SwerveModuleState2 getState()
   {
-    double     mps                = driveMotor.get();
-    double     angularVelocityRPS = 0;
+    double     mps = driveMotor.get();
+    double     angularVelocityRPS;
     Rotation2d angle;
-    if (absoluteEncoder instanceof CANCoder)
-    {
-      angle = Rotation2d.fromDegrees(
-          Math.round(Robot.isReal() ? absoluteEncoder.getAbsolutePosition() - angleOffset : targetAngle));
-      angularVelocityRPS = Robot.isReal() ? Math.toRadians(absoluteEncoder.getVelocity()) : targetAngularVelocityRPS;
-      //^ Convert degrees per second to radians per second.
-    } else
-    {
-      throw new RuntimeException("No CANCoder attached.");
-    }
+    angle = Rotation2d.fromDegrees(Math.round(
+        Robot.isReal() ? absoluteEncoder.getAbsolutePosition() - angleOffset : targetAngle));
+    angularVelocityRPS = Robot.isReal() ? Math.toRadians(absoluteEncoder.getVelocity()) : targetAngularVelocityRPS;
+    //^ Convert degrees per second to radians per second.
     return new SwerveModuleState2(mps, angle, angularVelocityRPS);
   }
 
@@ -590,11 +567,9 @@ public class SwerveModule<DriveMotorType extends MotorController, AngleMotorType
           SmartDashboard.putBoolean(name + "/update", false);
           subscribe();
         }
-
         // The higher the better, 2 and 3 are what we want.
         SmartDashboard.putNumber(name + "/steer/encoder/field", absoluteEncoder.getMagnetFieldStrength().value);
       case NORMAL:
-        // TODO: Implement for CTRE
         // Steering Encoder Values
         SmartDashboard.putNumber(name + "/steer/encoder/integrated", turningMotor.get());
         SmartDashboard.putNumber(name + "/steer/encoder/absolute", absoluteEncoder.getAbsolutePosition());
@@ -796,10 +771,7 @@ public class SwerveModule<DriveMotorType extends MotorController, AngleMotorType
    */
   public void setInvertedAbsoluteEncoder(boolean isInverted)
   {
-    if (absoluteEncoder instanceof CANCoder)
-    {
-      absoluteEncoder.configSensorDirection(isInverted);
-    }
+    absoluteEncoder.setInverted(isInverted);
   }
 
   ////////////// CUSTOM INVERSION FUNCTIONS SECTION //////////////////////////

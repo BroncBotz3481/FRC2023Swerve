@@ -1,5 +1,11 @@
 package frc.robot.subsystems.swervedrive.swerve;
 
+import com.ctre.phoenix.motorcontrol.can.TalonFX;
+import com.revrobotics.CANSparkMax;
+import edu.wpi.first.wpilibj.motorcontrol.MotorController;
+import frc.robot.subsystems.swervedrive.swerve.motors.CTRESwerveMotor;
+import frc.robot.subsystems.swervedrive.swerve.motors.REVSwerveMotor;
+
 public abstract class SwerveMotor
 {
 
@@ -15,6 +21,39 @@ public abstract class SwerveMotor
    * Target value for PID.
    */
   public double target;
+
+  /**
+   * Constructor for Swerve Motor, expecting CANSparkMax or TalonFX. Clears sticky faults and restores factory
+   * defaults.
+   *
+   * @param motor           Motor controller.
+   * @param absoluteEncoder The absolute encoder used for the module, if the motor is a turning motor and the encoder is
+   *                        compatible it will set the encoder as the remote integrated encoder and does not need
+   *                        periodic synchronization.
+   * @param type            Swerve module motor type.
+   * @param gearRatio       Gear ratio.
+   * @param wheelDiameter   Wheel diameter in meters.
+   * @param freeSpeedRPM    Free speed RPM of the motor.
+   * @param <MotorType>     Motor type to use.
+   */
+  public static <MotorType extends MotorController> SwerveMotor fromMotor(MotorType motor,
+                                                                          SwerveEncoder<?> absoluteEncoder,
+                                                                          ModuleMotorType type,
+                                                                          double gearRatio,
+                                                                          double wheelDiameter,
+                                                                          double freeSpeedRPM)
+  {
+    if (motor instanceof CANSparkMax)
+    {
+      return new REVSwerveMotor(((CANSparkMax) motor), absoluteEncoder, type, gearRatio, wheelDiameter, freeSpeedRPM);
+    }
+    if (motor instanceof TalonFX)
+    {
+      return new CTRESwerveMotor((TalonFX) motor, absoluteEncoder, type, gearRatio, wheelDiameter, freeSpeedRPM);
+    }
+    return null;
+  }
+
 
   /**
    * Configure the maximum power (-1 to 1) the PID can output. This helps manage voltage pull for the drive base.

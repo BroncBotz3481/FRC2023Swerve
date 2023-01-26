@@ -7,6 +7,7 @@ import com.ctre.phoenix.motorcontrol.NeutralMode;
 import com.ctre.phoenix.motorcontrol.SupplyCurrentLimitConfiguration;
 import com.ctre.phoenix.motorcontrol.can.TalonFX;
 import com.ctre.phoenix.sensors.CANCoder;
+import frc.robot.subsystems.swervedrive.swerve.SwerveEncoder;
 import frc.robot.subsystems.swervedrive.swerve.SwerveMotor;
 import java.util.function.Supplier;
 
@@ -21,10 +22,15 @@ public class CTRESwerveMotor extends SwerveMotor
   private final TalonFX          m_motor;
 
   // TODO: Finish this based off of BaseFalconSwerve
-  public CTRESwerveMotor(TalonFX motor, CANCoder encoder, ModuleMotorType type, double gearRatio, double wheelDiameter,
+  public CTRESwerveMotor(TalonFX motor, SwerveEncoder encoder, ModuleMotorType type, double gearRatio,
+                         double wheelDiameter,
                          double freeSpeedRPM)
   {
-    m_angleEncoder = encoder;
+    if (!(encoder.m_encoder instanceof CANCoder))
+    {
+      throw new RuntimeException("CANCoder not used with Falcon");
+    }
+    m_angleEncoder = (CANCoder) encoder.m_encoder;
     m_motorType = type;
     m_motor = motor;
 
@@ -56,7 +62,7 @@ public class CTRESwerveMotor extends SwerveMotor
 
       // Configure the CANCoder as the remote sensor.
       motor.configSelectedFeedbackSensor(FeedbackDevice.RemoteSensor0);
-      motor.configRemoteFeedbackFilter(encoder, CTRE_remoteSensor.REMOTE_SENSOR_0.ordinal());
+      motor.configRemoteFeedbackFilter(m_angleEncoder, CTRE_remoteSensor.REMOTE_SENSOR_0.ordinal());
       motor.configSelectedFeedbackCoefficient((double) 360 / 4096); // Degrees/Ticks
       // The CANCoder has 4096 ticks per rotation.
     }
