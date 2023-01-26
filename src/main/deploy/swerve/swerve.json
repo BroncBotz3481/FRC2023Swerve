@@ -4,12 +4,12 @@
   "WheelDiameter": 4,
   "Speed": {
     "MetersPerSecond": 3,
-    "TeleopReduction": 0.5,
-    "RadianPerSecond": 3
+    "PhysicalMetersPerSecond": 3,
+    "RadianPerSecond": 1
   },
   "Acceleration": {
-    "MetersPerSecond": 3,
-    "RadianPerSecond": 3
+    "MetersPerSecond": 1,
+    "RadianPerSecond": 1
   },
   "Drive": {
     "Inverted": true,

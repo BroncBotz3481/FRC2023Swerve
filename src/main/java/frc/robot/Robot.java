@@ -74,7 +74,6 @@ public class Robot extends TimedRobot
   public void simulationPeriodic()
   {
     REVPhysicsSim.getInstance().run();
-
   }
 
   /**

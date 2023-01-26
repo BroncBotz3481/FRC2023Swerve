@@ -147,7 +147,7 @@ public class SwerveParser
     assert mainJson.has("WheelDiameter");
     assert mainJson.has("Speed");
     assert mainJson.get("Speed").has("MetersPerSecond") && mainJson.get("Speed").has("RadianPerSecond") &&
-           mainJson.get("Speed").has("TeleopReduction");
+           mainJson.get("Speed").has("PhysicalMetersPerSecond");
     assert mainJson.has("Acceleration");
     assert mainJson.get("Acceleration").has("MetersPerSecond") && mainJson.get("Acceleration").has("RadianPerSecond");
     assert mainJson.has("Drive");
@@ -218,11 +218,11 @@ public class SwerveParser
                                         new File(directory, "modules/back/right.json"),
                                         SwerveModuleLocation.BackRight),
                            createGyro(swerveJson.get("Gyro")),
-                           swerveJson.get("Speed").get("MetersPerSecond").asDouble() *
-                           swerveJson.get("Speed").get("TeleopReduction").asDouble(),
+                           swerveJson.get("Speed").get("MetersPerSecond").asDouble(),
                            swerveJson.get("Speed").get("RadianPerSecond").asDouble() * Math.PI,
                            swerveJson.get("Acceleration").get("MetersPerSecond").asDouble(),
                            swerveJson.get("Acceleration").get("RadianPerSecond").asDouble() * Math.PI,
+                           swerveJson.get("Speed").get("PhysicalMetersPerSecond").asDouble(),
                            swerveJson.get("Gyro").get("Inverted").asBoolean());
 
   }
