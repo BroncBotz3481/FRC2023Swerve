@@ -75,8 +75,8 @@ public class SwerveModuleState2 extends edu.wpi.first.math.kinematics.SwerveModu
     {
       state = new SwerveModuleState2(desiredState.speedMetersPerSecond, desiredState.angle);
     }
-    state.angle = Rotation2d.fromDegrees(
-        placeInAppropriate0To360Scope(currentAngle.getDegrees(), state.angle.getDegrees()));
+    // state.angle = Rotation2d.fromDegrees(
+    //     placeInAppropriate0To360Scope(currentAngle.getDegrees(), state.angle.getDegrees()));
     return state;
   }
 

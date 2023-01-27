@@ -14,6 +14,7 @@ import edu.wpi.first.math.controller.SimpleMotorFeedforward;
 import edu.wpi.first.math.geometry.Rotation2d;
 import edu.wpi.first.math.geometry.Translation2d;
 import edu.wpi.first.math.kinematics.SwerveModulePosition;
+import edu.wpi.first.math.kinematics.SwerveModuleState;
 import edu.wpi.first.util.sendable.Sendable;
 import edu.wpi.first.util.sendable.SendableBuilder;
 import edu.wpi.first.util.sendable.SendableRegistry;
@@ -378,7 +379,7 @@ public class SwerveModule<DriveMotorType extends MotorController, AngleMotorType
 //      // angle = currentAngle;
 //    }
     // System.out.println(angle);
-    turningMotor.setTarget(Math.round(angle) % 360, feedforward);
+    turningMotor.setTarget(Math.round(angle) % 180, feedforward);
   }
 
   /**
@@ -436,12 +437,12 @@ public class SwerveModule<DriveMotorType extends MotorController, AngleMotorType
     // state.angle = state.angle.minus(Rotation2d.fromDegrees(angleOffset));
     // inspired by https://github.com/first95/FRC2022/blob/1f57d6837e04d8c8a89f4d83d71b5d2172f41a0e/SwervyBot/src/main/java/frc/robot/SwerveModule.java#L22
     Rotation2d currentAngle = getState().angle;
-    state = SwerveModuleState2.optimize(state, currentAngle);
-    //double angle = state.angle.getDegrees(); // getDegrees returns in the range of -180 to 180 we want 0 to 360.
-    double velocity = (Math.abs(state.speedMetersPerSecond) <= (maxDriveSpeedMPS * 0.01)) ? 0
-                                                                                          : state.speedMetersPerSecond;
-    double angle = SwerveModuleState2.placeInAppropriate0To360Scope(currentAngle.getDegrees(), state.angle.getDegrees());
-                                                                                          // if (Math.abs(angle) != 45)
+    SwerveModuleState state1 = SwerveModuleState.optimize(new SwerveModuleState(state.speedMetersPerSecond, state.angle), currentAngle);
+    double angle = state1.angle.getDegrees(); // getDegrees returns in the range of -180 to 180 we want 0 to 360.
+    double velocity = (Math.abs(state1.speedMetersPerSecond) <= (maxDriveSpeedMPS * 0.01)) ? 0
+                                                                                          : state1.speedMetersPerSecond;
+    // double angle = SwerveModuleState2.placeInAppropriate0To360Scope(currentAngle.getDegrees(), state.angle.getDegrees());
+    // if (Math.abs(angle) != 45)
     // {
     // turn motor code
     // Prevent rotating module if speed is less then 1%. Prevents Jittering.
@@ -587,6 +588,9 @@ public class SwerveModule<DriveMotorType extends MotorController, AngleMotorType
         // PID
         SmartDashboard.putNumber(name + "/drive/pid/target", targetVelocity);
         SmartDashboard.putNumber(name + "/steer/pid/target", targetAngle);
+        SmartDashboard.putNumber(name + "/drive/voltage", driveMotor.getVoltage());
+        SmartDashboard.putNumber(name + "/steer/voltage", turningMotor.getVoltage());
+
 
     }
   }

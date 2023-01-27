@@ -93,8 +93,8 @@ public class REVSwerveMotor extends SwerveMotor
       setConversionFactor(360 / gearRatio);
 
       m_pid.setPositionPIDWrappingEnabled(true);
-      m_pid.setPositionPIDWrappingMinInput(0);
-      m_pid.setPositionPIDWrappingMaxInput(360);
+      m_pid.setPositionPIDWrappingMinInput(-180);
+      m_pid.setPositionPIDWrappingMaxInput(180);
       m_pid.setOutputRange(-.4, .4, m_mainPidSlot);
       m_pid.setOutputRange(-.4, .4, m_secondaryPidSlot);
     }
@@ -331,5 +331,11 @@ public class REVSwerveMotor extends SwerveMotor
   enum REV_slotIdx
   {
     Position, Velocity, Simulation
+  }
+
+  @Override
+  public double getVoltage() {
+    // TODO Auto-generated method stub
+    return m_motor.getOutputCurrent();
   }
 }
