@@ -74,8 +74,8 @@ public class REVSwerveMotor extends SwerveMotor
       // setREVConversionFactor(motor, (Math.PI * wheelDiameter) / (60 * gearRatio), ModuleMotorType.DRIVE);
       setConversionFactor(((Math.PI * wheelDiameter) / gearRatio) / 60);
 
-      m_pid.setOutputRange(-.6, .6, m_mainPidSlot);
-      m_pid.setOutputRange(-.6, .6, m_secondaryPidSlot);
+      m_pid.setOutputRange(-.3, .3, m_mainPidSlot);
+      m_pid.setOutputRange(-.3, .3, m_secondaryPidSlot);
     } else
     {
       m_moduleRadkV = (12 * 60) / (freeSpeedRPM * Math.toRadians(360 / gearRatio));
@@ -95,8 +95,8 @@ public class REVSwerveMotor extends SwerveMotor
       m_pid.setPositionPIDWrappingEnabled(true);
       m_pid.setPositionPIDWrappingMinInput(-180);
       m_pid.setPositionPIDWrappingMaxInput(180);
-      m_pid.setOutputRange(-.4, .4, m_mainPidSlot);
-      m_pid.setOutputRange(-.4, .4, m_secondaryPidSlot);
+      m_pid.setOutputRange(-.2, .2, m_mainPidSlot);
+      m_pid.setOutputRange(-.2, .2, m_secondaryPidSlot);
     }
 
     setVoltageCompensation(10);
