@@ -115,11 +115,11 @@ public abstract class SwerveMotor
   public abstract double get();
 
   /**
-   * Get the current value of the encoder corresponding to the PID.
+   * Get the current output.
    *
-   * @return Current value of the encoder either in velocity or position..
+   * @return Output amps.
    */
-  public abstract double getVoltage();
+  public abstract double getAmps();
 
   /**
    * Get the current value of the encoder.

@@ -109,8 +109,8 @@ public class REVSwerveMotor extends SwerveMotor
       setConversionFactor(m_integratedAbsEncoder ? 360 : 360 / gearRatio);
 
       m_pid.setPositionPIDWrappingEnabled(true);
-      m_pid.setPositionPIDWrappingMinInput(0);
-      m_pid.setPositionPIDWrappingMaxInput(360);
+      m_pid.setPositionPIDWrappingMinInput(-180);
+      m_pid.setPositionPIDWrappingMaxInput(180);
 
       setCurrentLimit(20);
     }
@@ -245,6 +245,17 @@ public class REVSwerveMotor extends SwerveMotor
   public double get()
   {
     return m_encoderRet.get();
+  }
+
+  /**
+   * Get the current output.
+   *
+   * @return Output amps.
+   */
+  @Override
+  public double getAmps()
+  {
+    return m_motor.getOutputCurrent();
   }
 
   /**

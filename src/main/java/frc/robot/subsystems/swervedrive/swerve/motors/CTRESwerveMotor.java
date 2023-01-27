@@ -264,6 +264,12 @@ public class CTRESwerveMotor extends SwerveMotor
     m_motor.setInverted(inverted);
   }
 
+  @Override
+  public double getAmps()
+  {
+    // TODO Auto-generated method stub
+    return 0;
+  }
 
   /**
    * The Talon SRX Slot profile used to configure the motor to use for the PID.
@@ -284,12 +290,6 @@ public class CTRESwerveMotor extends SwerveMotor
   enum CTRE_remoteSensor
   {
     REMOTE_SENSOR_0, REMOTE_SENSOR_1
-  }
-
-  @Override
-  public double getVoltage() {
-    // TODO Auto-generated method stub
-    return 0;
   }
 
 //  /**
