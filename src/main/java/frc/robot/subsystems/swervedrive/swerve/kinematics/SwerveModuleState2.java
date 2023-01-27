@@ -85,7 +85,7 @@ public class SwerveModuleState2 extends edu.wpi.first.math.kinematics.SwerveModu
    * @param newAngle       Target Angle
    * @return Closest angle within scope
    */
-  private static double placeInAppropriate0To360Scope(double scopeReference, double newAngle)
+  public static double placeInAppropriate0To360Scope(double scopeReference, double newAngle)
   {
     double lowerBound;
     double upperBound;
