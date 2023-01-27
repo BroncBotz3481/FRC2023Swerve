@@ -219,7 +219,7 @@ public class SwerveModule<DriveMotorType extends MotorController, AngleMotorType
     // targetAngle = getState().angle.getDegrees();
     targetAngle = 0;
 
-    if (!remoteIntegratedEncoder())
+    if (!remoteIntegratedEncoder() && Robot.isReal())
     {
       Robot.getInstance().addPeriodic(this::synchronizeSteeringEncoder, 0.02);
     }

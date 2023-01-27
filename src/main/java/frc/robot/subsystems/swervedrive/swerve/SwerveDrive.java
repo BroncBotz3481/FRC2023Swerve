@@ -42,19 +42,23 @@ public class SwerveDrive extends RobotDriveBase implements Sendable, AutoCloseab
   /**
    * Front left swerve drive
    */
-  public final  SwerveModule<?, ?, ?>    m_frontLeft;
+  public final SwerveModule<?, ?, ?> m_frontLeft;
   /**
    * Back left swerve drive
    */
-  public final  SwerveModule<?, ?, ?>    m_backLeft;
+  public final SwerveModule<?, ?, ?> m_backLeft;
   /**
    * Front right swerve drive
    */
-  public final  SwerveModule<?, ?, ?>    m_frontRight;
+  public final SwerveModule<?, ?, ?> m_frontRight;
   /**
    * Back right swerve drive
    */
-  public final  SwerveModule<?, ?, ?>    m_backRight;
+  public final SwerveModule<?, ?, ?> m_backRight;
+  /**
+   * Maximum speed in meters per second.
+   */
+  public final double                m_driverMaxSpeedMPS, m_driverMaxAngularVelocity, m_physicalMaxSpeedMPS;
   /**
    * Swerve drive kinematics.
    */
@@ -76,61 +80,73 @@ public class SwerveDrive extends RobotDriveBase implements Sendable, AutoCloseab
    */
   private final SlewRateLimiter          m_xLimiter, m_yLimiter, m_turningLimiter;
   /**
-   * Maximum speed in meters per second.
-   */
-  public double m_maxSpeedMPS = 5, m_maxAngularVelocity;
-  /**
    * Invert the gyro reading.
    */
-  private boolean                m_gyroInverted = false;
-  private double                 angle;
-  private SwerveModulePosition[] prevPos;
+  private boolean                m_gyroInverted;
+  private double                 m_angle;
+  private SwerveModulePosition[] m_prevPos;
 
 
   /**
    * Constructor for Swerve Drive assuming modules have been created and configured with PIDF and conversions.
    *
-   * @param frontLeft                              Front left swerve module configured.
-   * @param backLeft                               Back left swerve module.
-   * @param frontRight                             Front right swerve module.
-   * @param backRight                              Back right swerve moduule
-   * @param pigeon                                 Pigeon IMU.
-   * @param maxSpeedMetersPerSecond                Maximum speed for all modules to follow.
-   * @param maxAngularVelocityRadiansPerSecond     Maximum angular velocity for turning when using the drive function.
-   * @param maxDriveAccelerationMetersPerSecond    Maximum acceleration in meters per second for the drive motors.
-   * @param maxAngularAccelerationRadiansPerSecond Maximum angular acceleration in meters per second for the steering
-   *                                               motors.
-   * @param gyroInverted                           Invert the gyroscope for the robot.
+   * @param frontLeft                                    Front left swerve module configured.
+   * @param backLeft                                     Back left swerve module.
+   * @param frontRight                                   Front right swerve module.
+   * @param backRight                                    Back right swerve module
+   * @param pigeon                                       Pigeon IMU.
+   * @param driverMaxSpeedMetersPerSecond                Maximum speed for all modules to follow when in teleop.
+   * @param driverMaxAngularVelocityRadiansPerSecond     Maximum angular velocity for turning when using the drive
+   *                                                     function.
+   * @param driverMaxDriveAccelerationMetersPerSecond    Maximum acceleration in meters per second for the drive motors
+   *                                                     when in teleop for the slew rate limiter.
+   * @param driverMaxAngularAccelerationRadiansPerSecond Maximum angular acceleration in meters per second for the
+   *                                                     steering motors when in teleop for the slew rate limiters.
+   * @param physicalMaxSpeedMPS                          Maximum speed a module can go physically, used to desaturate
+   *                                                     wheel speeds.
+   * @param gyroInverted                                 Invert the gyroscope for the robot.
    */
   public SwerveDrive(SwerveModule<?, ?, ?> frontLeft,
                      SwerveModule<?, ?, ?> frontRight,
                      SwerveModule<?, ?, ?> backLeft,
                      SwerveModule<?, ?, ?> backRight, WPI_Pigeon2 pigeon,
-                     double maxSpeedMetersPerSecond, double maxAngularVelocityRadiansPerSecond,
-                     double maxDriveAccelerationMetersPerSecond, double maxAngularAccelerationRadiansPerSecond,
+                     double driverMaxSpeedMetersPerSecond, double driverMaxAngularVelocityRadiansPerSecond,
+                     double driverMaxDriveAccelerationMetersPerSecond,
+                     double driverMaxAngularAccelerationRadiansPerSecond,
+                     double physicalMaxSpeedMPS,
                      boolean gyroInverted)
   {
     instances++;
+    if (instances > 1)
+    {
+      throw new RuntimeException("Cannot use more than one swerve drive instance at a time.");
+    }
+
     m_frontLeft = frontLeft;
     m_backRight = backRight;
     m_backLeft = backLeft;
     m_frontRight = frontRight;
     m_gyroInverted = gyroInverted;
+
+    m_driverMaxSpeedMPS = driverMaxSpeedMetersPerSecond;
+    m_driverMaxAngularVelocity = driverMaxAngularVelocityRadiansPerSecond;
+    m_xLimiter = new SlewRateLimiter(driverMaxDriveAccelerationMetersPerSecond);
+    m_yLimiter = new SlewRateLimiter(driverMaxDriveAccelerationMetersPerSecond);
+    m_turningLimiter = new SlewRateLimiter(driverMaxAngularAccelerationRadiansPerSecond);
+    m_physicalMaxSpeedMPS = physicalMaxSpeedMPS;
+
+    m_pigeonIMU = pigeon;
+    if (!Robot.isReal())
+    {
+      m_prevPos = new SwerveModulePosition[]{new SwerveModulePosition(), new SwerveModulePosition(),
+                                             new SwerveModulePosition(), new SwerveModulePosition()};
+    }
+    configurePigeonIMU(); // Reset pigeon to 0 and default settings.
+
     m_swerveKinematics = new SwerveDriveKinematics2(frontLeft.swerveModuleLocation,
                                                     frontRight.swerveModuleLocation,
                                                     backLeft.swerveModuleLocation,
                                                     backRight.swerveModuleLocation);
-
-    m_maxSpeedMPS = maxSpeedMetersPerSecond;
-    m_maxAngularVelocity = maxAngularVelocityRadiansPerSecond;
-    m_pigeonIMU = pigeon;
-    if (!Robot.isReal())
-    {
-      prevPos = new SwerveModulePosition[]{new SwerveModulePosition(), new SwerveModulePosition(),
-                                           new SwerveModulePosition(), new SwerveModulePosition()};
-    }
-
-    configurePigeonIMU(); // Reset pigeon to 0 and default settings.
     m_swervePoseEstimator = new SwerveDrivePoseEstimator(
         m_swerveKinematics,
         getRotation(),
@@ -138,10 +154,6 @@ public class SwerveDrive extends RobotDriveBase implements Sendable, AutoCloseab
         new Pose2d(),
         VecBuilder.fill(0.1, 0.1, 0.1), // x,y,heading in radians; state std dev, higher=less weight
         VecBuilder.fill(0.9, 1.0, 0.9)); // x,y,heading in radians; Vision measurement std dev, higher=less weight
-
-    m_xLimiter = new SlewRateLimiter(maxDriveAccelerationMetersPerSecond);
-    m_yLimiter = new SlewRateLimiter(maxDriveAccelerationMetersPerSecond);
-    m_turningLimiter = new SlewRateLimiter(maxAngularAccelerationRadiansPerSecond);
 
     // Inspired by https://github.com/Team364/BaseFalconSwerve/blob/main/src/main/java/frc/robot/subsystems/Swerve.java
     SmartDashboard.putData(m_field);
@@ -151,7 +163,7 @@ public class SwerveDrive extends RobotDriveBase implements Sendable, AutoCloseab
 
     if (!Robot.isReal())
     {
-      prevPos = getPositions();
+      m_prevPos = getPositions();
     }
   }
 
@@ -268,9 +280,9 @@ public class SwerveDrive extends RobotDriveBase implements Sendable, AutoCloseab
     }
 
     // 3. Make the driving smoother
-    forward = m_xLimiter.calculate(forward) * m_maxSpeedMPS;
-    strafe = m_yLimiter.calculate(strafe) * m_maxSpeedMPS;
-    turn = m_turningLimiter.calculate(turn) * m_maxAngularVelocity;
+    forward = m_xLimiter.calculate(forward) * m_driverMaxSpeedMPS;
+    strafe = m_yLimiter.calculate(strafe) * m_driverMaxSpeedMPS;
+    turn = m_turningLimiter.calculate(turn) * m_driverMaxAngularVelocity;
 
     set(forward, strafe, turn, fieldRelative);
   }
@@ -320,7 +332,7 @@ public class SwerveDrive extends RobotDriveBase implements Sendable, AutoCloseab
   public void setModuleStates(SwerveModuleState2[] states)
   {
     feedWatchdog(); // Required
-    SwerveDriveKinematics2.desaturateWheelSpeeds(states, m_maxSpeedMPS);
+    SwerveDriveKinematics2.desaturateWheelSpeeds(states, m_physicalMaxSpeedMPS);
     m_frontLeft.setState(states[0]);
     m_frontRight.setState(states[1]);
     m_backLeft.setState(states[2]);
@@ -362,14 +374,14 @@ public class SwerveDrive extends RobotDriveBase implements Sendable, AutoCloseab
     } else
     {
       SwerveModulePosition[] pos = getPositions();
-      for (int i = 0; i < prevPos.length; i++)
+      for (int i = 0; i < m_prevPos.length; i++)
       {
-        pos[i] = new SwerveModulePosition(prevPos[i].distanceMeters - pos[i].distanceMeters,
-                                          prevPos[i].angle.minus(pos[i].angle));
+        pos[i] = new SwerveModulePosition(m_prevPos[i].distanceMeters - pos[i].distanceMeters,
+                                          m_prevPos[i].angle.minus(pos[i].angle));
       }
-      prevPos = getPositions();
-      angle += m_swerveKinematics.toTwist2d(pos).dtheta;
-      return new Rotation2d(angle);
+      m_prevPos = getPositions();
+      m_angle += m_swerveKinematics.toTwist2d(pos).dtheta;
+      return new Rotation2d(m_angle);
     }
   }
 
