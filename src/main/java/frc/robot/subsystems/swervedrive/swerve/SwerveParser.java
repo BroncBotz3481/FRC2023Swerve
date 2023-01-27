@@ -190,6 +190,8 @@ public class SwerveParser
                               moduleJson.get("Motor").get("Steer").get("FreeSpeedRPM").asDouble(),
                               mainJson.get("Speed").get("MetersPerSecond").asDouble(),
                               mainJson.get("Acceleration").get("MetersPerSecond").asDouble(),
+                              mainJson.get("Drive").get("MaxPower").asDouble(),
+                              mainJson.get("Steer").get("MaxPower").asDouble(),
                               mainJson.get("Steer").get("Inverted").asBoolean(),
                               mainJson.get("Drive").get("Inverted").asBoolean());
   }

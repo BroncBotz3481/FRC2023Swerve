@@ -43,9 +43,10 @@ public class REVSwerveMotor extends SwerveMotor
    * @param gearRatio       Gear ratio.
    * @param wheelDiameter   Wheel diameter in meters.
    * @param freeSpeedRPM    Free speed RPM of the motor.
+   * @param powerLimit      Power limit for the motor.
    */
   public REVSwerveMotor(CANSparkMax motor, SwerveEncoder<?> absoluteEncoder, ModuleMotorType type, double gearRatio,
-                        double wheelDiameter, double freeSpeedRPM)
+                        double wheelDiameter, double freeSpeedRPM, double powerLimit)
   {
     m_integratedAbsEncoder = absoluteEncoder.m_encoder instanceof AbsoluteEncoder && type == ModuleMotorType.TURNING;
 
@@ -66,7 +67,7 @@ public class REVSwerveMotor extends SwerveMotor
     motor.clearFaults();
     motor.setIdleMode(IdleMode.kBrake);
 
-    double powerDriving = .6, powerTurning = .4; // TODO: Change from magic numbers.
+//    double powerDriving = .6, powerTurning = .4; // TODO: Change from magic numbers.
 
     if (type == ModuleMotorType.DRIVE)
     {
@@ -81,7 +82,7 @@ public class REVSwerveMotor extends SwerveMotor
 
 //      setPIDF(0.1, 0, 0, 0, 1);
       setPIDF(0.01, 0, 0.005, 0, 0);
-      setPIDOutputRange(-powerDriving, powerDriving);
+      setPIDOutputRange(-powerLimit, powerLimit);
 
       setConversionFactor(((Math.PI * wheelDiameter) / gearRatio) / 60);
 
@@ -104,7 +105,7 @@ public class REVSwerveMotor extends SwerveMotor
       m_secondaryPidSlot = REV_slotIdx.Velocity.ordinal();
 
       setPIDF(0.01, 0, 0.005, 0, 0);
-      setPIDOutputRange(-powerTurning, powerTurning);
+      setPIDOutputRange(-powerLimit, powerLimit);
 
       setConversionFactor(m_integratedAbsEncoder ? 360 : 360 / gearRatio);
 

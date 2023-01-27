@@ -24,7 +24,7 @@ public class CTRESwerveMotor extends SwerveMotor
   // TODO: Finish this based off of BaseFalconSwerve
   public CTRESwerveMotor(TalonFX motor, SwerveEncoder encoder, ModuleMotorType type, double gearRatio,
                          double wheelDiameter,
-                         double freeSpeedRPM)
+                         double freeSpeedRPM, double powerLimit)
   {
     if (!(encoder.m_encoder instanceof CANCoder))
     {

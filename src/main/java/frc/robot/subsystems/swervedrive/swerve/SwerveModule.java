@@ -124,6 +124,8 @@ public class SwerveModule<DriveMotorType extends MotorController, AngleMotorType
    * @param steeringMotorFreeSpeedRPM The RPM free speed of the steering motor.
    * @param maxSpeedMPS               The maximum drive speed in meters per second.
    * @param maxDriveAcceleration      The maximum drive acceleration in meters^2 per second.
+   * @param drivingPowerLimit         The power limit for the closed loop PID of the driver motor.
+   * @param steeringPowerLimit        The power limit for the closed loop PID of the steering motor.
    * @param steeringInverted          The steering motor is inverted.
    * @param drivingInverted           The driving motor is inverted.
    * @throws RuntimeException if an assertion fails or invalid swerve module location is given.
@@ -132,7 +134,8 @@ public class SwerveModule<DriveMotorType extends MotorController, AngleMotorType
                       SwerveModuleLocation swervePosition, double driveGearRatio, double steerGearRatio,
                       double steeringOffsetDegrees, double wheelDiameterMeters, double wheelBaseMeters,
                       double driveTrainWidthMeters, double steeringMotorFreeSpeedRPM, double maxSpeedMPS,
-                      double maxDriveAcceleration, boolean steeringInverted, boolean drivingInverted)
+                      double maxDriveAcceleration, double drivingPowerLimit, double steeringPowerLimit,
+                      boolean steeringInverted, boolean drivingInverted)
   {
     // Steps to configure swerve drive are as follows
     // 1.  Set Current limit of turning motor to 20 amps
@@ -169,14 +172,16 @@ public class SwerveModule<DriveMotorType extends MotorController, AngleMotorType
                                        ModuleMotorType.DRIVE,
                                        driveGearRatio,
                                        wheelDiameterMeters,
-                                       0);
+                                       0,
+                                       drivingPowerLimit);
 
     turningMotor = SwerveMotor.fromMotor(angleMotor,
                                          absoluteEncoder,
                                          ModuleMotorType.TURNING,
                                          steerGearRatio,
                                          wheelDiameterMeters,
-                                         steeringMotorFreeSpeedRPM);
+                                         steeringMotorFreeSpeedRPM,
+                                         steeringPowerLimit);
 
     swerveLocation = swervePosition;
     swerveModuleLocation = getSwerveModulePosition(swervePosition);

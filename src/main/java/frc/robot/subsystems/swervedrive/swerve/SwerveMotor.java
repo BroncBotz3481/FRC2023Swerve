@@ -34,6 +34,7 @@ public abstract class SwerveMotor
    * @param gearRatio       Gear ratio.
    * @param wheelDiameter   Wheel diameter in meters.
    * @param freeSpeedRPM    Free speed RPM of the motor.
+   * @param powerLimit      Power limit for the motor.
    * @param <MotorType>     Motor type to use.
    */
   public static <MotorType extends MotorController> SwerveMotor fromMotor(MotorType motor,
@@ -41,15 +42,27 @@ public abstract class SwerveMotor
                                                                           ModuleMotorType type,
                                                                           double gearRatio,
                                                                           double wheelDiameter,
-                                                                          double freeSpeedRPM)
+                                                                          double freeSpeedRPM, double powerLimit)
   {
     if (motor instanceof CANSparkMax)
     {
-      return new REVSwerveMotor(((CANSparkMax) motor), absoluteEncoder, type, gearRatio, wheelDiameter, freeSpeedRPM);
+      return new REVSwerveMotor(((CANSparkMax) motor),
+                                absoluteEncoder,
+                                type,
+                                gearRatio,
+                                wheelDiameter,
+                                freeSpeedRPM,
+                                powerLimit);
     }
     if (motor instanceof TalonFX)
     {
-      return new CTRESwerveMotor((TalonFX) motor, absoluteEncoder, type, gearRatio, wheelDiameter, freeSpeedRPM);
+      return new CTRESwerveMotor((TalonFX) motor,
+                                 absoluteEncoder,
+                                 type,
+                                 gearRatio,
+                                 wheelDiameter,
+                                 freeSpeedRPM,
+                                 powerLimit);
     }
     return null;
   }

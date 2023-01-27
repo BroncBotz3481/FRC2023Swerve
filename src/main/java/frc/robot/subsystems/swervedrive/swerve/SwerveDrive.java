@@ -673,7 +673,7 @@ public class SwerveDrive extends RobotDriveBase implements Sendable, AutoCloseab
                                 wheelBaseMeters,
                                 driveTrainWidthMeters,
                                 steeringMotorFreeSpeedRPM,
-                                maxSpeedMPS, maxDriveAcceleration, steeringInverted, drivingInverted);
+                                maxSpeedMPS, maxDriveAcceleration, .6, .4, steeringInverted, drivingInverted);
     }
   }
 
