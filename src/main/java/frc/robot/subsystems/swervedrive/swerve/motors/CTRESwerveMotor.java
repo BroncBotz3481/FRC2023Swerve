@@ -286,6 +286,12 @@ public class CTRESwerveMotor extends SwerveMotor
     REMOTE_SENSOR_0, REMOTE_SENSOR_1
   }
 
+  @Override
+  public double getVoltage() {
+    // TODO Auto-generated method stub
+    return 0;
+  }
+
 //  /**
 //   * Set the PIDF coefficients for the closed loop PID onboard the TalonSRX.
 //   *
