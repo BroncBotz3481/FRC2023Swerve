@@ -23,7 +23,6 @@ import edu.wpi.first.wpilibj.shuffleboard.BuiltInWidgets;
 import edu.wpi.first.wpilibj.shuffleboard.Shuffleboard;
 import edu.wpi.first.wpilibj.shuffleboard.ShuffleboardTab;
 import edu.wpi.first.wpilibj.shuffleboard.SimpleWidget;
-import edu.wpi.first.wpilibj.smartdashboard.SmartDashboard;
 import frc.robot.Robot;
 import frc.robot.subsystems.swervedrive.swerve.SwerveMotor.ModuleMotorType;
 import frc.robot.subsystems.swervedrive.swerve.kinematics.SwerveModuleState2;
@@ -46,74 +45,73 @@ public class SwerveModule<DriveMotorType extends MotorController, AngleMotorType
   /**
    * Swerve Module location object relative to the center of the robot.
    */
-  public final  Translation2d          swerveModuleLocation;
+  public final  Translation2d                 swerveModuleLocation;
   /**
    * Motor Controllers for drive motor of the swerve module.
    */
-  public final  SwerveMotor            driveMotor;
+  public final  SwerveMotor                   driveMotor;
   /***
    * Motor Controller for the turning motor of the swerve drive module.
    */
-  public final  SwerveMotor            turningMotor;
+  public final  SwerveMotor                   turningMotor;
   /**
    * Enum representing the swerve module's location on the robot, assuming square.
    */
-  private final SwerveModuleLocation   swerveLocation;
+  private final SwerveModuleLocation          swerveLocation;
   /**
    * Absolute encoder for the swerve module.
    */
-  private final SwerveEncoder<?>       absoluteEncoder;
+  private final SwerveEncoder<?>              absoluteEncoder;
   /**
    * The Distance between centers of right and left wheels in meters.
    */
-  private final double                 driveTrainWidth;
+  private final double                        driveTrainWidth;
   /**
    * The Distance between front and back wheels of the robot in meters.
    */
-  private final double                 wheelBase;
+  private final double                        wheelBase;
   /**
    * Drive feedforward for PID when driving by velocity.
    */
-  private final SimpleMotorFeedforward driveFeedforward;
+  private final SimpleMotorFeedforward        driveFeedforward;
   /**
    * kV for steering feedforward.
    */
-  private final double                 steeringKV;
+  private final double                        steeringKV;
   /**
    * Angle offset of the CANCoder at initialization.
    */
-  public        double                 angleOffset              = 0;
+  public        double                        angleOffset              = 0;
   /**
    * Maximum speed in meters per second, used to eliminate unnecessary movement of the module.
    */
-  public        double                 maxDriveSpeedMPS;
+  public        double                        maxDriveSpeedMPS;
   /**
    * Inverted drive motor.
    */
-  private       boolean                invertedDrive            = false;
+  private       boolean                       invertedDrive            = false;
   /**
    * Inverted turning motor.
    */
-  private       boolean                invertedTurn             = false;
+  private       boolean                       invertedTurn             = false;
   /**
    * Power to drive motor from -1 to 1.
    */
-  private       double                 drivePower               = 0;
+  private       double                        drivePower               = 0;
   /**
    * Store the last angle for optimization.
    */
-  private       double                 targetAngle;
+  private       double                        targetAngle;
   /**
    * Angular velocity in radians per second.
    */
-  private       double                 targetAngularVelocityRPS = 0;
+  private       double                        targetAngularVelocityRPS = 0;
   /**
    * Target velocity for the swerve module.
    */
-  private       double                 targetVelocity           = 0;
-  private       ShuffleboardTab        moduleTab;
-  //////////////////////////// ENUMS SECTION //////////////////////////////////////////////////////////
-  private HashMap<String, SimpleWidget> NT4Entries = new HashMap<>();
+  private       double                        targetVelocity           = 0;
+  private final ShuffleboardTab               moduleTab;
+  private final HashMap<String, SimpleWidget> NT4Entries = new HashMap<>();
 
   ///////////////////////////// CONFIGURATION FUNCTIONS SECTION ///////////////////////////////////////////////////
 
@@ -404,7 +402,9 @@ public class SwerveModule<DriveMotorType extends MotorController, AngleMotorType
     steeringKV = (12 * 60) / (steeringMotorFreeSpeedRPM * Math.toRadians(360 / steerGearRatio));
 
     driveMotor.setInverted(drivingInverted);
+    invertedDrive = drivingInverted;
     turningMotor.setInverted(steeringInverted);
+    invertedTurn = steeringInverted;
 
     absoluteEncoder.configure();
 
@@ -455,57 +455,6 @@ public class SwerveModule<DriveMotorType extends MotorController, AngleMotorType
    */
   public void subscribe()
   {
-    String name = "SwerveDrive/" + SwerveModule.SwerveModuleLocationToString(swerveLocation);
-
-    // PID
-    double velocity = SmartDashboard.getNumber(name + "/drive/pid/setpoint", targetVelocity);
-    driveMotor.kP = SmartDashboard.getNumber(name + "/drive/pid/kP", driveMotor.kP);
-    driveMotor.kI = SmartDashboard.getNumber(name + "/drive/pid/kI", driveMotor.kI);
-    driveMotor.kD = SmartDashboard.getNumber(name + "/drive/pid/kD", driveMotor.kD);
-    driveMotor.kF = SmartDashboard.getNumber(name + "/drive/pid/kF", driveMotor.kF);
-    driveMotor.kIZ = SmartDashboard.getNumber(name + "/drive/pid/kIZ", driveMotor.kIZ);
-    driveMotor.setPIDF(driveMotor.kP, driveMotor.kI, driveMotor.kD, driveMotor.kF, driveMotor.kIZ);
-    if (velocity != targetVelocity)
-    {
-      setVelocity(velocity);
-    }
-
-    double angle = SmartDashboard.getNumber(name + "/steer/pid/setpoint", targetAngle);
-    turningMotor.kP = SmartDashboard.getNumber(name + "/steer/pid/kP", turningMotor.kP);
-    turningMotor.kI = SmartDashboard.getNumber(name + "/steer/pid/kI", turningMotor.kI);
-    turningMotor.kD = SmartDashboard.getNumber(name + "/steer/pid/kD", turningMotor.kD);
-    turningMotor.kF = SmartDashboard.getNumber(name + "/steer/pid/kF", turningMotor.kF);
-    turningMotor.kIZ = SmartDashboard.getNumber(name + "/steer/pid/kIZ", turningMotor.kIZ);
-    turningMotor.setPIDF(turningMotor.kP,
-                         turningMotor.kI,
-                         turningMotor.kD,
-                         turningMotor.kF,
-                         turningMotor.kIZ);
-    if (angle != targetAngle)
-    {
-      setAngle(angle);
-    }
-
-    // Offset
-    double offset = SmartDashboard.getNumber(name + "/steer/encoder/offset", angleOffset);
-    if (angleOffset != offset)
-    {
-      setAngleOffset(offset);
-      synchronizeSteeringEncoder();
-    }
-
-    // Inversion
-    boolean turnInvert = SmartDashboard.getBoolean(name + "/steer/inverted", invertedTurn);
-    if (turnInvert != invertedTurn)
-    {
-      setInvertedTurn(turnInvert);
-    }
-
-    boolean driveInvert = SmartDashboard.getBoolean(name + "/drive/inverted", invertedDrive);
-    if (driveInvert != invertedDrive)
-    {
-      setInverted(driveInvert);
-    }
 
   }
 
@@ -536,6 +485,8 @@ public class SwerveModule<DriveMotorType extends MotorController, AngleMotorType
     targetAngle = angle;
     targetAngularVelocityRPS = state.angularVelocityRadPerSecond;
   }
+
+  //////////////////////////// ENUMS SECTION //////////////////////////////////////////////////////////
 
   /**
    * Create a widget and add the entry to the hashmap of entries for network tables.
@@ -574,7 +525,7 @@ public class SwerveModule<DriveMotorType extends MotorController, AngleMotorType
       return widget;
     } catch (Exception e)
     {
-      System.err.println(e.toString());
+      System.err.println(e);
     }
     throw new RuntimeException("Error creating entry");
   }
@@ -586,9 +537,9 @@ public class SwerveModule<DriveMotorType extends MotorController, AngleMotorType
    */
   public void publish(Verbosity level)
   {
-
-    String name =
-        "SwerveDrive/" + SwerveModule.SwerveModuleLocationToString(swerveLocation); // TODO: Move to attribute
+    boolean goodLaptop = true;
+//    String name =
+//        "SwerveDrive/" + SwerveModule.SwerveModuleLocationToString(swerveLocation); // TODO: Move to attribute
     switch (level)
     {
       case SETUP:
@@ -598,125 +549,151 @@ public class SwerveModule<DriveMotorType extends MotorController, AngleMotorType
         addEntry("drive/pid/kD", driveMotor.kD);
         addEntry("drive/pid/kF", driveMotor.kF);
         addEntry("drive/pid/kIZ", driveMotor.kIZ);
-        addEntry("Target Velocity", targetVelocity)
-            .withPosition(8, 2)
-            .withSize(2, 2);
 
         addEntry("steer/pid/kP", turningMotor.kP);
         addEntry("steer/pid/kI", turningMotor.kI);
         addEntry("steer/pid/kD", turningMotor.kD);
         addEntry("steer/pid/kF", turningMotor.kF);
         addEntry("steer/pid/kIZ", turningMotor.kIZ);
-        addEntry("Target Angle", targetAngle)
-            .withPosition(8, 4)
-            .withSize(2, 2);
-
-        // Inverted Motors.
-        addEntry("Steer Motor Inverted", invertedTurn)
-            .withPosition(0, 6)
-            .withSize(4, 1);
-        addEntry("Drive Motor inverted", invertedDrive)
-            .withPosition(4, 6)
-            .withSize(4, 1);
-
-        // Angle Constants
-        addEntry("Absolute Encoder Offset", angleOffset)
-            .withProperties(Map.of("min", -180, "max", 180))
-            .withPosition(10, 3)
-            .withSize(2, 2)
-            .withWidget(BuiltInWidgets.kDial);
 
         // Pretty Widget Setup
-//        addEntry("Set Angle (Degrees)", targetAngle)
-//            .withProperties(Map.of("min", -180, "max", 180))
-//            .withWidget(BuiltInWidgets.kDial)
-//            .withPosition(0, 2)
-//            .withSize(4, 2);
-//        addEntry("Integrated Encoder Angle", turningMotor.get())
-//            .withProperties(Map.of("min", 0, "max", 360))
-//            .withWidget(BuiltInWidgets.kDial)
-//            .withPosition(0, 4)
-//            .withSize(2, 2);
-//        addEntry("Absolute Encoder Angle", absoluteEncoder.getAbsolutePosition())
-//            .withProperties(Map.of("min", 0, "max", 360))
-//            .withWidget(BuiltInWidgets.kDial)
-//            .withPosition(2, 4)
-//            .withSize(2, 2);
-        addEntry("Angle (Degrees)",
-                 new Double[]{targetAngle, turningMotor.get(), absoluteEncoder.getAbsolutePosition()})
-            .withPosition(0, 2)
-            .withSize(4, 4)
-            .withProperties(Map.of("visible time", 5))
-            .withWidget(BuiltInWidgets.kGraph);
-        addEntry("Absolute Angle", absoluteEncoder.getAbsolutePosition())
-            .withPosition(0, 1)
-            .withSize(2, 1);
-        addEntry("Integrated Angle", turningMotor.get())
-            .withPosition(2, 1)
-            .withSize(2, 1);
+        if (goodLaptop)
+        {
+          addEntry("Angle (Degrees)",
+                   new Double[]{targetAngle, turningMotor.get(), absoluteEncoder.getAbsolutePosition()})
+              .withPosition(0, 1)
+              .withSize(4, 4)
+              .withProperties(Map.of("visible time", 5))
+              .withWidget(BuiltInWidgets.kGraph);
+          addEntry("Absolute Angle", absoluteEncoder.getAbsolutePosition())
+              .withPosition(0, 0)
+              .withSize(2, 1);
+          addEntry("Integrated Angle", turningMotor.get())
+              .withPosition(2, 0)
+              .withSize(2, 1);
+          addEntry("Target Angle", targetAngle)
+              .withPosition(8, 4)
+              .withSize(2, 2);
 
-        addEntry("Velocity (Meters Per Second)", new Double[]{targetVelocity, driveMotor.get()})
-            .withPosition(4, 2)
-            .withSize(4, 4)
-            .withProperties(Map.of("visible time", 5))
-            .withWidget(BuiltInWidgets.kGraph);
-        addEntry("Motor Velocity", driveMotor.get())
-            .withPosition(4, 1)
-            .withSize(4, 1);
+          addEntry("Velocity (Meters Per Second)", new Double[]{targetVelocity, driveMotor.get()})
+              .withPosition(4, 1)
+              .withSize(4, 4)
+              .withProperties(Map.of("visible time", 5))
+              .withWidget(BuiltInWidgets.kGraph);
+          addEntry("Motor Velocity", driveMotor.get())
+              .withPosition(4, 0)
+              .withSize(4, 1);
+          addEntry("Target Velocity", targetVelocity)
+              .withPosition(8, 2)
+              .withSize(2, 2);
+
+          // Inverted Motors.
+          addEntry("Steer Motor Inverted", invertedTurn)
+              .withPosition(0, 5)
+              .withSize(4, 1);
+          addEntry("Drive Motor inverted", invertedDrive)
+              .withPosition(4, 5)
+              .withSize(4, 1);
+
+          addEntry("Absolute Encoder Magnetic Field", absoluteEncoder.getMagnetFieldStrength().value)
+              .withPosition(10, 2)
+              .withSize(2, 1);
+          addEntry("Drive Motor Current", driveMotor.getAmps())
+              .withPosition(10, 5)
+              .withSize(2, 1);
+
+          // Angle Constants
+          addEntry("Absolute Encoder Offset", angleOffset)
+              .withProperties(Map.of("min", -180, "max", 180))
+              .withPosition(10, 3)
+              .withSize(2, 2)
+              .withWidget(BuiltInWidgets.kDial);
+        } else
+        {
+          addEntry("Target Angle", targetAngle)
+              .withProperties(Map.of("min", -180, "max", 180))
+              .withWidget(BuiltInWidgets.kDial)
+              .withPosition(0, 0)
+              .withSize(4, 2);
+          addEntry("Integrated Angle", turningMotor.get())
+              .withProperties(Map.of("min", 0, "max", 360))
+              .withWidget(BuiltInWidgets.kDial)
+              .withPosition(0, 2)
+              .withSize(2, 2);
+          addEntry("Absolute Angle", absoluteEncoder.getAbsolutePosition())
+              .withProperties(Map.of("min", 0, "max", 360))
+              .withWidget(BuiltInWidgets.kDial)
+              .withPosition(2, 2)
+              .withSize(2, 2);
+
+          addEntry("Target Velocity", targetVelocity)
+              .withPosition(4, 0)
+              .withProperties(Map.of("min", -maxDriveSpeedMPS, "max", maxDriveSpeedMPS))
+              .withSize(4, 2)
+              .withWidget(BuiltInWidgets.kNumberBar);
+          addEntry("Motor Velocity", driveMotor.get())
+              .withPosition(4, 2)
+              .withProperties(Map.of("min", -maxDriveSpeedMPS, "max", maxDriveSpeedMPS))
+              .withSize(4, 2)
+              .withWidget(BuiltInWidgets.kNumberBar);
+
+          // Inverted Motors.
+          addEntry("Steer Motor Inverted", invertedTurn)
+              .withPosition(0, 4)
+              .withSize(4, 1);
+          addEntry("Drive Motor inverted", invertedDrive)
+              .withPosition(4, 4)
+              .withSize(4, 1);
+
+          addEntry("Absolute Encoder Magnetic Field", absoluteEncoder.getMagnetFieldStrength().value)
+              .withPosition(8, 2)
+              .withSize(2, 1);
+
+          addEntry("Drive Motor Current", driveMotor.getAmps())
+              .withPosition(10, 2)
+              .withSize(2, 1);
+
+          // Angle Constants
+          addEntry("Absolute Encoder Offset", angleOffset)
+              .withProperties(Map.of("min", -180, "max", 180))
+              .withPosition(8, 3)
+              .withSize(2, 2)
+              .withWidget(BuiltInWidgets.kDial);
+        }
 
         addEntry("CAN Connection", activeCAN())
             .withPosition(8, 0)
             .withSize(4, 2);
 
-        addEntry("Absolute Encoder Magnetic Field", absoluteEncoder.getMagnetFieldStrength().value)
-            .withPosition(10, 2)
-            .withSize(2, 1);
-
-        addEntry("Drive Motor Current", driveMotor.getAmps())
-            .withPosition(10, 5)
-            .withSize(2, 1);
-
       case HIGH:
         // Update if button is set.
-        if (SmartDashboard.getBoolean(name + "/update", false))
-        {
-          SmartDashboard.putBoolean(name + "/update", false);
-          subscribe();
-        }
         // The higher the better, 2 and 3 are what we want.
-//        SmartDashboard.putNumber(name + "/steer/encoder/field", absoluteEncoder.getMagnetFieldStrength().value);
         addEntry("Absolute Encoder Magnetic Field", absoluteEncoder.getMagnetFieldStrength().value);
       case NORMAL:
         // Steering Encoder Values
-//        SmartDashboard.putNumber(name + "/steer/encoder/integrated", turningMotor.get());
-//        SmartDashboard.putNumber(name + "/steer/encoder/absolute", absoluteEncoder.getAbsolutePosition());
-//        addEntry("Integrated Encoder Angle", turningMotor.get());
-//        addEntry("Absolute Encoder Angle", absoluteEncoder.getAbsolutePosition());
-        addEntry("Angle (Degrees)",
-                 new Double[]{targetAngle, turningMotor.get(), absoluteEncoder.getAbsolutePosition()});
-        addEntry("Target Angle", targetAngle);
+        if (goodLaptop)
+        {
+          addEntry("Angle (Degrees)",
+                   new Double[]{targetAngle, turningMotor.get(), absoluteEncoder.getAbsolutePosition()});
+        }
         addEntry("Absolute Angle", absoluteEncoder.getAbsolutePosition());
         addEntry("Integrated Angle", turningMotor.get());
 
         // Driving Encoder Values
-//        SmartDashboard.putNumber(name + "/drive/encoder/velocity", driveMotor.get());
-//        addEntry("Actual Velocity", driveMotor.get());
+        if (goodLaptop)
+        {
+          addEntry("Velocity (Meters Per Second)", new Double[]{targetVelocity, driveMotor.get()});
+        }
+        addEntry("Motor Velocity", driveMotor.get());
+        addEntry("Drive Motor Current", driveMotor.getAmps());
 
         // CAN Bus is accessible
-//        SmartDashboard.putBoolean(name + "/status", activeCAN());
         addEntry("CAN Connection", activeCAN());
+
       case LOW:
         // PID
-//        SmartDashboard.putNumber(name + "/drive/pid/target", targetVelocity);
-//        SmartDashboard.putNumber(name + "/steer/pid/target", targetAngle);
-//        SmartDashboard.putNumber(name + "/drive/voltage", driveMotor.getAmps());
-//        SmartDashboard.putNumber(name + "/steer/voltage", turningMotor.getAmps());
-        addEntry("Velocity (Meters Per Second)", new Double[]{targetVelocity, driveMotor.get()});
         addEntry("Target Velocity", targetVelocity);
-        addEntry("Motor Velocity", driveMotor.get());
-
-//        addEntry("Set Angle (Degrees)", targetAngle);
-        addEntry("Drive Motor Current", driveMotor.getAmps());
+        addEntry("Target Angle", targetAngle);
 
     }
   }
