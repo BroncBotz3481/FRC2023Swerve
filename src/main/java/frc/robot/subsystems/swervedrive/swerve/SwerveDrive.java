@@ -84,7 +84,6 @@ public class SwerveDrive extends RobotDriveBase implements Sendable, AutoCloseab
    */
   private boolean                m_gyroInverted;
   private double                 m_angle;
-  private SwerveModulePosition[] m_prevPos;
 
 
   /**
@@ -136,11 +135,6 @@ public class SwerveDrive extends RobotDriveBase implements Sendable, AutoCloseab
     m_physicalMaxSpeedMPS = physicalMaxSpeedMPS;
 
     m_pigeonIMU = pigeon;
-    if (!Robot.isReal())
-    {
-      m_prevPos = new SwerveModulePosition[]{new SwerveModulePosition(), new SwerveModulePosition(),
-                                             new SwerveModulePosition(), new SwerveModulePosition()};
-    }
     configurePigeonIMU(); // Reset pigeon to 0 and default settings.
 
     m_swerveKinematics = new SwerveDriveKinematics2(frontLeft.swerveModuleLocation,
@@ -161,10 +155,6 @@ public class SwerveDrive extends RobotDriveBase implements Sendable, AutoCloseab
 
     zeroModules(); // Set all modules to 0.
 
-    if (!Robot.isReal())
-    {
-      m_prevPos = getPositions();
-    }
   }
 
   /**
@@ -304,20 +294,18 @@ public class SwerveDrive extends RobotDriveBase implements Sendable, AutoCloseab
     ChassisSpeeds node = fieldRelative ? ChassisSpeeds.fromFieldRelativeSpeeds(forward, strafe, radianPerSecond,
                                                                                getRotation())
                                        : new ChassisSpeeds(forward, strafe, radianPerSecond);
-    // System.out.println(node.omegaRadiansPerSecond);
     SwerveModuleState2[] moduleStates = m_swerveKinematics.toSwerveModuleStates(node);
 //        new Translation2d((m_frontLeft.swerveModuleLocation.getX() + m_frontRight.swerveModuleLocation.getX()) / 2,
 //                          (m_frontLeft.swerveModuleLocation.getY() + m_backLeft.swerveModuleLocation.getY()) / 2));
-    // try
-    // {
+
     setModuleStates(moduleStates);
-    // } catch (Exception e)
-    // {
-    // System.err.println("Cannot set swerve module states!");
-    // }
 
     try
     {
+      if (!Robot.isReal())
+      {
+        m_angle += node.omegaRadiansPerSecond * 0.02;
+      }
       this.update();
       m_field.setRobotPose(m_swervePoseEstimator.getEstimatedPosition());
     } catch (Exception e)
@@ -377,14 +365,6 @@ public class SwerveDrive extends RobotDriveBase implements Sendable, AutoCloseab
           m_pigeonIMU.getYaw());
     } else
     {
-      SwerveModulePosition[] pos = getPositions();
-      for (int i = 0; i < m_prevPos.length; i++)
-      {
-        pos[i] = new SwerveModulePosition(m_prevPos[i].distanceMeters - pos[i].distanceMeters,
-                                          m_prevPos[i].angle.minus(pos[i].angle));
-      }
-      m_prevPos = getPositions();
-      m_angle += m_swerveKinematics.toTwist2d(pos).dtheta;
       return new Rotation2d(m_angle);
     }
   }
