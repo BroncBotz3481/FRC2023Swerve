@@ -11,7 +11,6 @@ import edu.wpi.first.math.controller.SimpleMotorFeedforward;
 import edu.wpi.first.math.geometry.Rotation2d;
 import edu.wpi.first.math.geometry.Translation2d;
 import edu.wpi.first.math.kinematics.SwerveModulePosition;
-import edu.wpi.first.math.kinematics.SwerveModuleState;
 import edu.wpi.first.networktables.GenericEntry;
 import edu.wpi.first.util.sendable.Sendable;
 import edu.wpi.first.util.sendable.SendableBuilder;
@@ -450,20 +449,21 @@ public class SwerveModule<DriveMotorType extends MotorController, AngleMotorType
     // state.angle = state.angle.minus(Rotation2d.fromDegrees(angleOffset));
     // inspired by https://github.com/first95/FRC2022/blob/1f57d6837e04d8c8a89f4d83d71b5d2172f41a0e/SwervyBot/src/main/java/frc/robot/SwerveModule.java#L22
     Rotation2d currentAngle = getState().angle;
-    SwerveModuleState optimizedState = SwerveModuleState.optimize(new SwerveModuleState(state.speedMetersPerSecond,
-                                                                                        state.angle), currentAngle);
-    double angle = optimizedState.angle.getDegrees(); // getDegrees returns in the range of -180 to 180 we want 0 to
+//    SwerveModuleState optimizedState = SwerveModuleState.optimize(new SwerveModuleState(state.speedMetersPerSecond,
+//                                                                                        state.angle), currentAngle);
+    SwerveModuleState2 optimizedState = SwerveModuleState2.optimize(state, currentAngle);
+    double             angle          = optimizedState.angle.getDegrees(); // getDegrees returns in the range of -180 to 180 we want 0 to
     // 360.
     double velocity = (Math.abs(optimizedState.speedMetersPerSecond) <= (maxDriveSpeedMPS * 0.01)) ? 0
                                                                                                    :
                       optimizedState.speedMetersPerSecond;
     // turn motor code
     // Prevent rotating module if speed is less then 1%. Prevents Jittering.
-    angle = (Math.abs(state.speedMetersPerSecond) <= (maxDriveSpeedMPS * 0.01)) ? 0 : angle;
-    setAngle(angle, state.angularVelocityRadPerSecond * steeringKV);
+    angle = (Math.abs(optimizedState.speedMetersPerSecond) <= (maxDriveSpeedMPS * 0.01)) ? 0 : angle;
+    setAngle(angle, optimizedState.angularVelocityRadPerSecond * steeringKV);
     setVelocity(velocity);
     targetAngle = angle;
-    targetAngularVelocityRPS = state.angularVelocityRadPerSecond;
+    targetAngularVelocityRPS = optimizedState.angularVelocityRadPerSecond;
   }
 
   /**
