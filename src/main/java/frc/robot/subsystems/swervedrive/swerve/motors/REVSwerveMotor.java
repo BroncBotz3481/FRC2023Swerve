@@ -88,7 +88,7 @@ public class REVSwerveMotor extends SwerveMotor
       setCurrentLimit(50);
     } else
     {
-      m_moduleRadkV = (12 * 60) / (freeSpeedRPM * Math.toRadians(180 / (m_integratedAbsEncoder ? 1 : gearRatio)));
+      m_moduleRadkV = (12 * 60) / (freeSpeedRPM * Math.toRadians(360 / (m_integratedAbsEncoder ? 1 : gearRatio)));
 
       if (m_integratedAbsEncoder)
       {
