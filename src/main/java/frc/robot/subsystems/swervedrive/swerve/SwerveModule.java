@@ -12,17 +12,24 @@ import edu.wpi.first.math.geometry.Rotation2d;
 import edu.wpi.first.math.geometry.Translation2d;
 import edu.wpi.first.math.kinematics.SwerveModulePosition;
 import edu.wpi.first.math.kinematics.SwerveModuleState;
+import edu.wpi.first.networktables.GenericEntry;
 import edu.wpi.first.util.sendable.Sendable;
 import edu.wpi.first.util.sendable.SendableBuilder;
 import edu.wpi.first.util.sendable.SendableRegistry;
 import edu.wpi.first.wpilibj.AnalogEncoder;
 import edu.wpi.first.wpilibj.DutyCycleEncoder;
 import edu.wpi.first.wpilibj.motorcontrol.MotorController;
+import edu.wpi.first.wpilibj.shuffleboard.BuiltInWidgets;
+import edu.wpi.first.wpilibj.shuffleboard.Shuffleboard;
+import edu.wpi.first.wpilibj.shuffleboard.ShuffleboardTab;
+import edu.wpi.first.wpilibj.shuffleboard.SimpleWidget;
 import edu.wpi.first.wpilibj.smartdashboard.SmartDashboard;
 import frc.robot.Robot;
 import frc.robot.subsystems.swervedrive.swerve.SwerveMotor.ModuleMotorType;
 import frc.robot.subsystems.swervedrive.swerve.kinematics.SwerveModuleState2;
 import java.io.Closeable;
+import java.util.HashMap;
+import java.util.Map;
 
 /**
  * Swerve module for representing a single swerve module of the robot.
@@ -104,131 +111,9 @@ public class SwerveModule<DriveMotorType extends MotorController, AngleMotorType
    * Target velocity for the swerve module.
    */
   private       double                 targetVelocity           = 0;
-
-  /**
-   * Swerve module constructor. Both motors <b>MUST</b> be a {@link MotorController} class. It is recommended to create
-   * a command to reset the encoders when triggered and
-   *
-   * @param mainMotor                 Main drive motor. Must be a {@link MotorController} type.
-   * @param angleMotor                Angle motor for controlling the angle of the swerve module.
-   * @param encoder                   Absolute encoder for the swerve module.
-   * @param driveGearRatio            Drive gear ratio in form of (rotation:1 AKA rotations/1) to get the encoder ticks
-   *                                  per rotation.
-   * @param steerGearRatio            Steering motor gear ratio (usually 12.8:1 for MK4 in form of rotations:1 or
-   *                                  rotations/1), only applied if using Neo's.
-   * @param swervePosition            Swerve Module position on the robot.
-   * @param steeringOffsetDegrees     The current offset of the absolute encoder from 0 in degrees.
-   * @param wheelDiameterMeters       The wheel diameter of the swerve drive module in meters.
-   * @param wheelBaseMeters           The Distance between front and back wheels of the robot in meters.
-   * @param driveTrainWidthMeters     The Distance between centers of right and left wheels in meters.
-   * @param steeringMotorFreeSpeedRPM The RPM free speed of the steering motor.
-   * @param maxSpeedMPS               The maximum drive speed in meters per second.
-   * @param maxDriveAcceleration      The maximum drive acceleration in meters^2 per second.
-   * @param drivingPowerLimit         The power limit for the closed loop PID of the driver motor.
-   * @param steeringPowerLimit        The power limit for the closed loop PID of the steering motor.
-   * @param steeringInverted          The steering motor is inverted.
-   * @param drivingInverted           The driving motor is inverted.
-   * @throws RuntimeException if an assertion fails or invalid swerve module location is given.
-   */
-  public SwerveModule(DriveMotorType mainMotor, AngleMotorType angleMotor, AbsoluteEncoderType encoder,
-                      SwerveModuleLocation swervePosition, double driveGearRatio, double steerGearRatio,
-                      double steeringOffsetDegrees, double wheelDiameterMeters, double wheelBaseMeters,
-                      double driveTrainWidthMeters, double steeringMotorFreeSpeedRPM, double maxSpeedMPS,
-                      double maxDriveAcceleration, double drivingPowerLimit, double steeringPowerLimit,
-                      boolean steeringInverted, boolean drivingInverted)
-  {
-    // Steps to configure swerve drive are as follows
-    // 1.  Set Current limit of turning motor to 20 amps
-    // 2.  Enable voltage compensation with optimal battery voltage
-    // 3.  Configure CANCoder
-    // 4.  Set inverted motors.
-    // 5.  Configure status frames
-    // 6.  Set all motors to brake mode.
-    // 7.  Set velocity and position conversion factors on drive motor encoder.
-    // 8.  Set PIDF with integral zone on drive motor controller PID.
-    // 9.  Set velocity and position conversion factors on turning motor controller. (Usually P=0.01,I=0,D=0,F=0,IZ=1)
-    // 10. Set PIDF with integral zone on turning motor controller.
-    // 11. Check all CAN devices are active.
-    // 12. Reset the angle on the internal encoder to the absolute encoder.
-    requireNonNull(mainMotor);
-    requireNonNull(angleMotor);
-    requireNonNull(encoder);
-
-    this.wheelBase = wheelBaseMeters;
-    this.driveTrainWidth = driveTrainWidthMeters;
-
-    assert mainMotor instanceof CANSparkMax || mainMotor instanceof TalonFX;
-    assert angleMotor instanceof CANSparkMax || angleMotor instanceof TalonFX;
-    assert encoder instanceof DutyCycleEncoder || encoder instanceof AnalogEncoder || encoder instanceof CANCoder ||
-           encoder instanceof AbsoluteEncoder;
-
-    absoluteEncoder = SwerveEncoder.fromEncoder(encoder);
-    assert absoluteEncoder != null;
-
-    absoluteEncoder.factoryDefault();
-
-    driveMotor = SwerveMotor.fromMotor(mainMotor,
-                                       absoluteEncoder,
-                                       ModuleMotorType.DRIVE,
-                                       driveGearRatio,
-                                       wheelDiameterMeters,
-                                       0,
-                                       drivingPowerLimit);
-
-    turningMotor = SwerveMotor.fromMotor(angleMotor,
-                                         absoluteEncoder,
-                                         ModuleMotorType.TURNING,
-                                         steerGearRatio,
-                                         wheelDiameterMeters,
-                                         steeringMotorFreeSpeedRPM,
-                                         steeringPowerLimit);
-
-    swerveLocation = swervePosition;
-    swerveModuleLocation = getSwerveModulePosition(swervePosition);
-
-    assert driveMotor != null;
-    assert turningMotor != null;
-
-    // Set the maximum speed for each swerve module for use when trying to optimize movements.
-    // Drive feedforward gains
-    //        public static final double KS = 0;
-    //        public static final double KV = 12 / MAX_SPEED; // Volt-seconds per meter (max voltage divided by max
-    //        speed)
-    //        public static final double KA = 12 / MAX_ACCELERATION; // Volt-seconds^2 per meter (max voltage divided
-    //        by max accel)
-    maxDriveSpeedMPS = maxSpeedMPS;
-    driveFeedforward = new SimpleMotorFeedforward(0, 12 / maxDriveSpeedMPS, 12 / maxDriveAcceleration);
-    steeringKV = (12 * 60) / (steeringMotorFreeSpeedRPM * Math.toRadians(360 / steerGearRatio));
-
-    driveMotor.setInverted(drivingInverted);
-    turningMotor.setInverted(steeringInverted);
-
-    absoluteEncoder.configure();
-
-    setAngleOffset(steeringOffsetDegrees);
-    resetEncoders();
-
-    // Convert CANCoder to read data as unsigned 0 to 360 for synchronization purposes.
-    absoluteEncoder.configure();
-
-    assert activeCAN();
-
-    resetEncoders();
-    synchronizeSteeringEncoder();
-
-    driveMotor.saveConfig();
-    turningMotor.saveConfig();
-
-    publish(Verbosity.SETUP);
-
-    // targetAngle = getState().angle.getDegrees();
-    targetAngle = 0;
-
-    if (!remoteIntegratedEncoder() && Robot.isReal())
-    {
-      Robot.getInstance().addPeriodic(this::synchronizeSteeringEncoder, 0.02);
-    }
-  }
+  private       ShuffleboardTab        moduleTab;
+  //////////////////////////// ENUMS SECTION //////////////////////////////////////////////////////////
+  private HashMap<String, SimpleWidget> NT4Entries = new HashMap<>();
 
   ///////////////////////////// CONFIGURATION FUNCTIONS SECTION ///////////////////////////////////////////////////
 
@@ -424,27 +309,131 @@ public class SwerveModule<DriveMotorType extends MotorController, AngleMotorType
   }
 
   /**
-   * Set the module speed and angle based off the module state.
+   * Swerve module constructor. Both motors <b>MUST</b> be a {@link MotorController} class. It is recommended to create
+   * a command to reset the encoders when triggered and
    *
-   * @param state Module state.
+   * @param mainMotor                 Main drive motor. Must be a {@link MotorController} type.
+   * @param angleMotor                Angle motor for controlling the angle of the swerve module.
+   * @param encoder                   Absolute encoder for the swerve module.
+   * @param driveGearRatio            Drive gear ratio in form of (rotation:1 AKA rotations/1) to get the encoder ticks
+   *                                  per rotation.
+   * @param steerGearRatio            Steering motor gear ratio (usually 12.8:1 for MK4 in form of rotations:1 or
+   *                                  rotations/1), only applied if using Neo's.
+   * @param swervePosition            Swerve Module position on the robot.
+   * @param steeringOffsetDegrees     The current offset of the absolute encoder from 0 in degrees.
+   * @param wheelDiameterMeters       The wheel diameter of the swerve drive module in meters.
+   * @param wheelBaseMeters           The Distance between front and back wheels of the robot in meters.
+   * @param driveTrainWidthMeters     The Distance between centers of right and left wheels in meters.
+   * @param steeringMotorFreeSpeedRPM The RPM free speed of the steering motor.
+   * @param maxSpeedMPS               The maximum drive speed in meters per second.
+   * @param maxDriveAcceleration      The maximum drive acceleration in meters^2 per second.
+   * @param drivingPowerLimit         The power limit for the closed loop PID of the driver motor.
+   * @param steeringPowerLimit        The power limit for the closed loop PID of the steering motor.
+   * @param steeringInverted          The steering motor is inverted.
+   * @param drivingInverted           The driving motor is inverted.
+   * @throws RuntimeException if an assertion fails or invalid swerve module location is given.
    */
-  public void setState(SwerveModuleState2 state)
+  public SwerveModule(DriveMotorType mainMotor, AngleMotorType angleMotor, AbsoluteEncoderType encoder,
+                      SwerveModuleLocation swervePosition, double driveGearRatio, double steerGearRatio,
+                      double steeringOffsetDegrees, double wheelDiameterMeters, double wheelBaseMeters,
+                      double driveTrainWidthMeters, double steeringMotorFreeSpeedRPM, double maxSpeedMPS,
+                      double maxDriveAcceleration, double drivingPowerLimit, double steeringPowerLimit,
+                      boolean steeringInverted, boolean drivingInverted)
   {
-    // state.angle = state.angle.minus(Rotation2d.fromDegrees(angleOffset));
-    // inspired by https://github.com/first95/FRC2022/blob/1f57d6837e04d8c8a89f4d83d71b5d2172f41a0e/SwervyBot/src/main/java/frc/robot/SwerveModule.java#L22
-    Rotation2d currentAngle = getState().angle;
-    SwerveModuleState optimizedState = SwerveModuleState.optimize(new SwerveModuleState(state.speedMetersPerSecond,
-                                                                                        state.angle), currentAngle);
-    double angle = optimizedState.angle.getDegrees(); // getDegrees returns in the range of -180 to 180 we want 0 to 360.
-    double velocity = (Math.abs(optimizedState.speedMetersPerSecond) <= (maxDriveSpeedMPS * 0.01)) ? 0
-                                                                                                   : optimizedState.speedMetersPerSecond;
-    // turn motor code
-    // Prevent rotating module if speed is less then 1%. Prevents Jittering.
-    angle = (Math.abs(state.speedMetersPerSecond) <= (maxDriveSpeedMPS * 0.01)) ? 0 : angle;
-    setAngle(angle, state.angularVelocityRadPerSecond * steeringKV);
-    setVelocity(velocity);
-    targetAngle = angle;
-    targetAngularVelocityRPS = state.angularVelocityRadPerSecond;
+    // Steps to configure swerve drive are as follows
+    // 1.  Set Current limit of turning motor to 20 amps
+    // 2.  Enable voltage compensation with optimal battery voltage
+    // 3.  Configure CANCoder
+    // 4.  Set inverted motors.
+    // 5.  Configure status frames
+    // 6.  Set all motors to brake mode.
+    // 7.  Set velocity and position conversion factors on drive motor encoder.
+    // 8.  Set PIDF with integral zone on drive motor controller PID.
+    // 9.  Set velocity and position conversion factors on turning motor controller. (Usually P=0.01,I=0,D=0,F=0,IZ=1)
+    // 10. Set PIDF with integral zone on turning motor controller.
+    // 11. Check all CAN devices are active.
+    // 12. Reset the angle on the internal encoder to the absolute encoder.
+    requireNonNull(mainMotor);
+    requireNonNull(angleMotor);
+    requireNonNull(encoder);
+
+    this.wheelBase = wheelBaseMeters;
+    this.driveTrainWidth = driveTrainWidthMeters;
+
+    assert mainMotor instanceof CANSparkMax || mainMotor instanceof TalonFX;
+    assert angleMotor instanceof CANSparkMax || angleMotor instanceof TalonFX;
+    assert encoder instanceof DutyCycleEncoder || encoder instanceof AnalogEncoder || encoder instanceof CANCoder ||
+           encoder instanceof AbsoluteEncoder;
+
+    absoluteEncoder = SwerveEncoder.fromEncoder(encoder);
+    assert absoluteEncoder != null;
+
+    absoluteEncoder.factoryDefault();
+
+    driveMotor = SwerveMotor.fromMotor(mainMotor,
+                                       absoluteEncoder,
+                                       ModuleMotorType.DRIVE,
+                                       driveGearRatio,
+                                       wheelDiameterMeters,
+                                       0,
+                                       drivingPowerLimit);
+
+    turningMotor = SwerveMotor.fromMotor(angleMotor,
+                                         absoluteEncoder,
+                                         ModuleMotorType.TURNING,
+                                         steerGearRatio,
+                                         wheelDiameterMeters,
+                                         steeringMotorFreeSpeedRPM,
+                                         steeringPowerLimit);
+
+    swerveLocation = swervePosition;
+    swerveModuleLocation = getSwerveModulePosition(swervePosition);
+
+    assert driveMotor != null;
+    assert turningMotor != null;
+
+    // Set the maximum speed for each swerve module for use when trying to optimize movements.
+    // Drive feedforward gains
+    //        public static final double KS = 0;
+    //        public static final double KV = 12 / MAX_SPEED; // Volt-seconds per meter (max voltage divided by max
+    //        speed)
+    //        public static final double KA = 12 / MAX_ACCELERATION; // Volt-seconds^2 per meter (max voltage divided
+    //        by max accel)
+    maxDriveSpeedMPS = maxSpeedMPS;
+    driveFeedforward = new SimpleMotorFeedforward(0, 12 / maxDriveSpeedMPS, 12 / maxDriveAcceleration);
+    steeringKV = (12 * 60) / (steeringMotorFreeSpeedRPM * Math.toRadians(360 / steerGearRatio));
+
+    driveMotor.setInverted(drivingInverted);
+    turningMotor.setInverted(steeringInverted);
+
+    absoluteEncoder.configure();
+
+    setAngleOffset(steeringOffsetDegrees);
+    resetEncoders();
+
+    // Convert CANCoder to read data as unsigned 0 to 360 for synchronization purposes.
+    absoluteEncoder.configure();
+
+    assert activeCAN();
+
+    resetEncoders();
+    synchronizeSteeringEncoder();
+
+    driveMotor.saveConfig();
+    turningMotor.saveConfig();
+
+    // targetAngle = getState().angle.getDegrees();
+    targetAngle = 0;
+
+    if (!remoteIntegratedEncoder() && Robot.isReal())
+    {
+      Robot.getInstance().addPeriodic(this::synchronizeSteeringEncoder, 0.02);
+    }
+
+    // Shuffleboard Data
+    moduleTab = Shuffleboard.getTab(SwerveModule.SwerveModuleLocationToString(swerveLocation));
+    publish(Verbosity.SETUP);
+
   }
 
   /////////////////// END OF ODOMETRY AND STATE FUNCTIONS SECTION ////////////////////////////////////////
@@ -522,39 +511,170 @@ public class SwerveModule<DriveMotorType extends MotorController, AngleMotorType
 
   //////////////////////////// END OF DIAGNOSTIC AND TUNING FUNCTIONS SECTION /////////////////////////
 
-  //////////////////////////// ENUMS SECTION //////////////////////////////////////////////////////////
+  /**
+   * Set the module speed and angle based off the module state.
+   *
+   * @param state Module state.
+   */
+  public void setState(SwerveModuleState2 state)
+  {
+    // state.angle = state.angle.minus(Rotation2d.fromDegrees(angleOffset));
+    // inspired by https://github.com/first95/FRC2022/blob/1f57d6837e04d8c8a89f4d83d71b5d2172f41a0e/SwervyBot/src/main/java/frc/robot/SwerveModule.java#L22
+    Rotation2d currentAngle = getState().angle;
+    SwerveModuleState optimizedState = SwerveModuleState.optimize(new SwerveModuleState(state.speedMetersPerSecond,
+                                                                                        state.angle), currentAngle);
+    double angle = optimizedState.angle.getDegrees(); // getDegrees returns in the range of -180 to 180 we want 0 to
+    // 360.
+    double velocity = (Math.abs(optimizedState.speedMetersPerSecond) <= (maxDriveSpeedMPS * 0.01)) ? 0
+                                                                                                   :
+                      optimizedState.speedMetersPerSecond;
+    // turn motor code
+    // Prevent rotating module if speed is less then 1%. Prevents Jittering.
+    angle = (Math.abs(state.speedMetersPerSecond) <= (maxDriveSpeedMPS * 0.01)) ? 0 : angle;
+    setAngle(angle, state.angularVelocityRadPerSecond * steeringKV);
+    setVelocity(velocity);
+    targetAngle = angle;
+    targetAngularVelocityRPS = state.angularVelocityRadPerSecond;
+  }
 
   /**
-   * Publish data to the smart dashboard relating to this swerve moduule.
+   * Create a widget and add the entry to the hashmap of entries for network tables.
+   *
+   * @param name         Key to display on shuffleboard.
+   * @param defaultValue Default value.
+   * @return Widget that can be modified.
+   */
+  private SimpleWidget addEntry(String name, Object defaultValue)
+  {
+    if (NT4Entries.containsKey(name))
+    {
+      GenericEntry entry = NT4Entries.get(name).getEntry();
+      if (defaultValue instanceof Integer)
+      {
+        entry.setInteger((int) defaultValue);
+      } else if (defaultValue instanceof Double)
+      {
+        entry.setDouble((double) defaultValue);
+      } else if (defaultValue instanceof Boolean)
+      {
+        entry.setBoolean((boolean) defaultValue);
+      } else if (defaultValue instanceof Double[])
+      {
+        entry.setDoubleArray((Double[]) defaultValue);
+      } else
+      {
+        throw new RuntimeException("Cannot publish value for " + name);
+      }
+      return NT4Entries.get(name);
+    }
+    try
+    {
+      SimpleWidget widget = moduleTab.add(name, defaultValue);
+      NT4Entries.put(name, widget);
+      return widget;
+    } catch (Exception e)
+    {
+      System.err.println(e.toString());
+    }
+    throw new RuntimeException("Error creating entry");
+  }
+
+  /**
+   * Publish data to the smart dashboard relating to this swerve module.
    *
    * @param level Verbosity level, affects the CAN utilization, on HIGH it will enable the update button.
    */
   public void publish(Verbosity level)
   {
+
     String name =
         "SwerveDrive/" + SwerveModule.SwerveModuleLocationToString(swerveLocation); // TODO: Move to attribute
     switch (level)
     {
       case SETUP:
         // PID
-        SmartDashboard.putNumber(name + "/drive/pid/kP", driveMotor.kP);
-        SmartDashboard.putNumber(name + "/drive/pid/kI", driveMotor.kI);
-        SmartDashboard.putNumber(name + "/drive/pid/kD", driveMotor.kD);
-        SmartDashboard.putNumber(name + "/drive/pid/kF", driveMotor.kF);
-        SmartDashboard.putNumber(name + "/drive/pid/kIZ", driveMotor.kIZ);
+        addEntry("drive/pid/kP", driveMotor.kP);
+        addEntry("drive/pid/kI", driveMotor.kI);
+        addEntry("drive/pid/kD", driveMotor.kD);
+        addEntry("drive/pid/kF", driveMotor.kF);
+        addEntry("drive/pid/kIZ", driveMotor.kIZ);
+        addEntry("Target Velocity", targetVelocity)
+            .withPosition(8, 2)
+            .withSize(2, 2);
 
-        SmartDashboard.putNumber(name + "/steer/pid/kP", turningMotor.kP);
-        SmartDashboard.putNumber(name + "/steer/pid/kI", turningMotor.kI);
-        SmartDashboard.putNumber(name + "/steer/pid/kD", turningMotor.kD);
-        SmartDashboard.putNumber(name + "/steer/pid/kF", turningMotor.kF);
-        SmartDashboard.putNumber(name + "/steer/pid/kIZ", turningMotor.kIZ);
+        addEntry("steer/pid/kP", turningMotor.kP);
+        addEntry("steer/pid/kI", turningMotor.kI);
+        addEntry("steer/pid/kD", turningMotor.kD);
+        addEntry("steer/pid/kF", turningMotor.kF);
+        addEntry("steer/pid/kIZ", turningMotor.kIZ);
+        addEntry("Target Angle", targetAngle)
+            .withPosition(8, 4)
+            .withSize(2, 2);
 
         // Inverted Motors.
-        SmartDashboard.putBoolean(name + "/steer/inverted", invertedTurn);
-        SmartDashboard.putBoolean(name + "/drive/inverted", invertedDrive);
+        addEntry("Steer Motor Inverted", invertedTurn)
+            .withPosition(0, 6)
+            .withSize(4, 1);
+        addEntry("Drive Motor inverted", invertedDrive)
+            .withPosition(4, 6)
+            .withSize(4, 1);
 
         // Angle Constants
-        SmartDashboard.putNumber(name + "/steer/encoder/offset", angleOffset);
+        addEntry("Absolute Encoder Offset", angleOffset)
+            .withProperties(Map.of("min", -180, "max", 180))
+            .withPosition(10, 3)
+            .withSize(2, 2)
+            .withWidget(BuiltInWidgets.kDial);
+
+        // Pretty Widget Setup
+//        addEntry("Set Angle (Degrees)", targetAngle)
+//            .withProperties(Map.of("min", -180, "max", 180))
+//            .withWidget(BuiltInWidgets.kDial)
+//            .withPosition(0, 2)
+//            .withSize(4, 2);
+//        addEntry("Integrated Encoder Angle", turningMotor.get())
+//            .withProperties(Map.of("min", 0, "max", 360))
+//            .withWidget(BuiltInWidgets.kDial)
+//            .withPosition(0, 4)
+//            .withSize(2, 2);
+//        addEntry("Absolute Encoder Angle", absoluteEncoder.getAbsolutePosition())
+//            .withProperties(Map.of("min", 0, "max", 360))
+//            .withWidget(BuiltInWidgets.kDial)
+//            .withPosition(2, 4)
+//            .withSize(2, 2);
+        addEntry("Angle (Degrees)",
+                 new Double[]{targetAngle, turningMotor.get(), absoluteEncoder.getAbsolutePosition()})
+            .withPosition(0, 2)
+            .withSize(4, 4)
+            .withProperties(Map.of("visible time", 5))
+            .withWidget(BuiltInWidgets.kGraph);
+        addEntry("Absolute Angle", absoluteEncoder.getAbsolutePosition())
+            .withPosition(0, 1)
+            .withSize(2, 1);
+        addEntry("Integrated Angle", turningMotor.get())
+            .withPosition(2, 1)
+            .withSize(2, 1);
+
+        addEntry("Velocity (Meters Per Second)", new Double[]{targetVelocity, driveMotor.get()})
+            .withPosition(4, 2)
+            .withSize(4, 4)
+            .withProperties(Map.of("visible time", 5))
+            .withWidget(BuiltInWidgets.kGraph);
+        addEntry("Motor Velocity", driveMotor.get())
+            .withPosition(4, 1)
+            .withSize(4, 1);
+
+        addEntry("CAN Connection", activeCAN())
+            .withPosition(8, 0)
+            .withSize(4, 2);
+
+        addEntry("Absolute Encoder Magnetic Field", absoluteEncoder.getMagnetFieldStrength().value)
+            .withPosition(10, 2)
+            .withSize(2, 1);
+
+        addEntry("Drive Motor Current", driveMotor.getAmps())
+            .withPosition(10, 5)
+            .withSize(2, 1);
 
       case HIGH:
         // Update if button is set.
@@ -564,24 +684,39 @@ public class SwerveModule<DriveMotorType extends MotorController, AngleMotorType
           subscribe();
         }
         // The higher the better, 2 and 3 are what we want.
-        SmartDashboard.putNumber(name + "/steer/encoder/field", absoluteEncoder.getMagnetFieldStrength().value);
+//        SmartDashboard.putNumber(name + "/steer/encoder/field", absoluteEncoder.getMagnetFieldStrength().value);
+        addEntry("Absolute Encoder Magnetic Field", absoluteEncoder.getMagnetFieldStrength().value);
       case NORMAL:
         // Steering Encoder Values
-        SmartDashboard.putNumber(name + "/steer/encoder/integrated", turningMotor.get());
-        SmartDashboard.putNumber(name + "/steer/encoder/absolute", absoluteEncoder.getAbsolutePosition());
+//        SmartDashboard.putNumber(name + "/steer/encoder/integrated", turningMotor.get());
+//        SmartDashboard.putNumber(name + "/steer/encoder/absolute", absoluteEncoder.getAbsolutePosition());
+//        addEntry("Integrated Encoder Angle", turningMotor.get());
+//        addEntry("Absolute Encoder Angle", absoluteEncoder.getAbsolutePosition());
+        addEntry("Angle (Degrees)",
+                 new Double[]{targetAngle, turningMotor.get(), absoluteEncoder.getAbsolutePosition()});
+        addEntry("Target Angle", targetAngle);
+        addEntry("Absolute Angle", absoluteEncoder.getAbsolutePosition());
+        addEntry("Integrated Angle", turningMotor.get());
 
         // Driving Encoder Values
-        SmartDashboard.putNumber(name + "/drive/encoder/velocity", driveMotor.get());
+//        SmartDashboard.putNumber(name + "/drive/encoder/velocity", driveMotor.get());
+//        addEntry("Actual Velocity", driveMotor.get());
 
         // CAN Bus is accessible
-        SmartDashboard.putBoolean(name + "/status", activeCAN());
+//        SmartDashboard.putBoolean(name + "/status", activeCAN());
+        addEntry("CAN Connection", activeCAN());
       case LOW:
         // PID
-        SmartDashboard.putNumber(name + "/drive/pid/target", targetVelocity);
-        SmartDashboard.putNumber(name + "/steer/pid/target", targetAngle);
-        SmartDashboard.putNumber(name + "/drive/voltage", driveMotor.getAmps());
-        SmartDashboard.putNumber(name + "/steer/voltage", turningMotor.getAmps());
+//        SmartDashboard.putNumber(name + "/drive/pid/target", targetVelocity);
+//        SmartDashboard.putNumber(name + "/steer/pid/target", targetAngle);
+//        SmartDashboard.putNumber(name + "/drive/voltage", driveMotor.getAmps());
+//        SmartDashboard.putNumber(name + "/steer/voltage", turningMotor.getAmps());
+        addEntry("Velocity (Meters Per Second)", new Double[]{targetVelocity, driveMotor.get()});
+        addEntry("Target Velocity", targetVelocity);
+        addEntry("Motor Velocity", driveMotor.get());
 
+//        addEntry("Set Angle (Degrees)", targetAngle);
+        addEntry("Drive Motor Current", driveMotor.getAmps());
 
     }
   }
