@@ -7,11 +7,13 @@ import edu.wpi.first.math.estimator.SwerveDrivePoseEstimator;
 import edu.wpi.first.math.filter.SlewRateLimiter;
 import edu.wpi.first.math.geometry.Pose2d;
 import edu.wpi.first.math.geometry.Rotation2d;
+import edu.wpi.first.math.geometry.Twist2d;
 import edu.wpi.first.math.kinematics.ChassisSpeeds;
 import edu.wpi.first.math.kinematics.SwerveModulePosition;
 import edu.wpi.first.util.sendable.Sendable;
 import edu.wpi.first.util.sendable.SendableBuilder;
 import edu.wpi.first.util.sendable.SendableRegistry;
+import edu.wpi.first.wpilibj.Timer;
 import edu.wpi.first.wpilibj.drive.RobotDriveBase;
 import edu.wpi.first.wpilibj.motorcontrol.MotorController;
 import edu.wpi.first.wpilibj.smartdashboard.Field2d;
@@ -79,12 +81,14 @@ public class SwerveDrive extends RobotDriveBase implements Sendable, AutoCloseab
    * The slew rate limiters to make control smooth.
    */
   private final SlewRateLimiter          m_xLimiter, m_yLimiter, m_turningLimiter;
+  private final Timer         m_driveTimer;
   /**
    * Invert the gyro reading.
    */
-  private boolean                m_gyroInverted;
-  private double                 m_angle;
-
+  private       boolean       m_gyroInverted;
+  private       double        m_angle;
+  private       ChassisSpeeds m_prevChassisSpeed = new ChassisSpeeds(0, 0, 0);
+  private       double        m_timerPrev;
 
   /**
    * Constructor for Swerve Drive assuming modules have been created and configured with PIDF and conversions.
@@ -120,6 +124,10 @@ public class SwerveDrive extends RobotDriveBase implements Sendable, AutoCloseab
     {
       throw new RuntimeException("Cannot use more than one swerve drive instance at a time.");
     }
+    m_driveTimer = new Timer();
+    m_driveTimer.reset();
+    m_driveTimer.start();
+    m_timerPrev = m_driveTimer.get();
 
     m_frontLeft = frontLeft;
     m_backRight = backRight;
@@ -281,6 +289,7 @@ public class SwerveDrive extends RobotDriveBase implements Sendable, AutoCloseab
     set(forward, strafe, turn, fieldRelative);
   }
 
+
   /**
    * Swerve drive function
    *
@@ -294,17 +303,29 @@ public class SwerveDrive extends RobotDriveBase implements Sendable, AutoCloseab
     ChassisSpeeds node = fieldRelative ? ChassisSpeeds.fromFieldRelativeSpeeds(forward, strafe, radianPerSecond,
                                                                                getRotation())
                                        : new ChassisSpeeds(forward, strafe, radianPerSecond);
-    SwerveModuleState2[] moduleStates = m_swerveKinematics.toSwerveModuleStates(node);
+
+    // Taken from https://www.chiefdelphi.com/t/whitepaper-swerve-drive-skew-and-second-order-kinematics/416964/5?u=nstrike
+    double timerDt = (m_driveTimer.get() - m_timerPrev);
+    Pose2d robot_pose_vel = new Pose2d(node.vxMetersPerSecond * timerDt,
+                                       node.vyMetersPerSecond * timerDt,
+                                       Rotation2d.fromRadians(node.omegaRadiansPerSecond * timerDt));
+    Twist2d twist_vel = new Pose2d(0, 0, new Rotation2d(0)).log(robot_pose_vel);
+    ChassisSpeeds updated_chassis_speeds = new ChassisSpeeds(
+        twist_vel.dx / timerDt, twist_vel.dy / timerDt, twist_vel.dtheta / timerDt);
+
+    SwerveModuleState2[] moduleStates = m_swerveKinematics.toSwerveModuleStates(updated_chassis_speeds);
 //        new Translation2d((m_frontLeft.swerveModuleLocation.getX() + m_frontRight.swerveModuleLocation.getX()) / 2,
 //                          (m_frontLeft.swerveModuleLocation.getY() + m_backLeft.swerveModuleLocation.getY()) / 2));
 
     setModuleStates(moduleStates);
+    m_prevChassisSpeed = updated_chassis_speeds;
+    m_timerPrev = m_driveTimer.get();
 
     try
     {
       if (!Robot.isReal())
       {
-        m_angle += node.omegaRadiansPerSecond * 0.02;
+        m_angle += updated_chassis_speeds.omegaRadiansPerSecond * 0.02;
       }
       this.update();
       m_field.setRobotPose(m_swervePoseEstimator.getEstimatedPosition());
