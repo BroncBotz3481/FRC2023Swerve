@@ -108,6 +108,7 @@ public class SwerveDrive extends RobotDriveBase implements Sendable, AutoCloseab
    * @param physicalMaxSpeedMPS                          Maximum speed a module can go physically, used to desaturate
    *                                                     wheel speeds.
    * @param gyroInverted                                 Invert the gyroscope for the robot.
+   * @param start                                        The starting pose on the field.
    */
   public SwerveDrive(SwerveModule<?, ?, ?> frontLeft,
                      SwerveModule<?, ?, ?> frontRight,
