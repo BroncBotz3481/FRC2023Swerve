@@ -36,7 +36,7 @@ public class SwerveDriveCommand extends CommandBase
     double forward      = forwardSpdFunction.get();
     double turningSpeed = turningSpdFunction.get();
 
-    swerveSubsystem.drive(forward, strafe, 0, !fieldOrientedFunction.get());
+    swerveSubsystem.drive(forward, strafe, turningSpeed, !fieldOrientedFunction.get());
     /*
 
 

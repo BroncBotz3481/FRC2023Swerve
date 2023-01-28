@@ -253,7 +253,11 @@ public class SwerveDrive extends RobotDriveBase implements Sendable, AutoCloseab
    */
   public SwerveDrivePoseEstimator update()
   {
-    m_swervePoseEstimator.update(getRotation(), getPositions());
+    Pose2d pos = m_swervePoseEstimator.update(getRotation(), getPositions());
+    if (!Robot.isReal())
+    {
+      m_pigeonIMU.setYaw(pos.getRotation().getDegrees());
+    }
     return m_swervePoseEstimator;
   }
 

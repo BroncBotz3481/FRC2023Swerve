@@ -537,9 +537,7 @@ public class SwerveModule<DriveMotorType extends MotorController, AngleMotorType
    */
   public void publish(Verbosity level)
   {
-    boolean goodLaptop = true;
-//    String name =
-//        "SwerveDrive/" + SwerveModule.SwerveModuleLocationToString(swerveLocation); // TODO: Move to attribute
+    boolean goodLaptop = false;
     switch (level)
     {
       case SETUP:
