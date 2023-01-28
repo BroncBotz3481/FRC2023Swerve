@@ -8,8 +8,8 @@
     "RadianPerSecond": 1
   },
   "Acceleration": {
-    "MetersPerSecond": 3,
-    "RadianPerSecond": 3
+    "MetersPerSecond": 1,
+    "RadianPerSecond": 1
   },
   "Drive": {
     "Inverted": true,
