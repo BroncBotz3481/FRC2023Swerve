@@ -255,13 +255,13 @@ public class SwerveModule<DriveMotorType extends MotorController, AngleMotorType
     switch (swerveLocation)
     {
       case FrontLeft:
-        return "FrontLeft";
+        return "Front Left Module";
       case BackLeft:
-        return "BackLeft";
+        return "Back Left Module";
       case FrontRight:
-        return "FrontRight";
+        return "Front Right Module";
       case BackRight:
-        return "BackRight";
+        return "Back Right Module";
       default:
         return "Unknown";
     }
