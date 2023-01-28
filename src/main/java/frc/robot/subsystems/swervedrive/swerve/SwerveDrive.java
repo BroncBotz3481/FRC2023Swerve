@@ -117,7 +117,7 @@ public class SwerveDrive extends RobotDriveBase implements Sendable, AutoCloseab
                      double driverMaxDriveAccelerationMetersPerSecond,
                      double driverMaxAngularAccelerationRadiansPerSecond,
                      double physicalMaxSpeedMPS,
-                     boolean gyroInverted)
+                     boolean gyroInverted, Pose2d start)
   {
     instances++;
     if (instances > 1)
@@ -153,7 +153,7 @@ public class SwerveDrive extends RobotDriveBase implements Sendable, AutoCloseab
         m_swerveKinematics,
         getRotation(),
         getPositions(),
-        new Pose2d(),
+        start,
         VecBuilder.fill(0.1, 0.1, 0.1), // x,y,heading in radians; state std dev, higher=less weight
         VecBuilder.fill(0.9, 1.0, 0.9)); // x,y,heading in radians; Vision measurement std dev, higher=less weight
 

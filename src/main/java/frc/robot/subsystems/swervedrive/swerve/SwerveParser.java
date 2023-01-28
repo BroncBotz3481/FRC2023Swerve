@@ -7,6 +7,8 @@ import com.fasterxml.jackson.databind.JsonNode;
 import com.fasterxml.jackson.databind.ObjectMapper;
 import com.revrobotics.CANSparkMax;
 import com.revrobotics.CANSparkMaxLowLevel.MotorType;
+import edu.wpi.first.math.geometry.Pose2d;
+import edu.wpi.first.math.geometry.Rotation2d;
 import edu.wpi.first.math.util.Units;
 import edu.wpi.first.wpilibj.AnalogEncoder;
 import edu.wpi.first.wpilibj.DutyCycleEncoder;
@@ -158,6 +160,9 @@ public class SwerveParser
            mainJson.get("Steer").has("MaxPower");
     assert mainJson.has("Gyro");
     assert mainJson.get("Gyro").has("Inverted") && mainJson.get("Gyro").has("Type") && mainJson.get("Gyro").has("ID");
+    assert mainJson.has("Initial Pose");
+    assert mainJson.get("Initial Pose").has("X") && mainJson.get("Initial Pose").has("Y") &&
+           mainJson.get("Initial Pose").has("Rotation");
   }
 
   /**
@@ -278,7 +283,11 @@ public class SwerveParser
                            swerveJson.get("Acceleration").get("MetersPerSecond").asDouble(),
                            swerveJson.get("Acceleration").get("RadianPerSecond").asDouble() * Math.PI,
                            swerveJson.get("Speed").get("PhysicalMetersPerSecond").asDouble(),
-                           swerveJson.get("Gyro").get("Inverted").asBoolean());
+                           swerveJson.get("Gyro").get("Inverted").asBoolean(),
+                           new Pose2d(Units.inchesToMeters(swerveJson.get("Initial Pose").get("X").asDouble()),
+                                      Units.inchesToMeters(swerveJson.get("Initial Pose").get("Y").asDouble()),
+                                      Rotation2d.fromDegrees(swerveJson.get("Initial Pose").get("Rotation")
+                                                                       .asDouble())));
 
   }
 }
