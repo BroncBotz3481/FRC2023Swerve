@@ -6,7 +6,11 @@ import com.ctre.phoenix.motorcontrol.FeedbackDevice;
 import com.ctre.phoenix.motorcontrol.NeutralMode;
 import com.ctre.phoenix.motorcontrol.SupplyCurrentLimitConfiguration;
 import com.ctre.phoenix.motorcontrol.can.TalonFX;
+import com.ctre.phoenix.motorcontrol.can.TalonFXConfiguration;
+import com.ctre.phoenix.sensors.AbsoluteSensorRange;
 import com.ctre.phoenix.sensors.CANCoder;
+import com.ctre.phoenix.sensors.SensorInitializationStrategy;
+import edu.wpi.first.math.util.Units;
 import frc.robot.subsystems.swervedrive.swerve.SwerveEncoder;
 import frc.robot.subsystems.swervedrive.swerve.SwerveMotor;
 import java.util.function.Supplier;
@@ -14,58 +18,93 @@ import java.util.function.Supplier;
 public class CTRESwerveMotor extends SwerveMotor
 {
 
-  private final CANCoder         m_angleEncoder;
+  private final SwerveEncoder m_angleEncoder;
+  private final boolean       m_integratedAbsEncoder;
+  private final double        m_allowableClosedLoopError;
+
   private final ControlMode      m_controlMode;
   private final int              m_mainPIDSlotId;
   private final int              m_mainPidId;
   private final Supplier<Double> m_encoderRet;
   private final TalonFX          m_motor;
 
+  /**
+   * kV feed forward for PID
+   */
+  private final double m_moduleRadkV;
+
   // TODO: Finish this based off of BaseFalconSwerve
-  public CTRESwerveMotor(TalonFX motor, SwerveEncoder encoder, ModuleMotorType type, double gearRatio,
+  public CTRESwerveMotor(TalonFX motor, SwerveEncoder<?> encoder, ModuleMotorType type, double gearRatio,
                          double wheelDiameter,
                          double freeSpeedRPM, double powerLimit)
   {
-    if (!(encoder.m_encoder instanceof CANCoder))
-    {
-      throw new RuntimeException("CANCoder not used with Falcon");
-    }
-    m_angleEncoder = (CANCoder) encoder.m_encoder;
-    m_motorType = type;
-    m_motor = motor;
+    TalonFXConfiguration config = new TalonFXConfiguration();
 
+    m_integratedAbsEncoder = encoder.m_encoder instanceof CANCoder;
+    // Inspired by the following sources
+    // https://github.com/SwerveDriveSpecialties/swerve-lib-2022-unmaintained/blob/55f3f1ad9e6bd81e56779d022a40917aacf8d3b3/src/main/java/com/swervedrivespecialties/swervelib/rev/NeoDriveControllerFactoryBuilder.java#L38
+    // https://github.com/first95/FRC2022/blob/1f57d6837e04d8c8a89f4d83d71b5d2172f41a0e/SwervyBot/src/main/java/frc/robot/SwerveModule.java#L68
+    // https://github.com/first95/FRC2022/blob/1f57d6837e04d8c8a89f4d83d71b5d2172f41a0e/SwervyBot/src/main/java/frc/robot/Constants.java#L89
+    // https://github.com/AusTINCANsProgrammingTeam/2022Swerve/blob/main/2022Swerve/src/main/java/frc/robot/Constants.java
     motor.clearStickyFaults();
     motor.configFactoryDefault();
 
-    motor.setNeutralMode(NeutralMode.Brake);
-    motor.setSensorPhase(true);
+    m_angleEncoder = encoder;
+    m_motorType = type;
+    m_motor = motor;
 
-    motor.enableVoltageCompensation(true);
+    m_motor.setNeutralMode(NeutralMode.Brake);
+    m_motor.setSensorPhase(true);
+
+    m_motor.enableVoltageCompensation(true);
 
     m_mainPidId = CTRE_pidIdx.PRIMARY_PID.ordinal();
     if (type == ModuleMotorType.DRIVE)
     {
+      m_moduleRadkV = 1;
+      m_allowableClosedLoopError = Units.inchesToMeters(1) * 60;
+
       m_mainPIDSlotId = CTRE_slotIdx.Velocity.ordinal();
       m_controlMode = ControlMode.Velocity;
       m_encoderRet = m_motor::getSelectedSensorVelocity;
 
-      setCurrentLimit(80);
+      setCurrentLimit(40);
 
-      setConversionFactor(((Math.PI * wheelDiameter) / ((4096 / gearRatio)) * 10));
+      setConversionFactor(((Math.PI * wheelDiameter) / gearRatio) * 10); // Convert units to MPS.
     } else
     {
+      m_moduleRadkV = (12 * 60) / (freeSpeedRPM * Math.toRadians(360 / (m_integratedAbsEncoder ? 1 : gearRatio)));
+      m_allowableClosedLoopError = 5;
+
+      // Configure the CANCoder as the remote sensor.
+      if (m_integratedAbsEncoder)
+      {
+        m_motor.configSelectedFeedbackSensor(FeedbackDevice.RemoteSensor0);
+        m_motor.configRemoteFeedbackFilter((CANCoder) m_angleEncoder.m_encoder,
+                                           CTRE_remoteSensor.REMOTE_SENSOR_0.ordinal());
+        ((CANCoder) m_angleEncoder.m_encoder).configAbsoluteSensorRange(AbsoluteSensorRange.Signed_PlusMinus180);
+      } else
+      {
+        m_motor.configSelectedFeedbackSensor(FeedbackDevice.IntegratedSensor);
+        m_motor.configIntegratedSensorInitializationStrategy(SensorInitializationStrategy.BootToZero);
+        m_motor.configIntegratedSensorAbsoluteRange(AbsoluteSensorRange.Signed_PlusMinus180);
+        setEnocder(0);
+      }
+
       m_mainPIDSlotId = CTRE_slotIdx.Distance.ordinal();
       m_controlMode = ControlMode.Position;
       m_encoderRet = m_motor::getSelectedSensorPosition;
 
       setCurrentLimit(20);
 
-      // Configure the CANCoder as the remote sensor.
-      motor.configSelectedFeedbackSensor(FeedbackDevice.RemoteSensor0);
-      motor.configRemoteFeedbackFilter(m_angleEncoder, CTRE_remoteSensor.REMOTE_SENSOR_0.ordinal());
-      motor.configSelectedFeedbackCoefficient((double) 360 / 4096); // Degrees/Ticks
-      // The CANCoder has 4096 ticks per rotation.
+      m_motor.configFeedbackNotContinuous(false, 100);
     }
+
+    setPIDOutputRange(-powerLimit, powerLimit);
+    setVoltageCompensation(12);
+
+    optimizeCANFrames();
+
   }
 
   /**
@@ -77,7 +116,8 @@ public class CTRESwerveMotor extends SwerveMotor
   @Override
   public void setPIDOutputRange(double min, double max)
   {
-
+    m_motor.configPeakOutputReverse(min);
+    m_motor.configPeakOutputForward(max);
   }
 
   /**
@@ -107,7 +147,7 @@ public class CTRESwerveMotor extends SwerveMotor
     m_motor.config_kD(m_mainPIDSlotId, D);
     m_motor.config_kF(m_mainPIDSlotId, F);
     m_motor.config_IntegralZone(m_mainPIDSlotId, integralZone);
-    m_motor.configAllowableClosedloopError(m_mainPIDSlotId, 0);
+    m_motor.configAllowableClosedloopError(m_mainPIDSlotId, m_allowableClosedLoopError);
 
     // If the closed loop error is within this threshold, the motor output will be neutral. Set to 0 to disable.
     // Value is in sensor units.
@@ -232,7 +272,7 @@ public class CTRESwerveMotor extends SwerveMotor
   @Override
   public boolean remoteIntegratedEncoder()
   {
-    return true;
+    return m_integratedAbsEncoder;
   }
 
   /**
@@ -267,8 +307,7 @@ public class CTRESwerveMotor extends SwerveMotor
   @Override
   public double getAmps()
   {
-    // TODO Auto-generated method stub
-    return 0;
+    return m_motor.getStatorCurrent();
   }
 
   /**

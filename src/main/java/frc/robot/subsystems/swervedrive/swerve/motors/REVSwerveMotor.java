@@ -82,14 +82,13 @@ public class REVSwerveMotor extends SwerveMotor
 
 //      setPIDF(0.1, 0, 0, 0, 1);
       setPIDF(0.01, 0, 0.005, 0, 0);
-      setPIDOutputRange(-powerLimit, powerLimit);
 
       setConversionFactor(((Math.PI * wheelDiameter) / gearRatio) / 60);
 
       setCurrentLimit(50);
     } else
     {
-      m_moduleRadkV = (12 * 60) / (freeSpeedRPM * Math.toRadians(360 / gearRatio));
+      m_moduleRadkV = (12 * 60) / (freeSpeedRPM * Math.toRadians(180 / (m_integratedAbsEncoder ? 1 : gearRatio)));
 
       if (m_integratedAbsEncoder)
       {
@@ -105,7 +104,6 @@ public class REVSwerveMotor extends SwerveMotor
       m_secondaryPidSlot = REV_slotIdx.Velocity.ordinal();
 
       setPIDF(0.01, 0, 0.005, 0, 0);
-      setPIDOutputRange(-powerLimit, powerLimit);
 
       setConversionFactor(m_integratedAbsEncoder ? 360 : 360 / gearRatio);
 
@@ -116,7 +114,8 @@ public class REVSwerveMotor extends SwerveMotor
       setCurrentLimit(20);
     }
 
-    setVoltageCompensation(10);
+    setPIDOutputRange(-powerLimit, powerLimit);
+    setVoltageCompensation(12);
 
     setEnocder(0);
 

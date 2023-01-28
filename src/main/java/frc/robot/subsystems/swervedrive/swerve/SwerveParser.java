@@ -177,23 +177,76 @@ public class SwerveParser
         steerMotor = createMotor(moduleJson.get("Motor").get("Steer"));
     Object encoder = createEncoder(moduleJson.get("AbsoluteEncoder"));
 
-    return new SwerveModule<>(driveMotor,
-                              steerMotor,
-                              encoder,
-                              moduleLocation,
-                              mainJson.get("Drive").get("GearRatio").asDouble(),
-                              mainJson.get("Steer").get("GearRatio").asDouble(),
-                              moduleJson.get("AbsoluteEncoder").get("Offset").asDouble(),
-                              Units.inchesToMeters(mainJson.get("WheelDiameter").asDouble()),
-                              Units.inchesToMeters(mainJson.get("WheelBase").asDouble()),
-                              Units.inchesToMeters(mainJson.get("TrackWidth").asDouble()),
-                              moduleJson.get("Motor").get("Steer").get("FreeSpeedRPM").asDouble(),
-                              mainJson.get("Speed").get("MetersPerSecond").asDouble(),
-                              mainJson.get("Acceleration").get("MetersPerSecond").asDouble(),
-                              mainJson.get("Drive").get("MaxPower").asDouble(),
-                              mainJson.get("Steer").get("MaxPower").asDouble(),
-                              mainJson.get("Steer").get("Inverted").asBoolean(),
-                              mainJson.get("Drive").get("Inverted").asBoolean());
+    SwerveModule<?, ?, ?> module = new SwerveModule<>(driveMotor,
+                                                      steerMotor,
+                                                      encoder,
+                                                      moduleLocation,
+                                                      mainJson.get("Drive").get("GearRatio").asDouble(),
+                                                      mainJson.get("Steer").get("GearRatio").asDouble(),
+                                                      moduleJson.get("AbsoluteEncoder").get("Offset").asDouble(),
+                                                      Units.inchesToMeters(mainJson.get("WheelDiameter").asDouble()),
+                                                      Units.inchesToMeters(mainJson.get("WheelBase").asDouble()),
+                                                      Units.inchesToMeters(mainJson.get("TrackWidth").asDouble()),
+                                                      moduleJson.get("Motor").get("Steer").get("FreeSpeedRPM")
+                                                                .asDouble(),
+                                                      mainJson.get("Speed").get("MetersPerSecond").asDouble(),
+                                                      mainJson.get("Acceleration").get("MetersPerSecond").asDouble(),
+                                                      mainJson.get("Drive").get("MaxPower").asDouble(),
+                                                      mainJson.get("Steer").get("MaxPower").asDouble(),
+                                                      mainJson.get("Steer").get("Inverted").asBoolean(),
+                                                      mainJson.get("Drive").get("Inverted").asBoolean());
+    if (moduleJson.get("Motor").get("Steer").has("PID"))
+    {
+      if (moduleJson.get("Motor").get("Steer").get("PID").has("P") &&
+          moduleJson.get("Motor").get("Steer").get("PID").has("I") &&
+          moduleJson.get("Motor").get("Steer").get("PID").has("D") &&
+          moduleJson.get("Motor").get("Steer").get("PID").has("F") &&
+          moduleJson.get("Motor").get("Steer").get("PID").has("IntegralZone"))
+      {
+        module.turningMotor.setPIDF(moduleJson.get("Motor").get("Steer").get("PID").get("P").asDouble(),
+                                    moduleJson.get("Motor").get("Steer").get("PID").get("I").asDouble(),
+                                    moduleJson.get("Motor").get("Steer").get("PID").get("D").asDouble(),
+                                    moduleJson.get("Motor").get("Steer").get("PID").get("F").asDouble(),
+                                    moduleJson.get("Motor").get("Steer").get("PID").get("IntegralZone").asDouble());
+      }
+    }
+    if (moduleJson.get("Motor").get("Drive").has("PID"))
+    {
+      if (moduleJson.get("Motor").get("Drive").get("PID").has("P") &&
+          moduleJson.get("Motor").get("Drive").get("PID").has("I") &&
+          moduleJson.get("Motor").get("Drive").get("PID").has("D") &&
+          moduleJson.get("Motor").get("Drive").get("PID").has("F") &&
+          moduleJson.get("Motor").get("Drive").get("PID").has("IntegralZone"))
+      {
+        module.driveMotor.setPIDF(moduleJson.get("Motor").get("Drive").get("PID").get("P").asDouble(),
+                                  moduleJson.get("Motor").get("Drive").get("PID").get("I").asDouble(),
+                                  moduleJson.get("Motor").get("Drive").get("PID").get("D").asDouble(),
+                                  moduleJson.get("Motor").get("Drive").get("PID").get("F").asDouble(),
+                                  moduleJson.get("Motor").get("Drive").get("PID").get("IntegralZone").asDouble());
+      }
+    }
+
+    if (moduleJson.get("Motor").get("Steer").has("VoltageCompensation"))
+    {
+      module.turningMotor.setVoltageCompensation(moduleJson.get("Motor").get("Steer").get("VoltageCompensation")
+                                                           .asDouble());
+    }
+    if (moduleJson.get("Motor").get("Drive").has("VoltageCompensation"))
+    {
+      module.driveMotor.setVoltageCompensation(moduleJson.get("Motor").get("Drive").get("VoltageCompensation")
+                                                         .asDouble());
+    }
+    if (moduleJson.get("Motor").get("Steer").has("CurrentLimit"))
+    {
+      module.turningMotor.setCurrentLimit(moduleJson.get("Motor").get("Steer").get("CurrentLimit")
+                                                    .asInt());
+    }
+    if (moduleJson.get("Motor").get("Drive").has("CurrentLimit"))
+    {
+      module.driveMotor.setCurrentLimit(moduleJson.get("Motor").get("Drive").get("CurrentLimit")
+                                                  .asInt());
+    }
+    return module;
   }
 
   /**

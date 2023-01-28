@@ -78,6 +78,8 @@ public class SwerveModule<DriveMotorType extends MotorController, AngleMotorType
    * kV for steering feedforward.
    */
   private final double                        steeringKV;
+  private final ShuffleboardTab               moduleTab;
+  private final HashMap<String, SimpleWidget> NT4Entries               = new HashMap<>();
   /**
    * Angle offset of the CANCoder at initialization.
    */
@@ -110,201 +112,8 @@ public class SwerveModule<DriveMotorType extends MotorController, AngleMotorType
    * Target velocity for the swerve module.
    */
   private       double                        targetVelocity           = 0;
-  private final ShuffleboardTab               moduleTab;
-  private final HashMap<String, SimpleWidget> NT4Entries = new HashMap<>();
 
   ///////////////////////////// CONFIGURATION FUNCTIONS SECTION ///////////////////////////////////////////////////
-
-  /**
-   * Convert {@link SwerveModuleLocation} to {@link String} representation.
-   *
-   * @param swerveLocation Swerve position to convert.
-   * @return {@link String} name of the {@link SwerveModuleLocation} enum.
-   */
-  public static String SwerveModuleLocationToString(SwerveModuleLocation swerveLocation)
-  {
-    switch (swerveLocation)
-    {
-      case FrontLeft:
-        return "FrontLeft";
-      case BackLeft:
-        return "BackLeft";
-      case FrontRight:
-        return "FrontRight";
-      case BackRight:
-        return "BackRight";
-      default:
-        return "Unknown";
-    }
-  }
-
-  /**
-   * Reset the REV encoders onboard the SparkMax's to 0, and set's the drive motor to position to 0 and synchronizes the
-   * internal steering encoders with the absolute encoder.
-   */
-  public void resetEncoders()
-  {
-    driveMotor.setEnocder(0);
-
-    if (!remoteIntegratedEncoder())
-    {
-      turningMotor.setEnocder(0);
-      synchronizeSteeringEncoder();
-    }
-  }
-
-  /**
-   * Synchronizes the internal encoder for the steering motor with the value from the absolute encoder.
-   */
-  public void synchronizeSteeringEncoder()
-  {
-    if (!remoteIntegratedEncoder())
-    {
-      if (absoluteEncoder.getMagnetFieldStrength() != MagnetFieldStrength.Good_GreenLED)
-      {
-        System.err.println("CANCoder magnetic field strength is unacceptable, will not synchronize encoders.");
-        return;
-      }
-      turningMotor.setEnocder(absoluteEncoder.getAbsolutePosition() - angleOffset);
-    }
-  }
-
-  /**
-   * Set the PIDF coefficients for the closed loop PID onboard the motor controller. Tuning the PID
-   * <p>
-   * <b>P</b> = .5 and increase it by .1 until oscillations occur, then decrease by .05 then .005 until oscillations
-   * stop and angle is perfect or near perfect.
-   * </p>
-   * <p>
-   * <b>I</b> = 0 tune this if your PID never quite reaches the target, after tuning <b>D</b>. Increase this by
-   * <b>P</b>*.01 each time and adjust accordingly.
-   * </p>
-   * <p>
-   * <b>D</b> = 0 tune this if the PID accelerates too fast, it will smooth the motion. Increase this by <b>P</b>*10
-   * and adjust accordingly.
-   * </p>
-   * <p>
-   * <b>F</b> = 0 tune this if the PID is being used for velocity, the <b>F</b> is multiplied by the target and added
-   * to the voltage output. Increase this by 0.01 until the PIDF reaches the desired state in a fast enough manner.
-   * </p>
-   * Documentation for this is best described by CTRE <a
-   * href="https://docs.ctre-phoenix.com/en/stable/ch16_ClosedLoop.html#position-closed-loop-control-mode">here</a>.
-   *
-   * @param p               Proportional gain for closed loop. This is multiplied by closed loop error in sensor units.
-   * @param i               Integral gain for closed loop. This is multiplied by closed loop error in sensor units every
-   *                        PID Loop.
-   * @param d               Derivative gain for closed loop. This is multiplied by derivative error (sensor units per
-   *                        PID loop).
-   * @param f               Feed Fwd gain for Closed loop.
-   * @param integralZone    Integral Zone can be used to auto clear the integral accumulator if the sensor pos is too
-   *                        far from the target. This prevents unstable oscillation if the kI is too large. Value is in
-   *                        sensor units.
-   * @param moduleMotorType Swerve drive motor type.
-   */
-  public void setPIDF(double p, double i, double d, double f, double integralZone,
-                      ModuleMotorType moduleMotorType)
-  {
-    if ((moduleMotorType == ModuleMotorType.DRIVE))
-    {
-      driveMotor.setPIDF(p, i, d, f, integralZone);
-    } else
-    {
-      turningMotor.setPIDF(p, i, d, f, integralZone);
-    }
-  }
-
-  /////////////////////// END OF CONFIGURATION FUNCTIONS SECTION //////////////////////////
-
-  ////////////////////////////// STATUS FUNCTIONS SECTION //////////////////////////////////////////////////////
-
-  /**
-   * Configure the magnetic offset in the CANCoder.
-   *
-   * @param offset Magnetic offset in degrees.
-   */
-  public void setAngleOffset(double offset)
-  {
-    // System.out.println(offset);
-    angleOffset = offset;
-    absoluteEncoder.setOffset(0);
-  }
-
-  //////////////////////////// END OF STATUS FUNCTIONS SECTION ////////////////////////////////////////////////
-
-  //////////////////////////// ODOMETRY AND STATE FUNCTIONS SECTION ///////////////////////////////////////////
-
-  /**
-   * Check that the link is good on the swerve module and CAN bus is able to retrieve data.
-   *
-   * @return true on all devices are accessible over CAN.
-   */
-  public boolean activeCAN()
-  {
-    boolean drive = driveMotor.reachable(), turn = turningMotor.reachable(), encoder = absoluteEncoder.reachable();
-
-    return drive && turn && encoder;
-  }
-
-  /**
-   * Checks if the absolute encoder is able to be read directly by the motor controller instead of using the
-   * synchronizeEncoder() function periodically.
-   *
-   * @return If the absolute sensor in the steering motor is directly accessed by the motor controller.
-   */
-  public boolean remoteIntegratedEncoder()
-  {
-    return turningMotor.remoteIntegratedEncoder();
-  }
-
-  /**
-   * Set the angle of the swerve module.
-   *
-   * @param angle       Angle in degrees.
-   * @param feedforward The feedforward for the PID.
-   */
-  public void setAngle(double angle, double feedforward)
-  {
-    turningMotor.setTarget(Math.round(angle) % 180, feedforward);
-  }
-
-  /**
-   * Set the angle of the swerve module without feedforward.
-   *
-   * @param angle Angle in degrees.
-   */
-  private void setAngle(double angle)
-  {
-    turningMotor.setTarget(angle, 0);
-  }
-
-  /**
-   * Set the drive motor velocity in MPS.
-   *
-   * @param velocity Velocity in MPS.
-   */
-  public void setVelocity(double velocity)
-  {
-    targetVelocity = velocity;
-    driveMotor.setTarget(velocity, driveFeedforward.calculate(velocity));
-  }
-
-  /**
-   * Get the module state.
-   *
-   * @return SwerveModuleState with the encoder inputs.
-   * @throws RuntimeException Exception if CANCoder doesnt exist
-   */
-  public SwerveModuleState2 getState()
-  {
-    double     mps = driveMotor.get();
-    double     angularVelocityRPS;
-    Rotation2d angle;
-    angle = Rotation2d.fromDegrees(Math.round(
-        Robot.isReal() ? absoluteEncoder.getAbsolutePosition() - angleOffset : targetAngle));
-    angularVelocityRPS = Robot.isReal() ? Math.toRadians(absoluteEncoder.getVelocity()) : targetAngularVelocityRPS;
-    //^ Convert degrees per second to radians per second.
-    return new SwerveModuleState2(mps, angle, angularVelocityRPS);
-  }
 
   /**
    * Swerve module constructor. Both motors <b>MUST</b> be a {@link MotorController} class. It is recommended to create
@@ -436,29 +245,200 @@ public class SwerveModule<DriveMotorType extends MotorController, AngleMotorType
 
   }
 
+  /**
+   * Convert {@link SwerveModuleLocation} to {@link String} representation.
+   *
+   * @param swerveLocation Swerve position to convert.
+   * @return {@link String} name of the {@link SwerveModuleLocation} enum.
+   */
+  public static String SwerveModuleLocationToString(SwerveModuleLocation swerveLocation)
+  {
+    switch (swerveLocation)
+    {
+      case FrontLeft:
+        return "FrontLeft";
+      case BackLeft:
+        return "BackLeft";
+      case FrontRight:
+        return "FrontRight";
+      case BackRight:
+        return "BackRight";
+      default:
+        return "Unknown";
+    }
+  }
+
+  /**
+   * Reset the REV encoders onboard the SparkMax's to 0, and set's the drive motor to position to 0 and synchronizes the
+   * internal steering encoders with the absolute encoder.
+   */
+  public void resetEncoders()
+  {
+    driveMotor.setEnocder(0);
+
+    if (!remoteIntegratedEncoder())
+    {
+      turningMotor.setEnocder(0);
+      synchronizeSteeringEncoder();
+    }
+  }
+
+  /**
+   * Synchronizes the internal encoder for the steering motor with the value from the absolute encoder.
+   */
+  public void synchronizeSteeringEncoder()
+  {
+    if (!remoteIntegratedEncoder())
+    {
+      if (absoluteEncoder.getMagnetFieldStrength() != MagnetFieldStrength.Good_GreenLED)
+      {
+        System.err.println("CANCoder magnetic field strength is unacceptable, will not synchronize encoders.");
+        return;
+      }
+      turningMotor.setEnocder(absoluteEncoder.getAbsolutePosition() - angleOffset);
+    }
+  }
+
+  /////////////////////// END OF CONFIGURATION FUNCTIONS SECTION //////////////////////////
+
+  ////////////////////////////// STATUS FUNCTIONS SECTION //////////////////////////////////////////////////////
+
+  /**
+   * Set the PIDF coefficients for the closed loop PID onboard the motor controller. Tuning the PID
+   * <p>
+   * <b>P</b> = .5 and increase it by .1 until oscillations occur, then decrease by .05 then .005 until oscillations
+   * stop and angle is perfect or near perfect.
+   * </p>
+   * <p>
+   * <b>I</b> = 0 tune this if your PID never quite reaches the target, after tuning <b>D</b>. Increase this by
+   * <b>P</b>*.01 each time and adjust accordingly.
+   * </p>
+   * <p>
+   * <b>D</b> = 0 tune this if the PID accelerates too fast, it will smooth the motion. Increase this by <b>P</b>*10
+   * and adjust accordingly.
+   * </p>
+   * <p>
+   * <b>F</b> = 0 tune this if the PID is being used for velocity, the <b>F</b> is multiplied by the target and added
+   * to the voltage output. Increase this by 0.01 until the PIDF reaches the desired state in a fast enough manner.
+   * </p>
+   * Documentation for this is best described by CTRE <a
+   * href="https://docs.ctre-phoenix.com/en/stable/ch16_ClosedLoop.html#position-closed-loop-control-mode">here</a>.
+   *
+   * @param p               Proportional gain for closed loop. This is multiplied by closed loop error in sensor units.
+   * @param i               Integral gain for closed loop. This is multiplied by closed loop error in sensor units every
+   *                        PID Loop.
+   * @param d               Derivative gain for closed loop. This is multiplied by derivative error (sensor units per
+   *                        PID loop).
+   * @param f               Feed Fwd gain for Closed loop.
+   * @param integralZone    Integral Zone can be used to auto clear the integral accumulator if the sensor pos is too
+   *                        far from the target. This prevents unstable oscillation if the kI is too large. Value is in
+   *                        sensor units.
+   * @param moduleMotorType Swerve drive motor type.
+   */
+  public void setPIDF(double p, double i, double d, double f, double integralZone,
+                      ModuleMotorType moduleMotorType)
+  {
+    if ((moduleMotorType == ModuleMotorType.DRIVE))
+    {
+      driveMotor.setPIDF(p, i, d, f, integralZone);
+    } else
+    {
+      turningMotor.setPIDF(p, i, d, f, integralZone);
+    }
+  }
+
+  //////////////////////////// END OF STATUS FUNCTIONS SECTION ////////////////////////////////////////////////
+
+  //////////////////////////// ODOMETRY AND STATE FUNCTIONS SECTION ///////////////////////////////////////////
+
+  /**
+   * Configure the magnetic offset in the CANCoder.
+   *
+   * @param offset Magnetic offset in degrees.
+   */
+  public void setAngleOffset(double offset)
+  {
+    // System.out.println(offset);
+    angleOffset = offset;
+    absoluteEncoder.setOffset(0);
+  }
+
+  /**
+   * Check that the link is good on the swerve module and CAN bus is able to retrieve data.
+   *
+   * @return true on all devices are accessible over CAN.
+   */
+  public boolean activeCAN()
+  {
+    boolean drive = driveMotor.reachable(), turn = turningMotor.reachable(), encoder = absoluteEncoder.reachable();
+
+    return drive && turn && encoder;
+  }
+
+  /**
+   * Checks if the absolute encoder is able to be read directly by the motor controller instead of using the
+   * synchronizeEncoder() function periodically.
+   *
+   * @return If the absolute sensor in the steering motor is directly accessed by the motor controller.
+   */
+  public boolean remoteIntegratedEncoder()
+  {
+    return turningMotor.remoteIntegratedEncoder();
+  }
+
+  /**
+   * Set the angle of the swerve module.
+   *
+   * @param angle       Angle in degrees.
+   * @param feedforward The feedforward for the PID.
+   */
+  public void setAngle(double angle, double feedforward)
+  {
+    turningMotor.setTarget(Math.round(angle) % 180, feedforward);
+  }
+
+  /**
+   * Set the angle of the swerve module without feedforward.
+   *
+   * @param angle Angle in degrees.
+   */
+  private void setAngle(double angle)
+  {
+    turningMotor.setTarget(angle, 0);
+  }
+
+  /**
+   * Set the drive motor velocity in MPS.
+   *
+   * @param velocity Velocity in MPS.
+   */
+  public void setVelocity(double velocity)
+  {
+    targetVelocity = velocity;
+    driveMotor.setTarget(velocity, driveFeedforward.calculate(velocity));
+  }
+
+  /**
+   * Get the module state.
+   *
+   * @return SwerveModuleState with the encoder inputs.
+   * @throws RuntimeException Exception if CANCoder doesnt exist
+   */
+  public SwerveModuleState2 getState()
+  {
+    double     mps = driveMotor.get();
+    double     angularVelocityRPS;
+    Rotation2d angle;
+    angle = Rotation2d.fromDegrees(Math.round(
+        Robot.isReal() ? absoluteEncoder.getAbsolutePosition() - angleOffset : targetAngle));
+    angularVelocityRPS = Robot.isReal() ? Math.toRadians(absoluteEncoder.getVelocity()) : targetAngularVelocityRPS;
+    //^ Convert degrees per second to radians per second.
+    return new SwerveModuleState2(mps, angle, angularVelocityRPS);
+  }
+
   /////////////////// END OF ODOMETRY AND STATE FUNCTIONS SECTION ////////////////////////////////////////
 
   /////////////////// DIAGNOSTIC AND TUNING FUNCTIONS SECTION ////////////////////////////////////////////
-
-  /**
-   * Get the swerve module position based off the sensors.
-   *
-   * @return Swerve Module position, with the angle as what the angle is supposed to be, not what it actually is.
-   */
-  public SwerveModulePosition getPosition()
-  {
-    return new SwerveModulePosition(driveMotor.getPosition(), Rotation2d.fromDegrees(targetAngle));
-  }
-
-  /**
-   * Subscribe from data within smart dashboard to make changes to the swerve module.
-   */
-  public void subscribe()
-  {
-
-  }
-
-  //////////////////////////// END OF DIAGNOSTIC AND TUNING FUNCTIONS SECTION /////////////////////////
 
   /**
    * Set the module speed and angle based off the module state.
@@ -484,6 +464,26 @@ public class SwerveModule<DriveMotorType extends MotorController, AngleMotorType
     setVelocity(velocity);
     targetAngle = angle;
     targetAngularVelocityRPS = state.angularVelocityRadPerSecond;
+  }
+
+  /**
+   * Get the swerve module position based off the sensors.
+   *
+   * @return Swerve Module position, with the angle as what the angle is supposed to be, not what it actually is.
+   */
+  public SwerveModulePosition getPosition()
+  {
+    return new SwerveModulePosition(driveMotor.getPosition(), Rotation2d.fromDegrees(targetAngle));
+  }
+
+  //////////////////////////// END OF DIAGNOSTIC AND TUNING FUNCTIONS SECTION /////////////////////////
+
+  /**
+   * Subscribe from data within smart dashboard to make changes to the swerve module.
+   */
+  public void subscribe()
+  {
+
   }
 
   //////////////////////////// ENUMS SECTION //////////////////////////////////////////////////////////
