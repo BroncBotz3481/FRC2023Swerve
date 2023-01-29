@@ -17,8 +17,8 @@ import org.ejml.simple.SimpleMatrix;
 /**
  * Clone of WPI SwerveKinematics, which implements second order kinematics when calculating modules states from chassis
  * speed.
- * <p></p>
- * <p>
+ * <p>Taken from https://github.com/FRC2539/javabot-2023/tree/main/src/main/java/frc/lib/swerve</p>
+ * <p>https://github.com/first95/FRC2022/tree/feature/secondOrderKinematics/SwervyBot/src/main/java/frc/lib</p>
  * Makes use of {@link SwerveDriveKinematics2} to add the angular velocity that is required of the module as an output.
  */
 public class SwerveDriveKinematics2 extends edu.wpi.first.math.kinematics.SwerveDriveKinematics

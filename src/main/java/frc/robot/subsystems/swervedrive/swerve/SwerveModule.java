@@ -837,7 +837,6 @@ public class SwerveModule<DriveMotorType extends MotorController, AngleMotorType
    *
    * @param currentLimit Current limit in AMPS at free speed.
    * @param type         Swerve Drive Motor type to configure.
-   * @return Self for one line configuration.
    */
   public void setCurrentLimit(int currentLimit, ModuleMotorType type)
   {

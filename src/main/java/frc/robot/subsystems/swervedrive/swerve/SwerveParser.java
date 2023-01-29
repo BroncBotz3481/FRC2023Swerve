@@ -17,6 +17,9 @@ import frc.robot.subsystems.swervedrive.swerve.SwerveModule.SwerveModuleLocation
 import java.io.File;
 import java.io.IOException;
 
+/**
+ * Swerve Drive JSON parser.
+ */
 public class SwerveParser
 {
 

@@ -9,10 +9,16 @@ import frc.robot.subsystems.swervedrive.swerve.SwerveModule.Verbosity;
 import frc.robot.subsystems.swervedrive.swerve.SwerveParser;
 import java.io.File;
 
+/**
+ * SwerveDrive Subsystem.
+ */
 public class SwerveSubsystem extends SubsystemBase
 {
 
   private final Timer       syncTimer = new Timer();
+  /**
+   * Swerve Drive object.
+   */
   public        SwerveDrive m_drive;
   //Creates Pigeon2 Gyroscope
 
@@ -154,6 +160,9 @@ public class SwerveSubsystem extends SubsystemBase
     m_drive.drive(forward, strafe, r, fieldOrientation);
   }
 
+  /**
+   * Stop the swerve drive.
+   */
   public void stop()
   {
     m_drive.stopMotor();
