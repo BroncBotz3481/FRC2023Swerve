@@ -13,6 +13,7 @@ import edu.wpi.first.math.kinematics.SwerveModulePosition;
 import edu.wpi.first.util.sendable.Sendable;
 import edu.wpi.first.util.sendable.SendableBuilder;
 import edu.wpi.first.util.sendable.SendableRegistry;
+import edu.wpi.first.wpilibj.RobotController;
 import edu.wpi.first.wpilibj.Timer;
 import edu.wpi.first.wpilibj.drive.RobotDriveBase;
 import edu.wpi.first.wpilibj.motorcontrol.MotorController;
@@ -162,9 +163,22 @@ public class SwerveDrive extends RobotDriveBase implements Sendable, AutoCloseab
     SmartDashboard.putData(m_field);
     SmartDashboard.putData(m_pigeonIMU);
 
+    setVoltageCompensation();
     zeroModules(); // Set all modules to 0.
-
   }
+
+  /**
+   * Enable voltage compensation to the current battery voltage on all modules.
+   */
+  public void setVoltageCompensation()
+  {
+    double currentVoltage = RobotController.getBatteryVoltage();
+    m_frontLeft.setVoltageCompensation(currentVoltage);
+    m_frontRight.setVoltageCompensation(currentVoltage);
+    m_backLeft.setVoltageCompensation(currentVoltage);
+    m_backRight.setVoltageCompensation(currentVoltage);
+  }
+
 
   /**
    * Create swerve drive modules

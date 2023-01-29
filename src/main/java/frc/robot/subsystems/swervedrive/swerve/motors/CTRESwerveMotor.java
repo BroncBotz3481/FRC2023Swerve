@@ -88,7 +88,7 @@ public class CTRESwerveMotor extends SwerveMotor
         m_motor.configSelectedFeedbackSensor(FeedbackDevice.IntegratedSensor);
         m_motor.configIntegratedSensorInitializationStrategy(SensorInitializationStrategy.BootToZero);
         m_motor.configIntegratedSensorAbsoluteRange(AbsoluteSensorRange.Signed_PlusMinus180);
-        setEnocder(0);
+        setEncoder(0);
       }
 
       m_mainPIDSlotId = CTRE_slotIdx.Distance.ordinal();
@@ -248,7 +248,7 @@ public class CTRESwerveMotor extends SwerveMotor
    * @param value Value to set the encoder to.
    */
   @Override
-  public void setEnocder(double value)
+  public void setEncoder(double value)
   {
     m_motor.setSelectedSensorPosition(value, m_mainPidId, 100);
   }

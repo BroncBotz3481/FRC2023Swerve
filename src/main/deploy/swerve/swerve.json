@@ -14,12 +14,14 @@
   "Drive": {
     "Inverted": true,
     "GearRatio": 6.75,
-    "MaxPower": 0.6
+    "MaxPower": 0.6,
+    "CurrentLimit": 40
   },
   "Steer": {
-    "Inverted": true,
+    "Inverted": false,
     "GearRatio": 12.8,
-    "MaxPower": 0.4
+    "MaxPower": 0.4,
+    "CurrentLimit": 20
   },
   "Gyro": {
     "Inverted": false,

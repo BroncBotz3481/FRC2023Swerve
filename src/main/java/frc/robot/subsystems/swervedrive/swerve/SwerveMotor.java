@@ -161,7 +161,7 @@ public abstract class SwerveMotor
    *
    * @param value Value to set the encoder to.
    */
-  public abstract void setEnocder(double value);
+  public abstract void setEncoder(double value);
 
   /**
    * Check that the link is good on the swerve module and CAN bus is able to retrieve data.

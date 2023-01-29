@@ -235,7 +235,7 @@ public class SwerveModule<DriveMotorType extends MotorController, AngleMotorType
 
     if (!remoteIntegratedEncoder() && Robot.isReal())
     {
-      Robot.getInstance().addPeriodic(this::synchronizeSteeringEncoder, 0.02);
+      Robot.getInstance().addPeriodic(this::synchronizeSteeringEncoder, 0.5);
     }
 
     // Shuffleboard Data
@@ -273,11 +273,11 @@ public class SwerveModule<DriveMotorType extends MotorController, AngleMotorType
    */
   public void resetEncoders()
   {
-    driveMotor.setEnocder(0);
+    driveMotor.setEncoder(0);
 
     if (!remoteIntegratedEncoder())
     {
-      turningMotor.setEnocder(0);
+      turningMotor.setEncoder(0);
       synchronizeSteeringEncoder();
     }
   }
@@ -294,7 +294,7 @@ public class SwerveModule<DriveMotorType extends MotorController, AngleMotorType
         System.err.println("CANCoder magnetic field strength is unacceptable, will not synchronize encoders.");
         return;
       }
-      turningMotor.setEnocder(absoluteEncoder.getAbsolutePosition() - angleOffset);
+      turningMotor.setEncoder(absoluteEncoder.getAbsolutePosition() - angleOffset);
     }
   }
 
@@ -820,19 +820,11 @@ public class SwerveModule<DriveMotorType extends MotorController, AngleMotorType
    * Set the voltage compensation for the swerve module motor.
    *
    * @param nominalVoltage Nominal voltage for operation to output to.
-   * @param type           Swerve Module Motor to configure.
-   * @return Self for one line configuration.
    */
-  public SwerveModule setVoltageCompensation(double nominalVoltage, ModuleMotorType type)
+  public void setVoltageCompensation(double nominalVoltage)
   {
-    if (type == ModuleMotorType.DRIVE)
-    {
-      driveMotor.setVoltageCompensation(nominalVoltage);
-    } else
-    {
-      turningMotor.setVoltageCompensation(nominalVoltage);
-    }
-    return this;
+    driveMotor.setVoltageCompensation(nominalVoltage);
+    turningMotor.setVoltageCompensation(nominalVoltage);
   }
 
   //////////////////////////////////// END OF OVERRIDES SECTION ////////////////////////////////////////////

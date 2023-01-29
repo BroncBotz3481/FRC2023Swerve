@@ -117,7 +117,7 @@ public class REVSwerveMotor extends SwerveMotor
     setPIDOutputRange(-powerLimit, powerLimit);
     setVoltageCompensation(12);
 
-    setEnocder(0);
+    setEncoder(0);
 
     optimizeCANFrames();
 
@@ -298,7 +298,7 @@ public class REVSwerveMotor extends SwerveMotor
    * @param value Value to set the encoder to.
    */
   @Override
-  public void setEnocder(double value)
+  public void setEncoder(double value)
   {
     if (m_encoder instanceof RelativeEncoder)
     {

@@ -200,58 +200,65 @@ public class SwerveParser
                                                       mainJson.get("Steer").get("MaxPower").asDouble(),
                                                       mainJson.get("Steer").get("Inverted").asBoolean(),
                                                       mainJson.get("Drive").get("Inverted").asBoolean());
+
     if (moduleJson.get("Motor").get("Steer").has("PID"))
     {
-      if (moduleJson.get("Motor").get("Steer").get("PID").has("P") &&
-          moduleJson.get("Motor").get("Steer").get("PID").has("I") &&
-          moduleJson.get("Motor").get("Steer").get("PID").has("D") &&
-          moduleJson.get("Motor").get("Steer").get("PID").has("F") &&
-          moduleJson.get("Motor").get("Steer").get("PID").has("IntegralZone"))
-      {
-        module.turningMotor.setPIDF(moduleJson.get("Motor").get("Steer").get("PID").get("P").asDouble(),
-                                    moduleJson.get("Motor").get("Steer").get("PID").get("I").asDouble(),
-                                    moduleJson.get("Motor").get("Steer").get("PID").get("D").asDouble(),
-                                    moduleJson.get("Motor").get("Steer").get("PID").get("F").asDouble(),
-                                    moduleJson.get("Motor").get("Steer").get("PID").get("IntegralZone").asDouble());
-      }
-    }
-    if (moduleJson.get("Motor").get("Drive").has("PID"))
+      JsonNode jsonPIDF = moduleJson.get("Motor").get("Steer").get("PID");
+      setModulePIDF(module.turningMotor, jsonPIDF);
+    } else if (mainJson.get("Steer").has("PID"))
     {
-      if (moduleJson.get("Motor").get("Drive").get("PID").has("P") &&
-          moduleJson.get("Motor").get("Drive").get("PID").has("I") &&
-          moduleJson.get("Motor").get("Drive").get("PID").has("D") &&
-          moduleJson.get("Motor").get("Drive").get("PID").has("F") &&
-          moduleJson.get("Motor").get("Drive").get("PID").has("IntegralZone"))
-      {
-        module.driveMotor.setPIDF(moduleJson.get("Motor").get("Drive").get("PID").get("P").asDouble(),
-                                  moduleJson.get("Motor").get("Drive").get("PID").get("I").asDouble(),
-                                  moduleJson.get("Motor").get("Drive").get("PID").get("D").asDouble(),
-                                  moduleJson.get("Motor").get("Drive").get("PID").get("F").asDouble(),
-                                  moduleJson.get("Motor").get("Drive").get("PID").get("IntegralZone").asDouble());
-      }
+      JsonNode jsonPIDF = mainJson.get("Steer").get("PID");
+      setModulePIDF(module.turningMotor, jsonPIDF);
     }
 
-    if (moduleJson.get("Motor").get("Steer").has("VoltageCompensation"))
+    if (moduleJson.get("Motor").get("Drive").has("PID"))
     {
-      module.turningMotor.setVoltageCompensation(moduleJson.get("Motor").get("Steer").get("VoltageCompensation")
-                                                           .asDouble());
-    }
-    if (moduleJson.get("Motor").get("Drive").has("VoltageCompensation"))
+      JsonNode jsonPIDF = moduleJson.get("Motor").get("Drive").get("PID");
+      setModulePIDF(module.driveMotor, jsonPIDF);
+    } else if (mainJson.get("Steer").has("PID"))
     {
-      module.driveMotor.setVoltageCompensation(moduleJson.get("Motor").get("Drive").get("VoltageCompensation")
-                                                         .asDouble());
+      JsonNode jsonPIDF = mainJson.get("Drive").get("PID");
+      setModulePIDF(module.turningMotor, jsonPIDF);
     }
+
     if (moduleJson.get("Motor").get("Steer").has("CurrentLimit"))
     {
       module.turningMotor.setCurrentLimit(moduleJson.get("Motor").get("Steer").get("CurrentLimit")
                                                     .asInt());
+    } else if (mainJson.get("Steer").has("CurrentLimit"))
+    {
+      module.turningMotor.setCurrentLimit(mainJson.get("Steer").get("CurrentLimit").asInt());
     }
+
     if (moduleJson.get("Motor").get("Drive").has("CurrentLimit"))
     {
       module.driveMotor.setCurrentLimit(moduleJson.get("Motor").get("Drive").get("CurrentLimit")
                                                   .asInt());
+    } else if (mainJson.get("Drive").has("CurrentLimit"))
+    {
+      module.turningMotor.setCurrentLimit(mainJson.get("Drive").get("CurrentLimit").asInt());
     }
+
     return module;
+  }
+
+  /**
+   * Set the PIDF for the module if the given JSON has the paramters.
+   *
+   * @param motor    Motor to configure.
+   * @param jsonPIDF JSON ndoe with values.
+   */
+  private static void setModulePIDF(SwerveMotor motor, JsonNode jsonPIDF)
+  {
+    if (jsonPIDF.has("P") && jsonPIDF.has("I") && jsonPIDF.has("D") &&
+        jsonPIDF.has("F") && jsonPIDF.has("IntegralZone"))
+    {
+      motor.setPIDF(jsonPIDF.get("P").asDouble(),
+                    jsonPIDF.get("I").asDouble(),
+                    jsonPIDF.get("D").asDouble(),
+                    jsonPIDF.get("F").asDouble(),
+                    jsonPIDF.get("IntegralZone").asDouble());
+    }
   }
 
   /**
