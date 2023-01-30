@@ -318,6 +318,16 @@ public class SwerveDrive extends RobotDriveBase implements Sendable, AutoCloseab
     ChassisSpeeds node = fieldRelative ? ChassisSpeeds.fromFieldRelativeSpeeds(forward, strafe, radianPerSecond,
                                                                                getRotation())
                                        : new ChassisSpeeds(forward, strafe, radianPerSecond);
+    set(node);
+  }
+
+  /**
+   * Set the swerve drive module states.
+   *
+   * @param node Chassis speeds to set the swerve module too.
+   */
+  public void set(ChassisSpeeds node)
+  {
 
     // Taken from https://www.chiefdelphi.com/t/whitepaper-swerve-drive-skew-and-second-order-kinematics/416964/5?u=nstrike
     double timerDt = (m_driveTimer.get() - m_timerPrev);
@@ -348,7 +358,6 @@ public class SwerveDrive extends RobotDriveBase implements Sendable, AutoCloseab
     {
       System.err.println("Cannot update SwerveDrive Odometry!");
     }
-
   }
 
   /**
