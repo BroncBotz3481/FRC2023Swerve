@@ -20,7 +20,7 @@ public abstract class SwerveMotor
   /**
    * Target value for PID.
    */
-  public double target;
+  public double target = 0;
 
   /**
    * Constructor for Swerve Motor, expecting CANSparkMax or TalonFX. Clears sticky faults and restores factory

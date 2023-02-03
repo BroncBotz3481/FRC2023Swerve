@@ -10,6 +10,9 @@ import com.revrobotics.REVPhysicsSim;
 import com.revrobotics.RelativeEncoder;
 import com.revrobotics.SparkMaxPIDController;
 import com.revrobotics.SparkMaxPIDController.ArbFFUnits;
+import edu.wpi.first.math.MathUtil;
+import edu.wpi.first.math.controller.PIDController;
+import edu.wpi.first.wpilibj.Timer;
 import frc.robot.Robot;
 import frc.robot.subsystems.swervedrive.swerve.SwerveEncoder;
 import frc.robot.subsystems.swervedrive.swerve.SwerveMotor;
@@ -30,7 +33,12 @@ public class REVSwerveMotor extends SwerveMotor
   /**
    * kV feed forward for PID
    */
-  private final double m_moduleRadkV;
+  private final double        m_moduleRadkV;
+  private final Timer         m_timer;
+  private       PIDController m_drivePID;
+  private       double        m_position;
+  private       double        m_drivePIDMaxOutput, m_drivePIDMinOutput;
+  private double m_driveConversionFactorVelocity, m_driveConversionFactorPosition;
 
   /**
    * Constructor for REV Swerve Motor, expecting CANSparkMax. Clears sticky faults and restores factory defaults.
@@ -49,7 +57,9 @@ public class REVSwerveMotor extends SwerveMotor
                         double wheelDiameter, double freeSpeedRPM, double powerLimit)
   {
     m_integratedAbsEncoder = absoluteEncoder.m_encoder instanceof AbsoluteEncoder && type == ModuleMotorType.TURNING;
-
+    m_timer = new Timer();
+    m_timer.reset();
+    m_timer.start();
     // Inspired by the following sources
     // https://github.com/SwerveDriveSpecialties/swerve-lib-2022-unmaintained/blob/55f3f1ad9e6bd81e56779d022a40917aacf8d3b3/src/main/java/com/swervedrivespecialties/swervelib/rev/NeoDriveControllerFactoryBuilder.java#L38
     // https://github.com/first95/FRC2022/blob/1f57d6837e04d8c8a89f4d83d71b5d2172f41a0e/SwervyBot/src/main/java/frc/robot/SwerveModule.java#L68
@@ -137,6 +147,8 @@ public class REVSwerveMotor extends SwerveMotor
   @Override
   public void setPIDOutputRange(double min, double max)
   {
+    m_drivePIDMaxOutput = max;
+    m_drivePIDMinOutput = min;
     m_pid.setOutputRange(min, max, m_mainPidSlot);
     m_pid.setOutputRange(min, max, m_secondaryPidSlot);
   }
@@ -160,16 +172,23 @@ public class REVSwerveMotor extends SwerveMotor
   {
     // Example at
     // https://github.com/REVrobotics/SPARK-MAX-Examples/blob/master/Java/Velocity%20Closed%20Loop%20Control/src/main/java/frc/robot/Robot.java#L65-L71
-    kP = P;
-    kI = I;
-    kD = D;
-    kF = F;
-    kIZ = integralZone;
-    m_pid.setP(P, m_mainPidSlot);
-    m_pid.setI(I, m_mainPidSlot);
-    m_pid.setD(D, m_mainPidSlot);
-    m_pid.setFF(F, m_mainPidSlot);
-    m_pid.setIZone(integralZone, m_mainPidSlot);
+    if (m_motorType == ModuleMotorType.TURNING)
+    {
+      kP = P;
+      kI = I;
+      kD = D;
+      kF = F;
+      kIZ = integralZone;
+      m_pid.setP(P, m_mainPidSlot);
+      m_pid.setI(I, m_mainPidSlot);
+      m_pid.setD(D, m_mainPidSlot);
+      m_pid.setFF(F, m_mainPidSlot);
+      m_pid.setIZone(integralZone, m_mainPidSlot);
+    } else
+    {
+      m_drivePID = new PIDController(P, I, D);
+      m_drivePID.setIntegratorRange(-integralZone, integralZone);
+    }
     // m_pid.setOutputRange(-1, 1, m_mainPidSlot);
   }
 
@@ -195,9 +214,11 @@ public class REVSwerveMotor extends SwerveMotor
       }
     } else
     {
-      ((RelativeEncoder) m_encoder).setVelocityConversionFactor(conversionFactor);
-      ((RelativeEncoder) m_encoder).setPositionConversionFactor(
-          conversionFactor * 60 * (Robot.isReal() ? 1 : 42 * 60)); // RPS -> RPM sim
+      m_driveConversionFactorVelocity = conversionFactor;
+      m_driveConversionFactorPosition = conversionFactor * 60;// * (Robot.isReal() ? 1 : 42 * 60);
+//      ((RelativeEncoder) m_encoder).setVelocityConversionFactor(conversionFactor);
+//      ((RelativeEncoder) m_encoder).setPositionConversionFactor(
+//          conversionFactor * 60 * (Robot.isReal() ? 1 : 42 * 60)); // RPS -> RPM sim
       // SparkMaxSimProfile assumes the velocity is in RPM and multiplies it by 60, in our use case velocity is in RPS
       // The Sim profile also neglects to take into account that there are 42 ticks per rotation.
     }
@@ -212,8 +233,21 @@ public class REVSwerveMotor extends SwerveMotor
   @Override
   public void setTarget(double target, double feedforward)
   {
+    m_position += m_timer.get() * target;
+    m_timer.reset();
+    m_timer.start();
     this.target = target;
-    m_pid.setReference(target, m_pidControlType, m_mainPidSlot, feedforward * m_moduleRadkV, m_feedforwardUnits);
+    if (m_motorType == ModuleMotorType.TURNING)
+    {
+      m_pid.setReference(target, m_pidControlType, m_mainPidSlot, feedforward * m_moduleRadkV, m_feedforwardUnits);
+    } else
+    {
+      set(MathUtil.clamp(m_drivePID.calculate(get(), target), m_drivePIDMinOutput, m_drivePIDMaxOutput));
+      if (!Robot.isReal())
+      {
+        setEncoder(m_position / m_driveConversionFactorPosition);
+      }
+    }
   }
 
   /**
@@ -255,7 +289,7 @@ public class REVSwerveMotor extends SwerveMotor
   @Override
   public double get()
   {
-    return m_encoderRet.get();
+    return m_encoderRet.get() * (m_motorType == ModuleMotorType.TURNING ? 1 : m_driveConversionFactorVelocity);
   }
 
   /**
@@ -277,7 +311,8 @@ public class REVSwerveMotor extends SwerveMotor
   @Override
   public double getPosition()
   {
-    return m_encoderPosRet.get();
+    return m_motorType == ModuleMotorType.TURNING ? m_encoderPosRet.get()
+                                                  : m_encoderPosRet.get() * m_driveConversionFactorPosition;
   }
 
   /**
