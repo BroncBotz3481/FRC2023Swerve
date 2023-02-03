@@ -126,40 +126,40 @@ public final class Constants {
         
         public static final int NUM_MODULES = 4;
             // Module specific constants
-        public static final class Mod0 {
-            public static final int DRIVE_MOTOR_ID = 3;
-            public static final int ANGLE_MOTOR_ID = 2;
+        public static final class Mod0 { //Front Left
+            public static final int DRIVE_MOTOR_ID = 4;
+            public static final int ANGLE_MOTOR_ID = 3;
+            public static final int CANCODER_ID = 9;
+            public static final double ANGLE_OFFSET = 105.03; //TODO Set Angle Offset
+            public static final SwerveModuleConstants CONSTANTS =
+                new SwerveModuleConstants(DRIVE_MOTOR_ID, ANGLE_MOTOR_ID, CANCODER_ID, ANGLE_OFFSET);
+        }
+        public static final class Mod1 { //Front Right
+            public static final int DRIVE_MOTOR_ID = 2;
+            public static final int ANGLE_MOTOR_ID = 1;
             public static final int CANCODER_ID = 10;
-            public static final double ANGLE_OFFSET = 105.03;
+            public static final double ANGLE_OFFSET = 334.95; //TODO Set Angle Offset
             public static final SwerveModuleConstants CONSTANTS =
                 new SwerveModuleConstants(DRIVE_MOTOR_ID, ANGLE_MOTOR_ID, CANCODER_ID, ANGLE_OFFSET);
         }
-        public static final class Mod1 {
-            public static final int DRIVE_MOTOR_ID = 5;
-            public static final int ANGLE_MOTOR_ID = 4;
-            public static final int CANCODER_ID = 11;
-            public static final double ANGLE_OFFSET = 334.95;
-            public static final SwerveModuleConstants CONSTANTS =
-                new SwerveModuleConstants(DRIVE_MOTOR_ID, ANGLE_MOTOR_ID, CANCODER_ID, ANGLE_OFFSET);
-        }
-        public static final class Mod2 {
+        public static final class Mod2 { //Back Left
             public static final int DRIVE_MOTOR_ID = 7;
-            public static final int ANGLE_MOTOR_ID = 6;
+            public static final int ANGLE_MOTOR_ID = 8;
             public static final int CANCODER_ID = 12;
-            public static final double ANGLE_OFFSET = 34.10;
+            public static final double ANGLE_OFFSET = 34.10; //TODO Set Angle Offset
             public static final SwerveModuleConstants CONSTANTS =
                 new SwerveModuleConstants(DRIVE_MOTOR_ID, ANGLE_MOTOR_ID, CANCODER_ID, ANGLE_OFFSET);
         }
-        public static final class Mod3 {
-            public static final int DRIVE_MOTOR_ID = 9;
-            public static final int ANGLE_MOTOR_ID = 8;
-            public static final int CANCODER_ID = 13;
-            public static final double ANGLE_OFFSET = 306.47;
+        public static final class Mod3 { //Back Right
+            public static final int DRIVE_MOTOR_ID = 5;
+            public static final int ANGLE_MOTOR_ID = 6;
+            public static final int CANCODER_ID = 11;
+            public static final double ANGLE_OFFSET = 306.47; //TODO Set Angle Offset
             public static final SwerveModuleConstants CONSTANTS =
                 new SwerveModuleConstants(DRIVE_MOTOR_ID, ANGLE_MOTOR_ID, CANCODER_ID, ANGLE_OFFSET);
         }
 
-        public static final int PIGEON = 14;
+        public static final int PIGEON = 13;
     }
 
     public class OperatorConstants {
