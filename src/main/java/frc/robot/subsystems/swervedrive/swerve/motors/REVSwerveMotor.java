@@ -187,7 +187,7 @@ public class REVSwerveMotor extends SwerveMotor
     } else
     {
       m_drivePID = new PIDController(P, I, D);
-      m_drivePID.setIntegratorRange(-integralZone, integralZone);
+//      m_drivePID.setIntegratorRange(-integralZone, integralZone);
     }
     // m_pid.setOutputRange(-1, 1, m_mainPidSlot);
   }
@@ -240,9 +240,12 @@ public class REVSwerveMotor extends SwerveMotor
     if (m_motorType == ModuleMotorType.TURNING)
     {
       m_pid.setReference(target, m_pidControlType, m_mainPidSlot, feedforward * m_moduleRadkV, m_feedforwardUnits);
+      setEncoder(target);
     } else
     {
-      set(MathUtil.clamp(m_drivePID.calculate(get(), target), m_drivePIDMinOutput, m_drivePIDMaxOutput));
+      double output = m_drivePID.calculate(get(), target) + feedforward;
+      System.out.println(output);
+      set(MathUtil.clamp(output, m_drivePIDMinOutput, m_drivePIDMaxOutput));
       if (!Robot.isReal())
       {
         setEncoder(m_position / m_driveConversionFactorPosition);
