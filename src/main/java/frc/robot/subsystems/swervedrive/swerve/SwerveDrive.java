@@ -280,7 +280,14 @@ public class SwerveDrive extends RobotDriveBase implements Sendable, AutoCloseab
     if (!Robot.isReal())
     {
       m_pigeonIMU.setYaw(pos.getRotation().getDegrees());
+      m_field.getObject("XModules").setPoses(
+          new Pose2d(m_frontLeft.swerveModuleLocation.plus(pos.getTranslation()), m_frontLeft.getPosition().angle),
+          new Pose2d(m_frontRight.swerveModuleLocation.plus(pos.getTranslation()), m_frontRight.getPosition().angle),
+          new Pose2d(m_backLeft.swerveModuleLocation.plus(pos.getTranslation()), m_backLeft.getPosition().angle),
+          new Pose2d(m_backRight.swerveModuleLocation.plus(pos.getTranslation()), m_backRight.getPosition().angle));
     }
+    m_field.setRobotPose(pos);
+
     return m_swervePoseEstimator;
   }
 
@@ -376,7 +383,6 @@ public class SwerveDrive extends RobotDriveBase implements Sendable, AutoCloseab
         m_angle += updated_chassis_speeds.omegaRadiansPerSecond * 0.02;
       }
       this.update();
-      m_field.setRobotPose(m_swervePoseEstimator.getEstimatedPosition());
     } catch (Exception e)
     {
       System.err.println("Cannot update SwerveDrive Odometry!");

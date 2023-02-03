@@ -46,6 +46,44 @@
     },
     "windows": {
       "/SmartDashboard/Field": {
+        "BackLeft": {
+          "arrowColor": [
+            0.07963143289089203,
+            0.055603597313165665,
+            0.8725489974021912,
+            255.0
+          ],
+          "arrowSize": 33,
+          "arrowWeight": 2.0,
+          "style": "Hidden",
+          "weight": 0.0
+        },
+        "Modules": {
+          "arrowColor": [
+            0.0,
+            0.14705896377563477,
+            1.0,
+            255.0
+          ],
+          "arrowSize": 25,
+          "arrowWeight": 2.0,
+          "style": "Hidden"
+        },
+        "Robot": {
+          "arrowSize": 42,
+          "style": "Box/Image"
+        },
+        "XModules": {
+          "arrowColor": [
+            0.0,
+            0.11764693260192871,
+            1.0,
+            255.0
+          ],
+          "arrowSize": 31,
+          "arrowWeight": 3.0,
+          "style": "Hidden"
+        },
         "window": {
           "visible": true
         }
