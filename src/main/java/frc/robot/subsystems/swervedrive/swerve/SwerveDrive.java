@@ -7,6 +7,7 @@ import edu.wpi.first.math.estimator.SwerveDrivePoseEstimator;
 import edu.wpi.first.math.filter.SlewRateLimiter;
 import edu.wpi.first.math.geometry.Pose2d;
 import edu.wpi.first.math.geometry.Rotation2d;
+import edu.wpi.first.math.geometry.Transform2d;
 import edu.wpi.first.math.geometry.Twist2d;
 import edu.wpi.first.math.kinematics.ChassisSpeeds;
 import edu.wpi.first.math.kinematics.SwerveModulePosition;
@@ -281,10 +282,10 @@ public class SwerveDrive extends RobotDriveBase implements Sendable, AutoCloseab
     {
       m_pigeonIMU.setYaw(pos.getRotation().getDegrees());
       m_field.getObject("XModules").setPoses(
-          new Pose2d(m_frontLeft.swerveModuleLocation.plus(pos.getTranslation()), m_frontLeft.getPosition().angle),
-          new Pose2d(m_frontRight.swerveModuleLocation.plus(pos.getTranslation()), m_frontRight.getPosition().angle),
-          new Pose2d(m_backLeft.swerveModuleLocation.plus(pos.getTranslation()), m_backLeft.getPosition().angle),
-          new Pose2d(m_backRight.swerveModuleLocation.plus(pos.getTranslation()), m_backRight.getPosition().angle));
+          pos.plus(new Transform2d(m_frontLeft.swerveModuleLocation, m_frontLeft.getPosition().angle)),
+          pos.plus(new Transform2d(m_frontRight.swerveModuleLocation, m_frontRight.getPosition().angle)),
+          pos.plus(new Transform2d(m_backLeft.swerveModuleLocation, m_backLeft.getPosition().angle)),
+          pos.plus(new Transform2d(m_backRight.swerveModuleLocation, m_backRight.getPosition().angle)));
     }
     m_field.setRobotPose(pos);
 
