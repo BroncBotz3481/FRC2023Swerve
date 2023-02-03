@@ -320,7 +320,6 @@ public class SwerveDrive extends RobotDriveBase implements Sendable, AutoCloseab
     strafe = applyDeadband(strafe, true);
     turn = applyDeadband(turn, true);
 
-
     // 3. Make the driving smoother
     forward = m_xLimiter.calculate(forward) * m_driverMaxSpeedMPS;
     strafe = m_yLimiter.calculate(strafe) * m_driverMaxSpeedMPS;
