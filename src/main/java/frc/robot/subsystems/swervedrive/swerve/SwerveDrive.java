@@ -61,7 +61,8 @@ public class SwerveDrive extends RobotDriveBase implements Sendable, AutoCloseab
   /**
    * Maximum speed in meters per second.
    */
-  public final double                m_driverMaxSpeedMPS, m_driverMaxAngularVelocity, m_physicalMaxSpeedMPS, m_driveAccellerationMetersPerSecondSquared;
+  public final double                m_driverMaxSpeedMPS, m_driverMaxAngularVelocity, m_physicalMaxSpeedMPS,
+      m_driveAccellerationMetersPerSecondSquared;
   /**
    * Swerve drive pose estimator for attempting to figure out our current position.
    */
@@ -284,6 +285,19 @@ public class SwerveDrive extends RobotDriveBase implements Sendable, AutoCloseab
   }
 
   /**
+   * Algebraically apply a deadband using a piece wise function.
+   *
+   * @param value   value to apply deadband to.
+   * @param complex Use algebra to determine deadband by starting the value at 0 past deadband.
+   * @return Value with deadband applied.
+   */
+  private double applyDeadband(double value, boolean complex)
+  {
+    value = Math.abs(value) > m_deadband ? value : 0;
+    return complex ? ((1 / (1 - m_deadband)) * (Math.abs(value) - .2)) * Math.signum(value) : value;
+  }
+
+  /**
    * Drive swerve based off controller input.
    *
    * @param forward       The speed (-1 to 1) in which the Y axis should go.
@@ -294,9 +308,9 @@ public class SwerveDrive extends RobotDriveBase implements Sendable, AutoCloseab
   public void drive(double forward, double strafe, double turn, boolean fieldRelative)
   {
     // 2. Apply deadband/Dead-Zone
-    forward = Math.abs(forward) > m_deadband ? forward : 0.0;
-    strafe = Math.abs(strafe) > m_deadband ? strafe : 0.0;
-    turn = Math.abs(turn) > m_deadband ? turn : 0.0;
+    forward = applyDeadband(forward, true);
+    strafe = applyDeadband(strafe, true);
+    turn = applyDeadband(turn, false);
 
     // If nothing is asked of us we do nothing.
     if ((Math.abs(forward) + Math.abs(strafe) + Math.abs(turn)) <= m_deadband)
