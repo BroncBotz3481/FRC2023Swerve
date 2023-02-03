@@ -318,14 +318,8 @@ public class SwerveDrive extends RobotDriveBase implements Sendable, AutoCloseab
     // 2. Apply deadband/Dead-Zone
     forward = applyDeadband(forward, true);
     strafe = applyDeadband(strafe, true);
-    turn = applyDeadband(turn, false);
+    turn = applyDeadband(turn, true);
 
-    // If nothing is asked of us we do nothing.
-    if ((Math.abs(forward) + Math.abs(strafe) + Math.abs(turn)) <= m_deadband)
-    {
-      zeroModules();
-      return;
-    }
 
     // 3. Make the driving smoother
     forward = m_xLimiter.calculate(forward) * m_driverMaxSpeedMPS;
