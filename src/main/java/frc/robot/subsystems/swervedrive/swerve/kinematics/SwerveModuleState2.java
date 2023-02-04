@@ -54,6 +54,35 @@ public class SwerveModuleState2 extends edu.wpi.first.math.kinematics.SwerveModu
   }
 
   /**
+   * Get the quadrant of the unit circle in which the angle resides.
+   *
+   * @param angle Angle
+   * @return Quadrant
+   */
+  public static int getQuadrant(double angle)
+  {
+//    double angleDeg = angle.getDegrees() % 360;
+    while (angle < 0)
+    {
+      angle += 180;
+    }
+    if (angle >= 0 && angle <= 90)
+    {
+      return 1;
+    } else if (angle > 90 && angle < 180)
+    {
+      return 2;
+    } else if (angle >= 180 && angle < 270)
+    {
+      return 3;
+    } else if (angle > 270)
+    {
+      return 4;
+    }
+    throw new RuntimeException("QUADRANT DOESNT EXIST! " + angle);
+  }
+
+  /**
    * Minimize the change in heading the desired swerve module state would require by potentially reversing the direction
    * the wheel spins. Customized from WPILib's version to include placing in appropriate scope for CTRE and REV onboard
    * control as both controllers as of writing don't have support for continuous input.
@@ -65,15 +94,18 @@ public class SwerveModuleState2 extends edu.wpi.first.math.kinematics.SwerveModu
       SwerveModuleState2 desiredState, Rotation2d currentAngle)
   {
     SwerveModuleState2 state;
-    Rotation2d         delta = desiredState.angle.minus(currentAngle);
+
+    Rotation2d delta = desiredState.angle.minus(currentAngle);
     if (Math.abs(delta.getDegrees()) > 90.0)
     {
       state = new SwerveModuleState2(
           -desiredState.speedMetersPerSecond,
-          desiredState.angle.rotateBy(Rotation2d.fromDegrees(180.0)));
+          desiredState.angle.rotateBy(Rotation2d.fromDegrees(180.0)),
+          desiredState.angularVelocityRadPerSecond);
     } else
     {
-      state = new SwerveModuleState2(desiredState.speedMetersPerSecond, desiredState.angle);
+      state = new SwerveModuleState2(desiredState.speedMetersPerSecond, desiredState.angle,
+                                     desiredState.angularVelocityRadPerSecond);
     }
     // state.angle = Rotation2d.fromDegrees(
     //     placeInAppropriate0To360Scope(currentAngle.getDegrees(), state.angle.getDegrees()));

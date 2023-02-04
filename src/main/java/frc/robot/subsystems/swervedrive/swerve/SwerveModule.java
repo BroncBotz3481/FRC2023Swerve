@@ -207,7 +207,7 @@ public class SwerveModule<DriveMotorType extends MotorController, AngleMotorType
     //        public static final double KA = 12 / MAX_ACCELERATION; // Volt-seconds^2 per meter (max voltage divided
     //        by max accel)
     maxDriveSpeedMPS = maxSpeedMPS;
-    driveFeedforward = new SimpleMotorFeedforward(0, 12 / maxDriveSpeedMPS, 12 / maxDriveAcceleration);
+    driveFeedforward = new SimpleMotorFeedforward(0, (12 / maxDriveSpeedMPS) * .5, (12 / maxDriveAcceleration) * .5);
     steeringKV = (12 * 60) / (steeringMotorFreeSpeedRPM * Math.toRadians(360 / steerGearRatio));
 
     driveMotor.setInverted(drivingInverted);
@@ -394,7 +394,7 @@ public class SwerveModule<DriveMotorType extends MotorController, AngleMotorType
    */
   public void setAngle(double angle, double feedforward)
   {
-    turningMotor.setTarget(Math.round(angle) % 180, feedforward);
+    turningMotor.setTarget(angle, feedforward);
   }
 
   /**
@@ -456,6 +456,14 @@ public class SwerveModule<DriveMotorType extends MotorController, AngleMotorType
     // to 180 we want 0 to
     // 360.
     double velocity = optimizedState.speedMetersPerSecond;
+//    int quad = SwerveModuleState2.getQuadrant(angle);
+//    if(quad == 3 || quad == 2)
+//    {
+//      angle -= 180;
+//      angle = angle % 180;
+//    }
+//    System.out.println(quad);
+
     // turn motor code
     // Prevent rotating module if speed is less then 1%. Prevents Jittering.
     angle = (Math.abs(optimizedState.speedMetersPerSecond) <= (maxDriveSpeedMPS * 0.01)) ? targetAngle : angle;

@@ -12,6 +12,7 @@ import com.revrobotics.SparkMaxPIDController;
 import com.revrobotics.SparkMaxPIDController.ArbFFUnits;
 import edu.wpi.first.math.MathUtil;
 import edu.wpi.first.math.controller.PIDController;
+import edu.wpi.first.math.system.plant.DCMotor;
 import edu.wpi.first.wpilibj.Timer;
 import frc.robot.Robot;
 import frc.robot.subsystems.swervedrive.swerve.SwerveEncoder;
@@ -35,6 +36,7 @@ public class REVSwerveMotor extends SwerveMotor
    */
   private final double        m_moduleRadkV;
   private final Timer         m_timer;
+  private       DCMotor       m_simMotor;
   private       PIDController m_drivePID;
   private       double        m_position;
   private       double        m_drivePIDMaxOutput, m_drivePIDMinOutput;
@@ -134,7 +136,8 @@ public class REVSwerveMotor extends SwerveMotor
     m_motor.setCANTimeout(0); // Spin off configurations in a different thread.
     if (!Robot.isReal())
     {
-      REVPhysicsSim.getInstance().addSparkMax(m_motor, 2.6f, 5676);
+      m_simMotor = DCMotor.getNEO(1).withReduction(1 / gearRatio);
+      REVPhysicsSim.getInstance().addSparkMax(m_motor, m_simMotor);
     }
   }
 

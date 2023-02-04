@@ -321,9 +321,9 @@ public class SwerveDrive extends RobotDriveBase implements Sendable, AutoCloseab
     turn = applyDeadband(turn, true);
 
     // 3. Make the driving smoother
-    forward = m_xLimiter.calculate(forward) * m_driverMaxSpeedMPS;
-    strafe = m_yLimiter.calculate(strafe) * m_driverMaxSpeedMPS;
-    turn = m_turningLimiter.calculate(turn) * m_driverMaxAngularVelocity;
+    forward *= m_driverMaxSpeedMPS;
+    strafe *= m_driverMaxSpeedMPS;
+    turn *= m_driverMaxAngularVelocity;
 
     set(forward, strafe, turn, fieldRelative);
   }
@@ -342,6 +342,11 @@ public class SwerveDrive extends RobotDriveBase implements Sendable, AutoCloseab
     ChassisSpeeds node = fieldRelative ? ChassisSpeeds.fromFieldRelativeSpeeds(forward, strafe, radianPerSecond,
                                                                                getRotation())
                                        : new ChassisSpeeds(forward, strafe, radianPerSecond);
+
+//    node.vxMetersPerSecond = m_xLimiter.calculate(node.vxMetersPerSecond);
+//    node.vyMetersPerSecond = m_yLimiter.calculate(node.vyMetersPerSecond);
+//    node.omegaRadiansPerSecond = m_turningLimiter.calculate(node.omegaRadiansPerSecond);
+
     set(node);
   }
 

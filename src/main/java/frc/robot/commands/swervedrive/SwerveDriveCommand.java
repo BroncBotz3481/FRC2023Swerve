@@ -32,8 +32,8 @@ public class SwerveDriveCommand extends CommandBase
   public void execute()
   {
     // 1. Get real-time joystick inputs
-    double strafe       = strafeSpdFunction.get();
-    double forward      = forwardSpdFunction.get();
+    double strafe       = -strafeSpdFunction.get();
+    double forward      = -forwardSpdFunction.get();
     double turningSpeed = turningSpdFunction.get();
 
     swerveSubsystem.drive(forward, strafe, turningSpeed, !fieldOrientedFunction.get());
