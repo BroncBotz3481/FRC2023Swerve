@@ -3,13 +3,13 @@
   "TrackWidth": 23.75,
   "WheelDiameter": 4,
   "Speed": {
-    "MetersPerSecond": 1.25,
-    "PhysicalMetersPerSecond": 5,
-    "RadianPerSecond": 1
+    "MetersPerSecond": 2,
+    "PhysicalMetersPerSecond": 2,
+    "RadianPerSecond": 3.14
   },
   "Acceleration": {
-    "MetersPerSecond": 1,
-    "RadianPerSecond": 1
+    "MetersPerSecond": 2,
+    "RadianPerSecond": 1.07
   },
   "Drive": {
     "Inverted": true,
