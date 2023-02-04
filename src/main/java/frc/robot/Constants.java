@@ -130,7 +130,7 @@ public final class Constants {
             public static final int DRIVE_MOTOR_ID = 4;
             public static final int ANGLE_MOTOR_ID = 3;
             public static final int CANCODER_ID = 9;
-            public static final double ANGLE_OFFSET = 105.03; //TODO Set Angle Offset
+            public static final double ANGLE_OFFSET = -114.609; //TODO Set Angle Offset
             public static final SwerveModuleConstants CONSTANTS =
                 new SwerveModuleConstants(DRIVE_MOTOR_ID, ANGLE_MOTOR_ID, CANCODER_ID, ANGLE_OFFSET);
         }
@@ -138,7 +138,7 @@ public final class Constants {
             public static final int DRIVE_MOTOR_ID = 2;
             public static final int ANGLE_MOTOR_ID = 1;
             public static final int CANCODER_ID = 10;
-            public static final double ANGLE_OFFSET = 334.95; //TODO Set Angle Offset
+            public static final double ANGLE_OFFSET = -50.977; //TODO Set Angle Offset
             public static final SwerveModuleConstants CONSTANTS =
                 new SwerveModuleConstants(DRIVE_MOTOR_ID, ANGLE_MOTOR_ID, CANCODER_ID, ANGLE_OFFSET);
         }
@@ -146,7 +146,7 @@ public final class Constants {
             public static final int DRIVE_MOTOR_ID = 7;
             public static final int ANGLE_MOTOR_ID = 8;
             public static final int CANCODER_ID = 12;
-            public static final double ANGLE_OFFSET = 34.10; //TODO Set Angle Offset
+            public static final double ANGLE_OFFSET = 6.504; //TODO Set Angle Offset
             public static final SwerveModuleConstants CONSTANTS =
                 new SwerveModuleConstants(DRIVE_MOTOR_ID, ANGLE_MOTOR_ID, CANCODER_ID, ANGLE_OFFSET);
         }
@@ -154,7 +154,7 @@ public final class Constants {
             public static final int DRIVE_MOTOR_ID = 5;
             public static final int ANGLE_MOTOR_ID = 6;
             public static final int CANCODER_ID = 11;
-            public static final double ANGLE_OFFSET = 306.47; //TODO Set Angle Offset
+            public static final double ANGLE_OFFSET = -18.281; //TODO Set Angle Offset
             public static final SwerveModuleConstants CONSTANTS =
                 new SwerveModuleConstants(DRIVE_MOTOR_ID, ANGLE_MOTOR_ID, CANCODER_ID, ANGLE_OFFSET);
         }
