@@ -4,7 +4,7 @@
 
 package frc.robot.subsystems;
 
-import com.ctre.phoenix.sensors.PigeonIMU;
+import com.ctre.phoenix.sensors.WPI_Pigeon2;
 
 import edu.wpi.first.math.geometry.Pose2d;
 import edu.wpi.first.math.geometry.Rotation2d;
@@ -25,7 +25,7 @@ import frc.robot.Constants.Drivebase;
 public class SwerveBase extends SubsystemBase {
 
   private SwerveModule[] swerveModules;
-  private PigeonIMU imu;
+  private WPI_Pigeon2 imu;
   
   private SwerveDriveOdometry odometry;
   public Field2d field = new Field2d();
@@ -51,7 +51,7 @@ public class SwerveBase extends SubsystemBase {
       timer.start();
       lasttime = 0;
     } else {
-      imu = new PigeonIMU(Drivebase.PIGEON);
+      imu = new WPI_Pigeon2(Drivebase.PIGEON, "canivore");
       imu.configFactoryDefault();
     }
 
