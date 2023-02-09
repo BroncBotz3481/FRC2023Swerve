@@ -61,12 +61,12 @@ public class RobotContainer {
       () -> -rotationController.getX(),
       () -> -rotationController.getY(), false);
 
-    TeleopDrive openRobotRel = new TeleopDrive(
-      drivebase,
-      () -> (Math.abs(driverController.getY()) > OperatorConstants.LEFT_Y_DEADBAND) ? -driverController.getY() : 0,
-      () -> (Math.abs(driverController.getX()) > OperatorConstants.LEFT_X_DEADBAND) ? -driverController.getX() : 0,
-      () -> -driverController.getTwist(), () -> false, true);
-    
+      TeleopDrive openRobotRel = new TeleopDrive(
+        drivebase,
+        () -> (Math.abs(driverController.getY()) > OperatorConstants.LEFT_Y_DEADBAND) ? -driverController.getY() : 0,
+        () -> (Math.abs(driverController.getX()) > OperatorConstants.LEFT_X_DEADBAND) ? -driverController.getX() : 0,
+        () -> -driverController.getRawAxis(3), () -> false, true);
+
     TeleopDrive closedRobotRel = new TeleopDrive(
       drivebase,
       () -> (Math.abs(driverController.getY()) > OperatorConstants.LEFT_Y_DEADBAND) ? -driverController.getY() : 0,
@@ -77,7 +77,7 @@ public class RobotContainer {
       drivebase,
       () -> (Math.abs(driverController.getY()) > OperatorConstants.LEFT_Y_DEADBAND) ? -driverController.getY() : 0,
       () -> (Math.abs(driverController.getX()) > OperatorConstants.LEFT_X_DEADBAND) ? -driverController.getX() : 0,
-      () -> -driverController.getTwist(), () -> true, true);
+      () -> -driverController.getRawAxis(3), () -> true, true);
 
     TeleopDrive closedFieldRel = new TeleopDrive(
       drivebase,
