@@ -4,6 +4,23 @@
       "/FMSInfo": "FMSInfo",
       "/SmartDashboard/Field": "Field2d",
       "/SmartDashboard/SendableChooser[0]": "String Chooser"
+    },
+    "windows": {
+      "/SmartDashboard/Field": {
+        "XModules": {
+          "arrowColor": [
+            0.0,
+            0.23529410362243652,
+            1.0,
+            255.0
+          ],
+          "arrowSize": 25,
+          "style": "Hidden"
+        },
+        "window": {
+          "visible": true
+        }
+      }
     }
   },
   "NetworkTables": {

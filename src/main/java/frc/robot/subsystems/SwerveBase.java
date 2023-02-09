@@ -5,9 +5,9 @@
 package frc.robot.subsystems;
 
 import com.ctre.phoenix.sensors.PigeonIMU;
-
 import edu.wpi.first.math.geometry.Pose2d;
 import edu.wpi.first.math.geometry.Rotation2d;
+import edu.wpi.first.math.geometry.Transform2d;
 import edu.wpi.first.math.geometry.Translation2d;
 import edu.wpi.first.math.kinematics.ChassisSpeeds;
 import edu.wpi.first.math.kinematics.SwerveDriveOdometry;
@@ -18,17 +18,19 @@ import edu.wpi.first.wpilibj.smartdashboard.SmartDashboard;
 import edu.wpi.first.wpilibj2.command.SubsystemBase;
 import frc.lib.util.BetterSwerveKinematics;
 import frc.lib.util.BetterSwerveModuleState;
+import frc.robot.Constants.Drivebase;
 import frc.robot.Robot;
 import frc.robot.SwerveModule;
-import frc.robot.Constants.Drivebase;
+import java.util.ArrayList;
+import java.util.List;
 
 public class SwerveBase extends SubsystemBase {
 
-  private SwerveModule[] swerveModules;
-  private PigeonIMU imu;
+  private final SwerveModule[] swerveModules;
+  private       PigeonIMU      imu;
   
-  private SwerveDriveOdometry odometry;
-  public Field2d field = new Field2d();
+  private final SwerveDriveOdometry odometry;
+  public        Field2d             field = new Field2d();
 
   private double angle, lasttime;
 
@@ -260,29 +262,53 @@ public class SwerveBase extends SubsystemBase {
   /**
    * Point all modules toward the robot center, thus making the robot very difficult to move.
    */
-  public void setDriveBrake() {
-    for (SwerveModule swerveModule : swerveModules) {
+  public void setDriveBrake()
+  {
+    for (SwerveModule swerveModule : swerveModules)
+    {
       swerveModule.setDesiredState(
-        new BetterSwerveModuleState(
-          0,
-          Drivebase.MODULE_LOCATIONS[swerveModule.moduleNumber].getAngle(),
-          0),
-        true);
+          new BetterSwerveModuleState(
+              0,
+              Drivebase.MODULE_LOCATIONS[swerveModule.moduleNumber].getAngle(),
+              0),
+          true);
     }
   }
 
+  /**
+   * Get the swerve module poses and on the field relative to the robot.
+   *
+   * @param robotPose Robot pose.
+   * @return Swerve module poses.
+   */
+  public Pose2d[] getSwerveModulePoses(Pose2d robotPose)
+  {
+    Pose2d[]     poseArr = new Pose2d[Drivebase.NUM_MODULES];
+    List<Pose2d> poses   = new ArrayList<>();
+    for (SwerveModule module : swerveModules)
+    {
+      poses.add(robotPose.plus(new Transform2d(Drivebase.MODULE_LOCATIONS[module.moduleNumber],
+                                               module.getState().angle)));
+    }
+    return poses.toArray(poseArr);
+  }
+
+
   @Override
-  public void periodic() {
+  public void periodic()
+  {
     // Update odometry
     odometry.update(getYaw(), getModulePositions());
 
     // Update angle accumulator if the robot is simulated
-    if (!Robot.isReal()) {
+    if (!Robot.isReal())
+    {
       angle += Drivebase.KINEMATICS.toChassisSpeeds(getStates()).omegaRadiansPerSecond * (timer.get() - lasttime);
       lasttime = timer.get();
     }
 
     field.setRobotPose(odometry.getPoseMeters());
+    field.getObject("XModules").setPoses(getSwerveModulePoses(odometry.getPoseMeters()));
     SmartDashboard.putData("Field", field);
 
     double[] moduleStates = new double[8];
