@@ -1,9 +1,7 @@
-# FRC2023Swerve
+# Yet Another Generic Swerve Library (YAGSL) Example project
+YAGSL is intended to be an easy implementation of a generic swerve drive that should work for most square swerve drives. The project is documented on [here](https://github.com/BroncBotz3481/YAGSL/wiki).
 
-Swerve Drive test for all NEO SDS MK4
-Dylan Watson is the GOAT
+This example is intended to be a starting place on how to use YAGSL. By no means is this intended to be the base of your robot project. YAGSL provides an easy way to generate a SwerveDrive which can be used in both TimedRobot and Command-Based Robot templates. 
 
-# Swerve Drive is based off 0 to Autonomous code
-
-https://github.com/SeanSun6814/FRC0ToAutonomous/tree/master/%236%20Swerve%20Drive%20Auto  
-https://www.youtube.com/watch?v=0Xi9yb1IMyA
+# Create an issue if there is any errors you find!
+We will be actively montoring this and fix any issues when we can!

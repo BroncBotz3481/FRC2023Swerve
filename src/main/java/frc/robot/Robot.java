@@ -4,11 +4,15 @@
 
 package frc.robot;
 
-import com.revrobotics.REVPhysicsSim;
+import com.pathplanner.lib.server.PathPlannerServer;
+import edu.wpi.first.wpilibj.Filesystem;
 import edu.wpi.first.wpilibj.TimedRobot;
-import edu.wpi.first.wpilibj.smartdashboard.SmartDashboard;
+import edu.wpi.first.wpilibj.Timer;
 import edu.wpi.first.wpilibj2.command.Command;
 import edu.wpi.first.wpilibj2.command.CommandScheduler;
+import frc.robot.subsystems.swervedrive2.swervelib.parser.SwerveParser;
+import java.io.File;
+import java.io.IOException;
 
 /**
  * The VM is configured to automatically run this class, and to call the functions corresponding to each mode, as
@@ -18,10 +22,22 @@ import edu.wpi.first.wpilibj2.command.CommandScheduler;
 public class Robot extends TimedRobot
 {
 
-  private Command m_autonomousCommand;
+  private static Robot   instance;
+  private        Command m_autonomousCommand;
 
   private RobotContainer m_robotContainer;
 
+  private Timer disabledTimer;
+
+  public Robot()
+  {
+    instance = this;
+  }
+
+  public static Robot getInstance()
+  {
+    return instance;
+  }
 
   /**
    * This function is run when the robot is first started up and should be used for any initialization code.
@@ -29,14 +45,19 @@ public class Robot extends TimedRobot
   @Override
   public void robotInit()
   {
+    PathPlannerServer.startServer(5811);
     // Instantiate our RobotContainer.  This will perform all our button bindings, and put our
     // autonomous chooser on the dashboard.
     m_robotContainer = new RobotContainer();
+
+    // Create a timer to disable motor brake a few seconds after disable.  This will let the robot stop
+    // immediately when disabled, but then also let it be pushed more 
+    disabledTimer = new Timer();
   }
 
   /**
-   * This function is called every robot packet, no matter the mode. Use this for items like diagnostics that you want
-   * ran during disabled, autonomous, teleoperated and test.
+   * This function is called every 20 ms, no matter the mode. Use this for items like diagnostics that you want ran
+   * during disabled, autonomous, teleoperated and test.
    *
    * <p>This runs after the mode specific periodic functions, but before LiveWindow and
    * SmartDashboard integrated updating.
@@ -52,25 +73,24 @@ public class Robot extends TimedRobot
   }
 
   /**
-   * Periodic simulation code should go here. This function is called in a simulated robot after user code executes.
-   */
-  @Override
-  public void simulationPeriodic()
-  {
-    REVPhysicsSim.getInstance().run();
-  }
-
-  /**
    * This function is called once each time the robot enters Disabled mode.
    */
   @Override
   public void disabledInit()
   {
+    m_robotContainer.setMotorBrake(true);
+    disabledTimer.reset();
+    disabledTimer.start();
   }
 
   @Override
   public void disabledPeriodic()
   {
+    if (disabledTimer.hasElapsed(Constants.Drivebase.WHEEL_LOCK_TIME))
+    {
+      m_robotContainer.setMotorBrake(false);
+      disabledTimer.stop();
+    }
   }
 
   /**
@@ -79,6 +99,7 @@ public class Robot extends TimedRobot
   @Override
   public void autonomousInit()
   {
+    m_robotContainer.setMotorBrake(true);
     m_autonomousCommand = m_robotContainer.getAutonomousCommand();
 
     // schedule the autonomous command (example)
@@ -107,6 +128,8 @@ public class Robot extends TimedRobot
     {
       m_autonomousCommand.cancel();
     }
+    m_robotContainer.setDriveMode();
+    m_robotContainer.setMotorBrake(true);
   }
 
   /**
@@ -122,10 +145,13 @@ public class Robot extends TimedRobot
   {
     // Cancels all running commands at the start of test mode.
     CommandScheduler.getInstance().cancelAll();
-//    swerve = new SwerveModule(2, 1, false, false,
-//                              2, 0, false);
-    SmartDashboard.putNumber("Rotation Degrees", 90);
-    SmartDashboard.putNumber("Drive Velocity", 0);
+    try
+    {
+      new SwerveParser(new File(Filesystem.getDeployDirectory(), "swerve"));
+    } catch (IOException e)
+    {
+      throw new RuntimeException(e);
+    }
   }
 
   /**
@@ -134,12 +160,21 @@ public class Robot extends TimedRobot
   @Override
   public void testPeriodic()
   {
-//    SmartDashboard.putNumber("Current Angle",
-//                             new Rotation2d(
-//                                 m_robotContainer.swerveSubsystem.frontRight.getAbsoluteEncoderRad()).getDegrees());
-//
-//    double num = SmartDashboard.getNumber("Rotation Degrees", 90);
-//    m_robotContainer.swerveSubsystem.frontRight.setDesiredState(
-//        new SwerveModuleState(SmartDashboard.getNumber("Drive Velocity", 0), Rotation2d.fromDegrees(num)));
+  }
+
+  /**
+   * This function is called once when the robot is first started up.
+   */
+  @Override
+  public void simulationInit()
+  {
+  }
+
+  /**
+   * This function is called periodically whilst in simulation.
+   */
+  @Override
+  public void simulationPeriodic()
+  {
   }
 }
