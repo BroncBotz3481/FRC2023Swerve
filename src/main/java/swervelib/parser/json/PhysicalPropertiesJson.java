@@ -4,7 +4,7 @@ import edu.wpi.first.math.util.Units;
 import swervelib.parser.SwerveModulePhysicalCharacteristics;
 
 /**
- * {@link swervelib.parser.SwerveModulePhysicalCharacteristics} parsed data. Used to configure the SwerveModule.
+ * {@link SwerveModulePhysicalCharacteristics} parsed data. Used to configure the SwerveModule.
  */
 public class PhysicalPropertiesJson
 {
