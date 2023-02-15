@@ -1,37 +1,19 @@
 {
-  "Connections": {
-    "open": true
-  },
   "NetworkTables Settings": {
     "mode": "Client (NT4)",
-    "serverTeam": "3481"
-  },
-  "Persistent Values": {
-    "open": false
+    "serverTeam": "localhost"
   },
   "transitory": {
-    "SmartDashboard": {
-      "SwerveDrive": {
-        "BackRight": {
-          "open": true,
-          "steer": {
-            "encoder": {
-              "open": true
-            },
-            "open": true,
-            "pid": {
-              "open": true
-            }
-          }
-        },
-        "FrontRight": {
-          "open": true,
-          "steer": {
-            "open": true
-          }
-        },
+    "Shuffleboard": {
+      ".metadata": {
         "open": true
       },
+      ".recording": {
+        "open": true
+      },
+      "open": true
+    },
+    "SmartDashboard": {
       "open": true
     }
   }
