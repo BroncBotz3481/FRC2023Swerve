@@ -30,7 +30,7 @@ public final class Autos
    */
   public static CommandBase exampleAuto(SwerveSubsystem swerve)
   {
-    PathPlannerTrajectory example = PathPlanner.loadPath("TEST1",
+    PathPlannerTrajectory example = PathPlanner.loadPath("AdvancedBlueAuto2",
                                                          new PathConstraints(Auton.MAX_SPEED, Auton.MAX_ACCELERATION));
     // Simple path with holonomic rotation. Stationary start/end. Max velocity of 4 m/s and max accel of 3 m/s^2
 //    PathPlannerTrajectory example = PathPlanner.generatePath(

@@ -3,17 +3,16 @@ package swervelib.motors;
 import com.ctre.phoenix.motorcontrol.ControlMode;
 import com.ctre.phoenix.motorcontrol.DemandType;
 import com.ctre.phoenix.motorcontrol.NeutralMode;
-import com.ctre.phoenix.motorcontrol.RemoteFeedbackDevice;
-import com.ctre.phoenix.motorcontrol.SupplyCurrentLimitConfiguration;
+import com.ctre.phoenix.motorcontrol.StatusFrameEnhanced;
+import com.ctre.phoenix.motorcontrol.can.TalonFXConfiguration;
 import com.ctre.phoenix.motorcontrol.can.WPI_TalonFX;
-import com.ctre.phoenix.sensors.CANCoder;
+import edu.wpi.first.wpilibj.RobotBase;
 import swervelib.encoders.SwerveAbsoluteEncoder;
-import swervelib.motors.TalonSRXSwerve.CTRE_remoteSensor;
-import swervelib.motors.TalonSRXSwerve.CTRE_slotIdx;
 import swervelib.parser.PIDFConfig;
+import swervelib.simulation.ctre.PhysicsSim;
 
 /**
- * {@link com.ctre.phoenix.motorcontrol.can.TalonFX} Swerve Motor.
+ * {@link com.ctre.phoenix.motorcontrol.can.TalonFX} Swerve Motor. Made by Team 1466 WebbRobotics.
  */
 public class TalonFXSwerve extends SwerveMotor
 {
@@ -21,19 +20,31 @@ public class TalonFXSwerve extends SwerveMotor
   /**
    * Factory default already occurred.
    */
-  private final boolean factoryDefaultOccurred = false;
+  private final boolean              factoryDefaultOccurred = false;
+  /**
+   * Current TalonFX configuration.
+   */
+  private final TalonFXConfiguration configuration          = new TalonFXConfiguration();
+  /**
+   * Whether the absolute encoder is integrated.
+   */
+  private final boolean              absoluteEncoder        = false;
   /**
    * TalonFX motor controller.
    */
   WPI_TalonFX motor;
   /**
-   * Whether the absolute encoder is integrated.
-   */
-  private boolean absoluteEncoder          = false;
-  /**
-   * The position conversion factor.
+   * The position conversion factor to convert raw sensor units to Meters Per 100ms, or Ticks to Degrees.
    */
   private double  positionConversionFactor = 1;
+  /**
+   * If the TalonFX configuration has changed.
+   */
+  private boolean configChanged            = true;
+  /**
+   * Feedforward scalar value for the angle motor.
+   */
+  private double  fscalar                  = 1;
 
   /**
    * Constructor for TalonFX swerve motor.
@@ -48,6 +59,11 @@ public class TalonFXSwerve extends SwerveMotor
 
     factoryDefaults();
     clearStickyFaults();
+
+    if (RobotBase.isSimulation())
+    {
+      PhysicsSim.getInstance().addTalonFX(motor, .25, 6800);
+    }
   }
 
   /**
@@ -82,6 +98,7 @@ public class TalonFXSwerve extends SwerveMotor
     if (!factoryDefaultOccurred)
     {
       motor.configFactoryDefault();
+      motor.setSensorPhase(true);
     }
   }
 
@@ -94,7 +111,6 @@ public class TalonFXSwerve extends SwerveMotor
     motor.clearStickyFaults();
   }
 
-
   /**
    * Set the absolute encoder to be a compatible absolute encoder.
    *
@@ -103,13 +119,7 @@ public class TalonFXSwerve extends SwerveMotor
   @Override
   public SwerveMotor setAbsoluteEncoder(SwerveAbsoluteEncoder encoder)
   {
-    if (encoder.getAbsoluteEncoder() instanceof CANCoder)
-    {
-      motor.configSelectedFeedbackSensor(RemoteFeedbackDevice.RemoteSensor0);
-      motor.configRemoteFeedbackFilter((CANCoder) encoder.getAbsoluteEncoder(),
-                                       CTRE_remoteSensor.REMOTE_SENSOR_0.ordinal());
-      absoluteEncoder = true;
-    }
+    // Do not support.
     return this;
   }
 
@@ -117,12 +127,36 @@ public class TalonFXSwerve extends SwerveMotor
    * Configure the integrated encoder for the swerve module. Sets the conversion factors for position and velocity.
    *
    * @param positionConversionFactor The conversion factor to apply for position.
+   *                                 <p><br>
+   *                                 Degrees: <br>
+   *                                 <code>
+   *                                 360 / (angleGearRatio * encoderTicksPerRotation)
+   *                                 </code><br>
+   *                                 <p><br>
+   *                                 Meters:<br>
+   *                                 <code>
+   *                                 (Math.PI * wheelDiameter) / (driveGearRatio * encoderTicksPerRotation)
+   *                                 </code>
    */
   @Override
   public void configureIntegratedEncoder(double positionConversionFactor)
   {
     this.positionConversionFactor = positionConversionFactor;
-    motor.configSelectedFeedbackCoefficient(positionConversionFactor);
+    // Taken from democat's library.
+    // https://github.com/democat3457/swerve-lib/blob/7c03126b8c22f23a501b2c2742f9d173a5bcbc40/src/main/java/com/swervedrivespecialties/swervelib/ctre/Falcon500DriveControllerFactoryBuilder.java#L16
+    configureCANStatusFrames(250);
+  }
+
+  /**
+   * Set the CAN status frames.
+   *
+   * @param CANStatus1 Applied Motor Output, Fault Information, Limit Switch Information
+   */
+  public void configureCANStatusFrames(int CANStatus1)
+  {
+    motor.setStatusFramePeriod(StatusFrameEnhanced.Status_1_General, CANStatus1);
+    // TODO: Configure Status Frame 2 thru 21 if necessary
+    //  https://v5.docs.ctr-electronics.com/en/stable/ch18_CommonAPI.html#setting-status-frame-periods
   }
 
   /**
@@ -133,13 +167,14 @@ public class TalonFXSwerve extends SwerveMotor
   @Override
   public void configurePIDF(PIDFConfig config)
   {
-    int slotIdx = isDriveMotor ? CTRE_slotIdx.Velocity.ordinal() : CTRE_slotIdx.Turning.ordinal();
-    motor.config_kP(slotIdx, config.p);
-    motor.config_kI(slotIdx, config.i);
-    motor.config_kD(slotIdx, config.d);
-    motor.config_kF(slotIdx, config.f);
-    motor.config_IntegralZone(slotIdx, config.iz);
-    motor.configClosedLoopPeakOutput(slotIdx, config.output.max);
+    configuration.slot0.kP = config.p;
+    configuration.slot0.kI = config.i;
+    configuration.slot0.kD = config.d;
+    configuration.slot0.kF = config.f;
+    configuration.slot0.integralZone = config.iz;
+    configuration.slot0.closedLoopPeakOutput = config.output.max;
+    fscalar = config.fscalar;
+    configChanged = true;
   }
 
   /**
@@ -182,7 +217,11 @@ public class TalonFXSwerve extends SwerveMotor
   @Override
   public void burnFlash()
   {
-    // Do nothing
+    if (configChanged)
+    {
+      motor.configAllSettings(configuration, 250);
+      configChanged = false;
+    }
   }
 
   /**
@@ -197,6 +236,63 @@ public class TalonFXSwerve extends SwerveMotor
   }
 
   /**
+   * Put an angle within the the 360 deg scope of a reference. For example, given a scope reference of 756 degrees,
+   * assumes the full scope is (720-1080), and places an angle of 22 degrees into it, returning 742 deg.
+   *
+   * @param scopeReference Current Angle (deg)
+   * @param newAngle       Target Angle (deg)
+   * @return Closest angle within scope (deg)
+   */
+  private double placeInAppropriate0To360Scope(double scopeReference, double newAngle)
+  {
+    double lowerBound;
+    double upperBound;
+    double lowerOffset = scopeReference % 360;
+
+    // Create the interval from the reference angle.
+    if (lowerOffset >= 0)
+    {
+      lowerBound = scopeReference - lowerOffset;
+      upperBound = scopeReference + (360 - lowerOffset);
+    } else
+    {
+      upperBound = scopeReference - lowerOffset;
+      lowerBound = scopeReference - (360 + lowerOffset);
+    }
+    // Put the angle in the interval.
+    while (newAngle < lowerBound)
+    {
+      newAngle += 360;
+    }
+    while (newAngle > upperBound)
+    {
+      newAngle -= 360;
+    }
+    // Smooth the transition between interval boundaries.
+    if (newAngle - scopeReference > 180)
+    {
+      newAngle -= 360;
+    } else if (newAngle - scopeReference < -180)
+    {
+      newAngle += 360;
+    }
+    return newAngle;
+  }
+
+  /**
+   * Convert the setpoint into native sensor units.
+   *
+   * @param setpoint Setpoint to mutate. In meters per second or degrees.
+   * @return Setpoint as native sensor units. Encoder ticks per 100ms, or Encoder tick.
+   */
+  public double convertToNativeSensorUnits(double setpoint)
+  {
+    setpoint =
+        isDriveMotor ? setpoint * .1 : placeInAppropriate0To360Scope(getRawPosition(), setpoint);
+    return setpoint / positionConversionFactor;
+  }
+
+  /**
    * Set the closed loop PID controller reference point.
    *
    * @param setpoint    Setpoint in MPS or Angle in degrees.
@@ -205,44 +301,64 @@ public class TalonFXSwerve extends SwerveMotor
   @Override
   public void setReference(double setpoint, double feedforward)
   {
-    motor.set(isDriveMotor ? ControlMode.Velocity : ControlMode.Position, isDriveMotor ? setpoint * .1 : setpoint,
-              DemandType.ArbitraryFeedForward,
-              feedforward);
+    if (RobotBase.isSimulation())
+    {
+      PhysicsSim.getInstance().run();
+    }
+
+    burnFlash();
+
+    motor.set(
+        isDriveMotor ? ControlMode.Velocity : ControlMode.Position,
+        convertToNativeSensorUnits(setpoint),
+        DemandType.ArbitraryFeedForward,
+        isDriveMotor ? feedforward : feedforward * fscalar);
+    // Credit to Team 3181 for the -0.3, I'm not sure why it works, but it does.
   }
 
   /**
    * Get the velocity of the integrated encoder.
    *
-   * @return velocity
+   * @return velocity in Meters Per Second, or Degrees per Second.
    */
   @Override
   public double getVelocity()
   {
-    return motor.getSelectedSensorVelocity() * (10 * positionConversionFactor);
+    return (motor.getSelectedSensorVelocity() * 10) * positionConversionFactor;
   }
 
   /**
-   * Get the position of the integrated encoder.
+   * Get the raw position.
    *
-   * @return Position
+   * @return Position in meters or degrees.
    */
-  @Override
-  public double getPosition()
+  public double getRawPosition()
   {
     return motor.getSelectedSensorPosition() * positionConversionFactor;
   }
 
   /**
+   * Get the position of the integrated encoder.
+   *
+   * @return Position in Meters or Degrees.
+   */
+  @Override
+  public double getPosition()
+  {
+    return isDriveMotor ? getRawPosition() : getRawPosition() % 360;
+  }
+
+  /**
    * Set the integrated encoder position.
    *
-   * @param position Integrated encoder position. Should be angle in degrees or meters per second.
+   * @param position Integrated encoder position. Should be angle in degrees or meters.
    */
   @Override
   public void setPosition(double position)
   {
-    if (!absoluteEncoder)
+    if (!absoluteEncoder && !RobotBase.isSimulation())
     {
-      motor.setSelectedSensorPosition(position * positionConversionFactor);
+      motor.setSelectedSensorPosition(convertToNativeSensorUnits(position), 0, 250);
     }
   }
 
@@ -254,8 +370,8 @@ public class TalonFXSwerve extends SwerveMotor
   @Override
   public void setVoltageCompensation(double nominalVoltage)
   {
-    motor.enableVoltageCompensation(true);
-    motor.configVoltageCompSaturation(nominalVoltage);
+    configuration.voltageCompSaturation = nominalVoltage;
+    configChanged = true;
   }
 
   /**
@@ -267,11 +383,9 @@ public class TalonFXSwerve extends SwerveMotor
   @Override
   public void setCurrentLimit(int currentLimit)
   {
-    SupplyCurrentLimitConfiguration config = new SupplyCurrentLimitConfiguration();
-    motor.configGetSupplyCurrentLimit(config);
-    config.currentLimit = currentLimit;
-    config.enable = true;
-    motor.configSupplyCurrentLimit(config);
+    configuration.supplyCurrLimit.currentLimit = currentLimit;
+    configuration.supplyCurrLimit.enable = true;
+    configChanged = true;
   }
 
   /**
@@ -282,8 +396,9 @@ public class TalonFXSwerve extends SwerveMotor
   @Override
   public void setLoopRampRate(double rampRate)
   {
-    motor.configClosedloopRamp(rampRate);
-    motor.configOpenloopRamp(rampRate);
+    configuration.closedloopRamp = rampRate;
+    configuration.openloopRamp = rampRate;
+    configChanged = true;
   }
 
   /**
@@ -307,5 +422,4 @@ public class TalonFXSwerve extends SwerveMotor
   {
     return absoluteEncoder;
   }
-
 }
