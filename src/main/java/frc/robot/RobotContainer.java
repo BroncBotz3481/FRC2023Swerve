@@ -44,6 +44,9 @@ public class RobotContainer
   {
     // Configure the trigger bindings
     configureBindings();
+    double min = 0.4;
+    double max = 0.8;
+    // min, max
 
     AbsoluteDrive closedAbsoluteDrive = new AbsoluteDrive(drivebase,
                                                           // Applies deadbands and inverts controls because joysticks
@@ -60,7 +63,7 @@ public class RobotContainer
                                                           false);
     TeleopDrive closedFieldRel = new TeleopDrive(
         drivebase,
-        () -> (Math.abs(driverController.getRawAxis(1)) > OperatorConstants.LEFT_Y_DEADBAND) ? driverController.getRawAxis(1) : 0,
+        () -> (Math.abs(driverController.getRawAxis(1)) > OperatorConstants.LEFT_Y_DEADBAND) ? driverController.getRawAxis(1)*(max - min / 2)() : 0,
         () -> (Math.abs(driverController.getRawAxis(0)) > OperatorConstants.LEFT_X_DEADBAND) ? driverController.getRawAxis(0) : 0,
         () -> (Math.abs(driverController.getRawAxis(4)) > .12 ) ? -driverController.getRawAxis(4) : 0, () -> true, false);
 
