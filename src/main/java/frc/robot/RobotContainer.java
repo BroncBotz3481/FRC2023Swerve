@@ -21,66 +21,96 @@ import frc.robot.subsystems.swervedrive.SwerveSubsystem;
 import java.io.File;
 
 /**
- * This class is where the bulk of the robot should be declared. Since Command-based is a "declarative" paradigm, very
- * little robot logic should actually be handled in the {@link Robot} periodic methods (other than the scheduler calls).
- * Instead, the structure of the robot (including subsystems, commands, and trigger mappings) should be declared here.
+ * This class is where the bulk of the robot should be declared. Since
+ * Command-based is a "declarative" paradigm, very
+ * little robot logic should actually be handled in the {@link Robot} periodic
+ * methods (other than the scheduler calls).
+ * Instead, the structure of the robot (including subsystems, commands, and
+ * trigger mappings) should be declared here.
  */
-public class RobotContainer
-{
+public class RobotContainer {
 
   // The robot's subsystems and commands are defined here...
   private final SwerveSubsystem drivebase = new SwerveSubsystem(new File(Filesystem.getDeployDirectory(), "swerve"));
   // CommandJoystick rotationController = new CommandJoystick(1);
   // Replace with CommandPS4Controller or CommandJoystick if needed
   CommandJoystick driverController = new CommandJoystick(1);
+  CommandJoystick throttleController = new CommandJoystick(3);
 
-  // CommandJoystick driverController   = new CommandJoystick(3);//(OperatorConstants.DRIVER_CONTROLLER_PORT);
+  // CommandJoystick driverController = new
+  // CommandJoystick(3);//(OperatorConstants.DRIVER_CONTROLLER_PORT);
   XboxController driverXbox = new XboxController(0);
 
   /**
    * The container for the robot. Contains subsystems, OI devices, and commands.
    */
-  public RobotContainer()
-  {
+  public RobotContainer() {
     // Configure the trigger bindings
     configureBindings();
-    double min = 0.4;
-    double max = 0.8;
+    double min = 0.4; // possibly up the min
+    double max = 1.0;
     // min, max
 
-    AbsoluteDrive closedAbsoluteDrive = new AbsoluteDrive(drivebase,
-                                                          // Applies deadbands and inverts controls because joysticks
-                                                          // are back-right positive while robot
-                                                          // controls are front-left positive
-                                                          () -> (Math.abs(driverXbox.getLeftY()) >
-                                                                 OperatorConstants.LEFT_Y_DEADBAND)
-                                                                ? -driverXbox.getLeftY() : 0,
-                                                          () -> (Math.abs(driverXbox.getLeftX()) >
-                                                                 OperatorConstants.LEFT_X_DEADBAND)
-                                                                ? -driverXbox.getLeftX() : 0,
-                                                          () -> -driverXbox.getRightX(),
-                                                          () -> -driverXbox.getRightY(),
-                                                          false);
+   /*  AbsoluteDrive closedAbsoluteDrive = new AbsoluteDrive(drivebase,
+        // Applies deadbands and inverts controls because joysticks
+        // are back-right positive while robot
+        // controls are front-left positive
+        () -> (Math.abs(driverXbox.getLeftY()) > OperatorConstants.LEFT_Y_DEADBAND)
+            ? -driverXbox.getLeftY()
+            : 0,
+        () -> (Math.abs(driverXbox.getLeftX()) > OperatorConstants.LEFT_X_DEADBAND)
+            ? -driverXbox.getLeftX()
+            : 0,
+        () -> -driverXbox.getRightX(),
+        () -> -driverXbox.getRightY(),
+        false); */
+
     TeleopDrive closedFieldRel = new TeleopDrive(
         drivebase,
-        () -> (Math.abs(driverController.getRawAxis(1)) > OperatorConstants.LEFT_Y_DEADBAND) ? driverController.getRawAxis(1) : 0,
-        () -> (Math.abs(driverController.getRawAxis(0)) > OperatorConstants.LEFT_X_DEADBAND) ? driverController.getRawAxis(0) : 0,
-        () -> (Math.abs(driverController.getRawAxis(4)) > .12 ) ? -driverController.getRawAxis(4) : 0, () -> true, false);
+        () -> (Math.abs(driverController.getRawAxis(1)) > OperatorConstants.LEFT_Y_DEADBAND)
+            ? driverController.getRawAxis(1) * (((max - min) / 2) * ((-1) * throttleController.getRawAxis(0) + 1) + min)
+            : 0,
+        () -> (Math.abs(driverController.getRawAxis(0)) > OperatorConstants.LEFT_X_DEADBAND)
+            ? driverController.getRawAxis(0) * (((max - min) / 2) * ((-1) * throttleController.getRawAxis(0) + 1) + min)
+            : 0,
+        () -> (Math.abs(driverController.getRawAxis(4)) > .12) ? -driverController.getRawAxis(4)
+            * (((max - min) / 2) * ((-1) * throttleController.getRawAxis(0) + 1) + min) : 0,
+        () -> true, false);
 
     drivebase.setDefaultCommand(closedFieldRel);
   }
 
   /**
-   * Use this method to define your trigger->command mappings. Triggers can be created via the
-   * {@link Trigger#Trigger(java.util.function.BooleanSupplier)} constructor with an arbitrary predicate, or via the
-   * named factories in {@link edu.wpi.first.wpilibj2.command.button.CommandGenericHID}'s subclasses for
-   * {@link CommandXboxController Xbox}/{@link edu.wpi.first.wpilibj2.command.button.CommandPS4Controller PS4}
-   * controllers or {@link edu.wpi.first.wpilibj2.command.button.CommandJoystick Flight joysticks}.
+   * Use this method to define your trigger->command mappings. Triggers can be
+   * created via the
+   * {@link Trigger#Trigger(java.util.function.BooleanSupplier)} constructor with
+   * an arbitrary predicate, or via the
+   * named factories in
+   * {@link edu.wpi.first.wpilibj2.command.button.CommandGenericHID}'s subclasses
+   * for
+   * {@link CommandXboxController
+   * Xbox}/{@link edu.wpi.first.wpilibj2.command.button.CommandPS4Controller PS4}
+   * controllers or {@link edu.wpi.first.wpilibj2.command.button.CommandJoystick
+   * Flight joysticks}.
    */
-  private void configureBindings()
-  {
+  private void configureBindings() {
     // Schedule `ExampleCommand` when `exampleCondition` changes to `true`
-
+    // driverXbox.setDefaultCommand(new TeleopDrive(drivebase, null, null, null,
+    // null, false));
+    new Trigger(() -> Math.abs(throttleController.getRawAxis(3)) > 0.5 || (Math.abs(throttleController.getRawAxis(4)) > 0.5 ))
+        .whileTrue((new AbsoluteDrive(drivebase,
+        // Applies deadbands and inverts controls because joysticks
+        // are back-right positive while robot
+        // controls are front-left positive
+        () -> (Math.abs(driverController.getRawAxis(0)) > OperatorConstants.LEFT_Y_DEADBAND)
+            ? -driverController.getRawAxis(0)
+            : 0,
+        () -> (Math.abs(driverController.getRawAxis(1)) > OperatorConstants.LEFT_X_DEADBAND)
+            ? -driverController.getRawAxis(1)
+            : 0,
+        () -> -throttleController.getRawAxis(4),
+        () -> -throttleController.getRawAxis(3),
+        false)));
     new JoystickButton(driverXbox, 1).onTrue((new InstantCommand(drivebase::zeroGyro)));
     new JoystickButton(driverXbox, 3).whileTrue(new RepeatCommand(new InstantCommand(drivebase::lock, drivebase)));
   }
@@ -90,19 +120,16 @@ public class RobotContainer
    *
    * @return the command to run in autonomous
    */
-  public Command getAutonomousCommand()
-  {
+  public Command getAutonomousCommand() {
     // An example command will be run in autonomous
     return Autos.exampleAuto(drivebase);
   }
 
-  public void setDriveMode()
-  {
-    //drivebase.setDefaultCommand();
+  public void setDriveMode() {
+    // drivebase.setDefaultCommand();
   }
 
-  public void setMotorBrake(boolean brake)
-  {
+  public void setMotorBrake(boolean brake) {
     drivebase.setMotorBrake(brake);
   }
 }
