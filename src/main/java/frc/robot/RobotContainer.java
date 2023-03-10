@@ -97,16 +97,18 @@ public class RobotContainer {
     // Schedule `ExampleCommand` when `exampleCondition` changes to `true`
     // driverXbox.setDefaultCommand(new TeleopDrive(drivebase, null, null, null,
     // null, false));
+    double min = 0.4; // possibly up the min
+    double max = 1.0;
     new Trigger(() -> Math.abs(throttleController.getRawAxis(3)) > 0.5 || (Math.abs(throttleController.getRawAxis(4)) > 0.5 ))
         .whileTrue((new AbsoluteDrive(drivebase,
         // Applies deadbands and inverts controls because joysticks
         // are back-right positive while robot
         // controls are front-left positive
         () -> (Math.abs(driverController.getRawAxis(1)) > OperatorConstants.LEFT_Y_DEADBAND)
-            ? driverController.getRawAxis(1)
+            ? driverController.getRawAxis(1) * (((max - min) / 2) * ((-1) * throttleController.getRawAxis(0) + 1) + min)
             : 0,
         () -> (Math.abs(driverController.getRawAxis(0)) > OperatorConstants.LEFT_X_DEADBAND)
-            ? driverController.getRawAxis(0)
+            ? driverController.getRawAxis(0) * (((max - min) / 2) * ((-1) * throttleController.getRawAxis(0) + 1) + min)
             : 0,
         () -> -throttleController.getRawAxis(4),
         () -> -throttleController.getRawAxis(3),
